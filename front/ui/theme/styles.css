@@ -1,0 +1,41 @@
+/* 올리브영 톤 */
+:root {
+  --oy-green: #9ad14b;
+  --oy-green-dark: #74b516;
+  --oy-bg: #ffffff;
+  --oy-gray-50: #fafafa;
+  --oy-gray-100: #f5f5f7;
+  --oy-gray-200: #e9e9ee;
+  --oy-text: #111111;
+}
+
+.block-container {
+  max-width: 920px;          /* 중앙 폭 */
+  padding-top: 1.4rem;
+}
+
+h1, h2, h3, p, div, span {
+  color: var(--oy-text);
+}
+
+section[data-testid="stSidebar"] {
+  background: var(--oy-gray-50);
+  border-right: 1px solid var(--oy-gray-200);
+}
+
+/* 버튼/액션 톤 */
+.stButton > button {
+  border-radius: 10px;
+  border: 1px solid var(--oy-gray-200);
+}
+
+.stButton > button[kind="primary"] {
+  background: var(--oy-green);
+  border: 1px solid var(--oy-green);
+  color: #111;
+}
+
+.stButton > button[kind="primary"]:hover {
+  background: var(--oy-green-dark);
+  border: 1px solid var(--oy-green-dark);
+}

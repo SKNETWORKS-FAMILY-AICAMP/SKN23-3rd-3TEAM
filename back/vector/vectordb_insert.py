@@ -6,17 +6,15 @@ from pathlib import Path
 from chromadb.utils import embedding_functions
 
 # [DB 설정] - DB 교체 시 이 섹션 수정
-DEFAULT_DATA_DIR = "./assets/vector_data"               # JSON 파일이 위치한 폴더
-DB_PATH = "./vector_store"                              # 벡터DB 로컬 저장 경로
-COLLECTION_NAME = "skin_knowledge_base"                 # 컬렉션(인덱스)명
-# 임베딩 모델
-EMBED_MODEL_NAME = "jhgan/ko-sroberta-multitask"       # 한국어 특화 (권장)
-# EMBED_MODEL_NAME = "BAAI/bge-large-zh-v1.5"          # 대안 1
+DEFAULT_DATA_DIR = "./assets/vector_data"                       # JSON 파일이 위치한 폴더
+ROOT_DIR = Path.cwd().resolve().parents[1]
+DB_PATH  = str(ROOT_DIR / "vector_store")                       # 벡터DB 로컬 저장 경로
+COLLECTION_NAME = "skin_knowledge_base"                         # 컬렉션(인덱스)명
+EMBED_MODEL_NAME = "jhgan/ko-sroberta-multitask"                # 한국어 특화 (권장)
+# EMBED_MODEL_NAME = "BAAI/bge-large-zh-v1.5"                   # 대안 1
 # EMBED_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"  # 대안 2 (다국어)
+REQUIRED_FIELDS = ["id", "doc_type", "category", "content"]     # 유효성 검사
 
-
-# 유효성 검사
-REQUIRED_FIELDS = ["id", "doc_type", "category", "content"]
 def validate_document(doc: dict, index: int) -> bool:
     """필수 필드 존재 여부 확인"""
     for field in REQUIRED_FIELDS:
@@ -31,8 +29,8 @@ def validate_document(doc: dict, index: int) -> bool:
 def collect_json_files(data_dir: str = None, file_list: list[str] = None) -> list[Path]:
     """
     처리할 JSON 파일 목록 반환
-      - file_list 지정 시: 해당 파일들만 처리
-      - data_dir 지정 시: 폴더 내 모든 .json 파일 처리
+    - file_list 지정 시: 해당 파일들만 처리
+    - data_dir 지정 시: 폴더 내 모든 .json 파일 처리
     """
     if file_list:
         paths = [Path(f) for f in file_list]

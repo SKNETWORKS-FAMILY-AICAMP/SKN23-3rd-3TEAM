@@ -18,6 +18,7 @@
 """
 
 import re
+import sys
 import json
 import time
 import argparse
@@ -25,6 +26,7 @@ import requests
 
 from pathlib import Path
 from bs4 import BeautifulSoup
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.tagging import match_all_tags
 
 # ─────────────────────────────────────────────────────────────

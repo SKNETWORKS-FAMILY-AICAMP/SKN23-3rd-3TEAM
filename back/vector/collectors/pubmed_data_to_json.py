@@ -49,6 +49,7 @@ PubMed API: https://www.ncbi.nlm.nih.gov/books/NBK25501/
 """
 
 import os
+import sys
 import json
 import time
 import argparse
@@ -58,6 +59,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.tagging import (CATEGORY_RULES, SKIN_TYPE_RULES, CONCERN_TAG_RULES, INGREDIENT_TAG_RULES, match_tags)
 
 load_dotenv()

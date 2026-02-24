@@ -22,6 +22,7 @@ AAD 사이트의 두 가지 페이지 타입을 모두 처리합니다:
 
 import os
 import re
+import sys
 import json
 import time
 import argparse
@@ -30,6 +31,7 @@ import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup, Tag, NavigableString
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.tagging import match_all_tags
 
 load_dotenv()

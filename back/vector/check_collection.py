@@ -1,44 +1,41 @@
 """
 ChromaDB 컬렉션 현황 확인 & 데이터 조회 스크립트
 ===================================================
-옵션 없이 실행하면 전체 통계를 출력하고,
-필터 옵션을 주면 특정 데이터를 조회합니다.
+옵션 없이 실행하면 전체 통계를 출력하고, 필터 옵션을 주면 특정 데이터를 조회
 
 사용법:
-  # 전체 통계 (기본)
-  python check_collection.py
+    # 전체 통계 (기본)
+    python check_collection.py
 
-  # 전체 source 분포 + ID 샘플
-  python check_collection.py --list-sources
+    # 전체 source 분포 + ID 샘플
+    python check_collection.py --list-sources
 
-  # source로 조회
-  python check_collection.py --source derma_kr
-  python check_collection.py --source aad_org
-  python check_collection.py --source mfds_api
+    # source로 조회
+    python check_collection.py --source derma_kr
+    python check_collection.py --source aad_org
+    python check_collection.py --source mfds_api
 
-  # id 접두어로 조회
-  python check_collection.py --id-prefix derma_disease
-  python check_collection.py --id-prefix aad_
+    # id 접두어로 조회
+    python check_collection.py --id-prefix derma_disease
+    python check_collection.py --id-prefix aad_
 
-  # doc_type으로 조회
-  python check_collection.py --doc-type guide
-  python check_collection.py --doc-type ingredient
+    # doc_type으로 조회
+    python check_collection.py --doc-type guide
+    python check_collection.py --doc-type ingredient
 
-  # 출력 건수 조절 (기본 5)
-  python check_collection.py --source derma_kr --limit 10
+    # 출력 건수 조절 (기본 5)
+    python check_collection.py --source derma_kr --limit 10
 """
 
 import argparse
 import chromadb
 
+from pathlib import Path
 from collections import Counter
 
-# ─────────────────────────────────────────────────────────────
-# [설정] — vectordb_insert.py 와 동일하게 맞춰주세요
-# ─────────────────────────────────────────────────────────────
-DB_PATH         = "./vector_store"
+ROOT_DIR = Path.cwd().resolve().parents[1]
+DB_PATH  = str(ROOT_DIR / "vector_store")    # 벡터DB 로컬 저장 경로
 COLLECTION_NAME = "skin_knowledge_base"
-
 
 # ─────────────────────────────────────────────────────────────
 # DB 연결

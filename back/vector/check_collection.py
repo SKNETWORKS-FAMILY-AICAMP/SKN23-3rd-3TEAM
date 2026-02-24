@@ -33,9 +33,10 @@ import chromadb
 from pathlib import Path
 from collections import Counter
 
-ROOT_DIR = Path.cwd().resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 DB_PATH  = str(ROOT_DIR / "vector_store")    # 벡터DB 로컬 저장 경로
 COLLECTION_NAME = "skin_knowledge_base"
+BATCH_SIZE = 500
 
 # ─────────────────────────────────────────────────────────────
 # DB 연결
@@ -46,15 +47,19 @@ def get_collection(db_path: str, collection_name: str):
         client = chromadb.PersistentClient(path=db_path)
     except Exception as e:
         print(f"[ERROR] DB 연결 실패: {e}\n        경로 확인: {db_path}")
+        
         return None, None
 
     collections = client.list_collections()
+
     print(f"\n{'='*55}")
     print(f"  DB 경로: {db_path}")
     print(f"  전체 컬렉션 수: {len(collections)}개")
+
     for c in collections:
         marker = " ◀ 현재 대상" if c.name == collection_name else ""
         print(f"    - {c.name}{marker}")
+
     print(f"{'='*55}")
 
     try:
@@ -82,8 +87,18 @@ def cmd_stats(col) -> None:
         print("  저장된 문서가 없습니다.")
         return
 
-    results = col.get(limit=fetch_n, include=["metadatas"])
-    metas   = results["metadatas"]
+    metas = []
+    offset = 0
+
+    while offset < fetch_n:
+        batch = col.get(limit=min(BATCH_SIZE, fetch_n - offset),
+                        offset=offset,
+                        include=["metadatas"])
+        metas.extend(batch["metadatas"])
+        offset += BATCH_SIZE
+
+        if len(batch["metadatas"]) < BATCH_SIZE:
+            break
 
     doc_types    = Counter(m.get("doc_type", "unknown") for m in metas)
     categories   = Counter(m.get("category", "unknown") for m in metas)
@@ -131,9 +146,20 @@ def cmd_list_sources(col) -> None:
     """전체 source 분포와 ID 샘플 출력"""
     total   = col.count()
     fetch_n = min(total, 50000)
-    results = col.get(limit=fetch_n, include=["metadatas"])
-    metas   = results["metadatas"]
-    ids     = results["ids"]
+    
+    metas, ids = [], []
+    offset = 0
+
+    while offset < fetch_n:
+        batch = col.get(limit=min(BATCH_SIZE, fetch_n - offset),
+                        offset=offset,
+                        include=["metadatas"])
+        metas.extend(batch["metadatas"])
+        ids.extend(batch["ids"])
+        offset += BATCH_SIZE
+
+        if len(batch["metadatas"]) < BATCH_SIZE:
+            break
 
     sources   = Counter(m.get("source",   "(없음)") for m in metas)
     doc_types = Counter(m.get("doc_type", "(없음)") for m in metas)
@@ -191,11 +217,22 @@ def cmd_id_prefix(col, prefix: str, limit: int) -> None:
     print(f"\n  [id prefix = '{prefix}'] 조회 중...\n")
 
     total   = col.count()
-    results = col.get(limit=min(total, 50000), include=["metadatas", "documents"])
-    ids, metas, docs = results["ids"], results["metadatas"], results["documents"]
+    ids, metas, docs = [], [], []
+    offset = 0
 
-    matched = [(ids[i], metas[i], docs[i])
-               for i, id_ in enumerate(ids) if id_.startswith(prefix)]
+    while offset < total:
+        batch = col.get(limit=min(BATCH_SIZE, total - offset),
+                        offset=offset,
+                        include=["metadatas", "documents"])
+        ids.extend(batch["ids"])
+        metas.extend(batch["metadatas"])
+        docs.extend(batch["documents"])
+        offset += BATCH_SIZE
+
+        if len(batch["ids"]) < BATCH_SIZE:
+            break
+
+    matched = [(ids[i], metas[i], docs[i]) for i, id_ in enumerate(ids) if id_.startswith(prefix)]
 
     if not matched:
         print(f"  id가 '{prefix}'로 시작하는 데이터가 없습니다.")
@@ -264,13 +301,20 @@ def cmd_delete_source(col, source: str) -> None:
     # 1. 삭제 대상 ID 조회
     print(f"\n  [source = '{source}'] 삭제 대상 조회 중...")
 
-    total   = col.count()
-    results = col.get(limit=min(total, 50000), include=["metadatas"])
-    ids     = results["ids"]
-    metas   = results["metadatas"]
+    total = col.count()
+    ids, metas = [], []
+    offset = 0
 
-    target_ids = [id_ for id_, m in zip(ids, metas)
-                  if m.get("source") == source]
+    while offset < total:
+        batch = col.get(limit=min(BATCH_SIZE, total - offset), offset=offset, include=["metadatas"])
+        ids.extend(batch["ids"])
+        metas.extend(batch["metadatas"])
+        offset += BATCH_SIZE
+
+        if len(batch["ids"]) < BATCH_SIZE:
+            break
+
+    target_ids = [id_ for id_, m in zip(ids, metas) if m.get("source") == source]
 
     if not target_ids:
         print(f"  source='{source}' 인 데이터가 없습니다.")
@@ -322,6 +366,7 @@ def main() -> None:
     args = parser.parse_args()
 
     _, col = get_collection(args.db_path, args.collection)
+
     if col is None:
         return
 

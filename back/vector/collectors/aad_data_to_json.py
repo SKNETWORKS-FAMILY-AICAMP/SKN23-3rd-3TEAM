@@ -41,7 +41,7 @@ load_dotenv()
 # ─────────────────────────────────────────────────────────────
 URL_FILE        = "./assets/aad_skin_care_disease2.json"
 OUTPUT_DIR      = Path("./assets/vector_data")
-OUTPUT_FILE     = "aad_guides2.json"
+OUTPUT_FILE     = "aad_guides2.jsonl"
 REQUEST_DELAY   = 1.0
 REQUEST_TIMEOUT = 15
 
@@ -448,33 +448,17 @@ def transform_to_vector_doc(parsed: dict, seq_no: int) -> dict:
         "content":        content,
     }
 
-# 메인 실행
-def run(input_file: str, output_path: Path, delay: float) -> None:
-    print(f"\n[1] 링크 파일 로드: {input_file}")
-
-    urls = load_links(input_file)
-
-    print(f"    총 {len(urls)}개 URL 발견")
-
-    if not urls:
-        print("    [ERROR] URL이 없습니다.")
-
-        return
-
-    guide_cnt   = sum(1 for u in urls if classify_url(u)["page_type"] == "guide")
-    disease_cnt = len(urls) - guide_cnt
-
-    print(f"    guide: {guide_cnt}개 / disease: {disease_cnt}개\n")
-
-    print(f"[2] 크롤링 시작 (딜레이: {delay}초)\n")
-
-    results, success, fail = [], 0, 0
+# URL 목록 → 문서 제너레이터
+def iter_docs(urls: list[str], delay: float):
+    """URL 목록을 순회하며 변환된 문서를 yield하는 제너레이터"""
+    total = len(urls)
+    success, fail = 0, 0
 
     for i, url in enumerate(urls, start=1):
         url_meta = classify_url(url)
         label    = f"[{url_meta['page_type']:7}]"
 
-        print(f"  [{i:>3}/{len(urls)}] {label} {url}")
+        print(f"  [{i:>3}/{total}] {label} {url}")
 
         html = fetch_html(url)
 
@@ -489,27 +473,57 @@ def run(input_file: str, output_path: Path, delay: float) -> None:
             continue
 
         doc = transform_to_vector_doc(parsed, seq_no=i)
-        results.append(doc)
 
         print(f"           ✓ {parsed['title']}")
         print(f"             category: {doc['category']}"
               f"  |  concern_tag: {doc['concern_tag']}"
               f"  |  본문 {len(parsed['content'])}자")
-        
-        success += 1
 
-        if i < len(urls):
+        success += 1
+        yield doc
+
+        if i < total:
             time.sleep(delay)
 
-    print(f"\n[3] JSON 저장: {output_path}")
+    print(f"\n  크롤링 완료: 성공 {success}건 / 실패 {fail}건")
 
+
+# JSONL 저장 (제너레이터 입력)
+def save_jsonl(docs_iter, output_path: Path) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
+        for doc in docs_iter:
+            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+            count += 1
 
+    return count
+
+
+# 메인 실행
+def run(input_file: str, output_path: Path, delay: float) -> None:
+    print(f"\n[1] 링크 파일 로드: {input_file}")
+
+    urls = load_links(input_file)
+
+    print(f"    총 {len(urls)}개 URL 발견")
+
+    if not urls:
+        print("    [ERROR] URL이 없습니다.")
+        return
+
+    guide_cnt   = sum(1 for u in urls if classify_url(u)["page_type"] == "guide")
+    disease_cnt = len(urls) - guide_cnt
+
+    print(f"    guide: {guide_cnt}개 / disease: {disease_cnt}개\n")
+    print(f"[2] 크롤링 시작 (딜레이: {delay}초)\n")
+
+    count = save_jsonl(iter_docs(urls, delay), output_path)
+
+    print(f"\n[3] JSONL 저장: {output_path}")
     print(f"\n{'=' * 55}")
-    print(f"  완료: 성공 {success}건 / 실패 {fail}건")
+    print(f"  완료: {count}건 저장")
     print(f"  출력 파일: {output_path}"
           f"  ({output_path.stat().st_size / 1024:.1f} KB)")
     print(f"{'=' * 55}\n")
@@ -520,7 +534,7 @@ def main() -> None:
     )
     parser.add_argument("--output", "-o",
                         default=str(OUTPUT_DIR / OUTPUT_FILE),
-                        help=f"출력 JSON 경로 (기본: {OUTPUT_DIR / OUTPUT_FILE})")
+                        help=f"출력 JSONL 경로 (기본: {OUTPUT_DIR / OUTPUT_FILE})")
     parser.add_argument("--delay",  "-d", type=float, default=REQUEST_DELAY,
                         help=f"요청 딜레이(초) (기본: {REQUEST_DELAY})")
     args = parser.parse_args()

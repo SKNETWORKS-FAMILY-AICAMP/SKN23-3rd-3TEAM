@@ -71,7 +71,7 @@ load_dotenv()
 BASE_URL          = "http://apis.data.go.kr/1471000/FtnltCosmRptPrdlstInfoService/getRptPrdlstInq"
 API_KEY           = os.getenv("DATA_GO_COSMETIC_KEY")
 OUTPUT_DIR        = Path("./assets/vector_data")
-OUTPUT_FILE       = "mfds_cosmetic_report.json"
+OUTPUT_FILE       = "mfds_cosmetic_report.jsonl"
 DEFAULT_PAGE_SIZE = 100       # 1회 호출 건수 (최대 100)
 REQUEST_DELAY     = 0.35      # 요청 간 딜레이 (초)
 CHUNK_MAX_CHARS   = 1000      # 대용량 문서 필드 1청크 최대 글자 수
@@ -353,9 +353,9 @@ def fetch_page(service_key: str, page_no: int, num_of_rows: int, item_name: str 
 
         return {"total": 0, "items": []}
 
-# 전체 수집
-def collect_all(service_key: str, page_size: int, max_pages: int, item_name: str, effect: str, exclude_cancelled: bool) -> list[dict]:
-    """전 페이지 순회 수집 → 변환된 JSON 문서 리스트 반환"""
+# 전체 수집 (제너레이터)
+def iter_all(service_key: str, page_size: int, max_pages: int, item_name: str, effect: str, exclude_cancelled: bool):
+    """전 페이지 순회 수집 → 변환된 JSON 문서를 yield하는 제너레이터"""
     effect_params = EFFECT_FILTER_MAP.get(effect, {})
 
     print(f"\n{'='*55}")
@@ -363,7 +363,7 @@ def collect_all(service_key: str, page_size: int, max_pages: int, item_name: str
 
     if item_name:
         print(f"  품목명 필터: {item_name}")
-    
+
     print(f"  효능 필터:   {effect} {effect_params if effect_params else '(전체)'}")
     print(f"  취하 제외:   {exclude_cancelled}")
     print(f"{'='*55}\n")
@@ -373,8 +373,7 @@ def collect_all(service_key: str, page_size: int, max_pages: int, item_name: str
 
     if first["total"] == 0:
         print("  [ERROR] 데이터 없음. API 키 또는 파라미터를 확인하세요.")
-
-        return []
+        return
 
     total_count = first["total"]
     total_pages = math.ceil(total_count / page_size)
@@ -384,59 +383,60 @@ def collect_all(service_key: str, page_size: int, max_pages: int, item_name: str
 
     print(f"  총 데이터: {total_count:,}건 → {total_pages}페이지 수집 예정\n")
 
-    all_docs      = []
+    yielded_cnt   = 0
     cancelled_cnt = 0
     hair_cnt      = 0
     seq_counter   = 1
 
-    def process_items(items: list) -> None:
-        nonlocal seq_counter, cancelled_cnt, hair_cnt  
+    def _process_page(items: list):
+        nonlocal yielded_cnt, cancelled_cnt, hair_cnt, seq_counter
 
         for item in items:
             if exclude_cancelled and is_cancelled(item):
                 cancelled_cnt += 1
-
                 continue
 
             if not is_face_product(item):
                 hair_cnt += 1
-
                 continue
 
-            docs = transform(item, seq_counter)
-            all_docs.extend(docs)
+            for doc in transform(item, seq_counter):
+                yield doc
+                yielded_cnt += 1
+
             seq_counter += 1
 
-    process_items(first["items"])
-
-    print(f"  page  1 / {total_pages}  ({len(all_docs):,}건 누적, 취하제외 {cancelled_cnt} | 두피·모발제외 {hair_cnt})")
+    yield from _process_page(first["items"])
+    print(f"  page  1 / {total_pages}  ({yielded_cnt:,}건 누적, 취하제외 {cancelled_cnt} | 두피·모발제외 {hair_cnt})")
 
     for page_no in range(2, total_pages + 1):
         time.sleep(REQUEST_DELAY)
         result = fetch_page(service_key, page_no, page_size, item_name, effect_params)
-        process_items(result["items"])
+        yield from _process_page(result["items"])
+        print(f"  page {page_no:>2} / {total_pages}  ({yielded_cnt:,}건 누적, 취하제외 {cancelled_cnt} | 두피·모발제외 {hair_cnt})")
 
-        print(f"  page {page_no:>2} / {total_pages}  ({len(all_docs):,}건 누적, 취하제외 {cancelled_cnt} | 두피·모발제외 {hair_cnt})")
-
-    print(f"\n  수집 완료: {len(all_docs):,}건")
+    print(f"\n  수집 완료: {yielded_cnt:,}건")
     print(f"  제외 현황: 취하 {cancelled_cnt}건 / 두피·모발 {hair_cnt}건")
 
-    return all_docs
-
-# JSON 저장
-def save_json(items: list[dict], output_dir: Path) -> Path:
+# JSONL 저장 (제너레이터 입력)
+def save_jsonl(docs_iter, output_dir: Path, sample_n: int = 0) -> tuple[Path, int, list[dict]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     file_path = output_dir / OUTPUT_FILE
+    count, sample = 0, []
 
     with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
+        for doc in docs_iter:
+            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+            count += 1
+            if sample_n and len(sample) < sample_n:
+                sample.append(doc)
 
     print(f"\n[저장 완료]")
     print(f"  경로: {file_path}")
-    print(f"  건수: {len(items):,}건")
+    print(f"  건수: {count:,}건")
     print(f"  크기: {file_path.stat().st_size / 1024:.1f} KB\n")
 
-    return file_path
+    return file_path, count, sample
 
 # 저장 샘플 출력
 def print_sample(items: list[dict], n: int = 2) -> None:
@@ -497,7 +497,7 @@ def main():
 
         return
 
-    items = collect_all(
+    docs_iter = iter_all(
         service_key        = API_KEY,
         page_size          = args.page_size,
         max_pages          = args.max_pages,
@@ -506,15 +506,14 @@ def main():
         exclude_cancelled  = not args.no_exclude_cancelled,
     )
 
-    if not items:
-        print("  수집된 데이터가 없습니다.")
+    _, count, sample = save_jsonl(docs_iter, Path(args.output_dir), sample_n=2 if args.sample else 0)
 
+    if count == 0:
+        print("  수집된 데이터가 없습니다.")
         return
 
-    save_json(items, Path(args.output_dir))
-
-    if args.sample:
-        print_sample(items)
+    if args.sample and sample:
+        print_sample(sample)
 
 if __name__ == "__main__":
     main()

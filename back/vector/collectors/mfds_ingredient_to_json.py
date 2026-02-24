@@ -128,9 +128,9 @@ def fetch_page(service_key: str, page_no: int, num_of_rows: int, ingd_name: str 
 
         return {"total": 0, "items": []}
 
-# 전체 수집
-def collect_all(service_key: str, page_size: int, max_pages: int, ingd_name: str) -> list[dict]:
-    """전 페이지 순회 수집 → raw 응답 리스트 반환"""
+# 전체 수집 (제너레이터)
+def iter_all(service_key: str, page_size: int, max_pages: int, ingd_name: str):
+    """전 페이지 순회 수집 → 변환된 JSON 문서를 yield하는 제너레이터"""
 
     print(f"\n{'='*50}")
     print(f"  식약처 화장품 원료성분정보 수집 시작")
@@ -145,8 +145,7 @@ def collect_all(service_key: str, page_size: int, max_pages: int, ingd_name: str
 
     if first["total"] == 0:
         print("  [ERROR] 데이터 없음. API 키 또는 파라미터를 확인하세요.")
-
-        return []
+        return
 
     total_count = first["total"]
     total_pages = math.ceil(total_count / page_size)
@@ -156,38 +155,46 @@ def collect_all(service_key: str, page_size: int, max_pages: int, ingd_name: str
 
     print(f"  총 데이터: {total_count:,}건 → {total_pages}페이지 수집 예정\n")
 
-    all_docs = [transform(item, i + 1) for i, item in enumerate(first["items"])]
+    yielded_cnt = 0
+    seq_counter = 1
 
-    print(f"  page  1 / {total_pages}  ({len(all_docs):,}건 누적)")
+    for item in first["items"]:
+        yield transform(item, seq_counter)
+        seq_counter += 1
+        yielded_cnt += 1
+
+    print(f"  page  1 / {total_pages}  ({yielded_cnt:,}건 누적)")
 
     for page_no in range(2, total_pages + 1):
         time.sleep(REQUEST_DELAY)
         result = fetch_page(service_key, page_no, page_size, ingd_name)
 
         for item in result["items"]:
-            all_docs.append(transform(item, len(all_docs) + 1))
+            yield transform(item, seq_counter)
+            seq_counter += 1
+            yielded_cnt += 1
 
-        print(f"  page {page_no:>2} / {total_pages}  ({len(all_docs):,}건 누적)")
+        print(f"  page {page_no:>2} / {total_pages}  ({yielded_cnt:,}건 누적)")
 
-    print(f"\n  수집 완료: {len(all_docs):,}건")
+    print(f"\n  수집 완료: {yielded_cnt:,}건")
 
-    return all_docs
-
-# JSON 저장
-def save_json(items: list[dict], output_dir: Path, ingd_name: str = "") -> Path:
+# JSONL 저장 (제너레이터 입력)
+def save_jsonl(docs_iter, output_dir: Path) -> tuple[Path, int]:
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    file_path = output_dir / f"mfds_ingredients.json"
+    file_path = output_dir / "mfds_ingredients.jsonl"
+    count = 0
 
     with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
+        for doc in docs_iter:
+            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+            count += 1
 
     print(f"\n[저장 완료]")
     print(f"  경로: {file_path}")
-    print(f"  건수: {len(items):,}건")
+    print(f"  건수: {count:,}건")
     print(f"  크기: {file_path.stat().st_size / 1024:.1f} KB\n")
 
-    return file_path
+    return file_path, count
 
 # 메인 함수
 def main():
@@ -198,10 +205,11 @@ def main():
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR),  help="저장 경로")
     args = parser.parse_args()
 
-    items = collect_all(service_key=API_KEY, page_size=args.page_size, max_pages=args.max_pages, ingd_name=args.name)
+    docs_iter = iter_all(service_key=API_KEY, page_size=args.page_size, max_pages=args.max_pages, ingd_name=args.name)
+    _, count = save_jsonl(docs_iter, Path(args.output_dir))
 
-    if items:
-        save_json(items, Path(args.output_dir), args.name)
+    if count == 0:
+        print("  수집된 데이터가 없습니다.")
 
 if __name__ == "__main__":
     main()

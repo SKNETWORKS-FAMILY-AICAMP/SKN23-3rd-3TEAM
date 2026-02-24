@@ -72,7 +72,7 @@ EFETCH_URL            = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fc
 
 DEFAULT_QUERIES_FILE = Path("./assets/links/pubmed_queries.json")
 OUTPUT_DIR            = Path("./assets/vector_data")
-OUTPUT_FILE           = "pubmed_skin_guides.json"
+OUTPUT_FILE           = "pubmed_skin_guides.jsonl"
 DEFAULT_MAX_PER_QUERY = 10
 DEFAULT_EMAIL         = os.getenv("PUBMED_EMAIL")
 NCBI_API_KEY          = os.getenv("NCBI_API_KEY")
@@ -643,10 +643,10 @@ def transform_article(art: dict, query_meta: dict, openai_key: str, chunk_index:
         "content":        content
     }
 
-# [메인 수집 로직]
-def collect(max_per_query: int, required_extra: int, openai_key: str, queries: list[dict] | None = None) -> list[dict]:
+# [메인 수집 로직 (제너레이터)]
+def iter_collect(max_per_query: int, required_extra: int, openai_key: str, queries: list[dict] | None = None):
     """
-    쿼리 목록 순회 → ESearch → EFetch → 변환(번역 포함)
+    쿼리 목록 순회 → ESearch → EFetch → 변환(번역 포함) → 문서를 yield하는 제너레이터
 
     Args:
         max_per_query:  일반 쿼리당 수집 논문 수
@@ -654,8 +654,7 @@ def collect(max_per_query: int, required_extra: int, openai_key: str, queries: l
         openai_key:     GPT 번역용 OpenAI API 키
         queries:        사용할 쿼리 목록 (None이면 내부 SEARCH_QUERIES fallback)
     """
-    all_docs: list[dict]  = []
-    seen_pmids: set[str]  = set()
+    seen_pmids: set[str] = set()
     query_list = queries if queries is not None else SEARCH_QUERIES
     total = len(query_list)
 
@@ -673,7 +672,6 @@ def collect(max_per_query: int, required_extra: int, openai_key: str, queries: l
 
         if not pmids:
             print("  → PMIDs 없음, 건너뜀")
-
             continue
 
         # 중복 PMID 제거
@@ -686,7 +684,6 @@ def collect(max_per_query: int, required_extra: int, openai_key: str, queries: l
 
         if not new_pmids:
             print("  → 신규 PMID 없음, 건너뜀")
-
             continue
 
         # EFetch
@@ -695,30 +692,29 @@ def collect(max_per_query: int, required_extra: int, openai_key: str, queries: l
 
         print(f"  → 논문 파싱 완료: {len(articles)}건")
 
-        # 변환 + 번역
+        # 변환 + 번역 → yield
         for j, art in enumerate(articles):
             print(f"    [{j + 1}/{len(articles)}] PMID {art['pmid']} 처리 중...")
+            yield transform_article(art, q_meta, openai_key=openai_key, chunk_index=j)
 
-            doc = transform_article(art, q_meta, openai_key=openai_key, chunk_index=j)
-            all_docs.append(doc)
 
-    return all_docs
-
-def save_json(docs: list[dict], output_dir: Path, filename: str) -> Path:
+# JSONL 저장 (제너레이터 입력)
+def save_jsonl(docs_iter, output_dir: Path, filename: str) -> tuple[Path, int]:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / filename
+    count = 0
 
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(docs, f, ensure_ascii=False, indent=2)
-
-    size_kb = path.stat().st_size / 1024
+        for doc in docs_iter:
+            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+            count += 1
 
     print(f"\n[저장 완료]")
     print(f"  경로: {path}")
-    print(f"  건수: {len(docs):,}건")
-    print(f"  크기: {size_kb:.1f} KB\n")
+    print(f"  건수: {count:,}건")
+    print(f"  크기: {path.stat().st_size / 1024:.1f} KB\n")
 
-    return path
+    return path, count
 
 def print_summary(docs: list[dict]) -> None:
     """카테고리별 수집 통계 출력"""
@@ -860,21 +856,29 @@ def main():
 
         return
 
-    # 수집 실행
-    docs = collect(
+    # 수집 실행 (제너레이터)
+    docs_iter = iter_collect(
         max_per_query=args.max_per_query,
         required_extra=args.required_extra,
         openai_key=openai_key,
         queries=queries,
     )
 
-    if not docs:
-        print("\n[ERROR] 수집된 데이터가 없습니다. 네트워크 및 API 설정을 확인하세요.")
+    _, count = save_jsonl(docs_iter, Path(args.output_dir), args.output_file)
 
+    if count == 0:
+        print("\n[ERROR] 수집된 데이터가 없습니다. 네트워크 및 API 설정을 확인하세요.")
         return
 
-    print_summary(docs)
-    save_json(docs, Path(args.output_dir), args.output_file)
+    # 저장된 JSONL을 다시 읽어 통계 출력
+    saved_path = Path(args.output_dir) / args.output_file
+    saved_docs = []
+    with open(saved_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                saved_docs.append(json.loads(line))
+    print_summary(saved_docs)
 
 if __name__ == "__main__":
     main()

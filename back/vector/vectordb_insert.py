@@ -7,7 +7,7 @@ from chromadb.utils import embedding_functions
 
 # [DB 설정] - DB 교체 시 이 섹션 수정
 DEFAULT_DATA_DIR = "./assets/vector_data"                       # JSON 파일이 위치한 폴더
-ROOT_DIR = Path.cwd().resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 DB_PATH  = str(ROOT_DIR / "vector_store")                       # 벡터DB 로컬 저장 경로
 COLLECTION_NAME = "skin_knowledge_base"                         # 컬렉션(인덱스)명
 EMBED_MODEL_NAME = "jhgan/ko-sroberta-multitask"                # 한국어 특화 (권장)
@@ -94,17 +94,34 @@ def load_json(file_path: Path) -> list[dict]:
 
 # 메타데이터 변환
 def build_metadata(doc: dict) -> dict:
-    source = doc.get("source", "internal")
-
-    return {
+    base = {
         "doc_type":       str(doc.get("doc_type", "")),
         "category":       str(doc.get("category", "")),
-        "skin_type":      ",".join(doc.get("skin_type", [])),       # list → 문자열
-        "concern_tag":    ",".join(doc.get("concern_tag", [])),     # list → 문자열
-        "ingredient_tag": ",".join(doc.get("ingredient_tag", [])),  # list → 문자열
-        "source":         source,
+        "skin_type":      ",".join(doc.get("skin_type", [])),
+        "concern_tag":    ",".join(doc.get("concern_tag", [])),
+        "ingredient_tag": ",".join(doc.get("ingredient_tag", [])),
+        "source":         str(doc.get("source", "internal")),
         "chunk_index":    int(doc.get("chunk_index", 0)),
     }
+
+    # doc_type별 확장 메타 — 없는 필드는 그냥 무시
+    EXTRA_FIELDS = {
+        "cosmetic_product": [
+            "item_name", "entp_name", "report_type",
+            "manuf_country", "cosmetic_std", "target_type",
+            "spf", "pa", "water_proof",
+            "effect_whitening", "effect_antiaging", "effect_suncare",
+            "cancel_yn",
+        ],
+    }
+
+    for field in EXTRA_FIELDS.get(doc.get("doc_type", ""), []):
+        val = doc.get(field, "")
+        
+        if val is not None:
+            base[field] = str(val)
+
+    return base
 
 # [DB 클라이언트 초기화] - DB 교체 시 이 함수 교체
 def get_db_collection():
@@ -130,39 +147,47 @@ def insert_from_file(file_path: Path, collection) -> tuple[int, int]:
 
     print(f"     로드: {len(documents)}건")
 
-    ids       = []
-    contents  = []
-    metadatas = []
+    # 1. 유효성 검사 통과한 문서만 수집
+    valid_docs = []
     skip_count = 0
 
     for i, doc in enumerate(documents):
-
-        # 유효성 검사
         if not validate_document(doc, i):
             skip_count += 1
-
             continue
+        valid_docs.append(doc)
 
-        # 중복 ID 확인
-        existing = collection.get(ids=[doc["id"]])
-        if existing["ids"]:
-            print(f"    [SKIP] 중복 ID: {doc['id']}")
+    if not valid_docs:
+        print(f"     Insert할 문서 없음 (전부 유효성 실패)")
+        return 0, skip_count
 
-            skip_count += 1
+    # 2. 기존 ID를 한 번의 bulk 조회로 확인
+    candidate_ids = [doc["id"] for doc in valid_docs]
+    existing = collection.get(ids=candidate_ids, include=[])
+    existing_set = set(existing["ids"])
 
+    dup_count = len(existing_set)
+    if dup_count:
+        print(f"     중복 스킵: {dup_count}건")
+    skip_count += dup_count
+
+    # 3. 새 문서만 필터링
+    ids       = []
+    contents  = []
+    metadatas = []
+
+    for doc in valid_docs:
+        if doc["id"] in existing_set:
             continue
-
         ids.append(doc["id"])
         contents.append(doc["content"])
         metadatas.append(build_metadata(doc))
 
     if not ids:
-        print(f"     Insert할 문서 없음 (전부 중복 또는 유효성 실패)")
-
+        print(f"     Insert할 문서 없음 (전부 중복)")
         return 0, skip_count
 
-    # DB 교체 시 이 부분 교체
-    # [Insert] 배치 단위로 나눠서 insert (ChromaDB 최대 배치 제한 대응)
+    # 4. 배치 단위 Insert
     BATCH_SIZE = 5000
     total_inserted = 0
 

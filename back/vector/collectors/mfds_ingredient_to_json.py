@@ -24,6 +24,7 @@
 """
 
 import os
+import sys
 import json
 import time
 import math
@@ -32,6 +33,7 @@ import requests
 
 from pathlib import Path
 from dotenv import load_dotenv
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.tagging import (CATEGORY_RULES, SKIN_TYPE_RULES, CONCERN_TAG_RULES, match_tags)
 
 load_dotenv()
@@ -82,7 +84,7 @@ def transform(item: dict, seq_no: int) -> dict:
         "skin_type":      match_tags(classify_text, SKIN_TYPE_RULES),
         "concern_tag":    match_tags(classify_text, CONCERN_TAG_RULES),
         "ingredient_tag": ingredient_tags,
-        "source":         "mfds_api",
+        "source":         "mfds_ingredient_api",
         "chunk_index":    0,
         "content":        build_content(item),
     }

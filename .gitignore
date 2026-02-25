@@ -193,7 +193,6 @@ chroma/
 vector_store/
 
 *.md
-*.ipynb
 
 # 100MB 넘는파일은 githumb에 업로드 불가 > ignore 처리
 ./back/vector/assets/vector_data/mfds_cosmetic_report.jsonl

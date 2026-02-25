@@ -1,4 +1,6 @@
+import os
 import json
+import gdown
 import argparse
 import chromadb
 
@@ -14,6 +16,29 @@ EMBED_MODEL_NAME = "jhgan/ko-sroberta-multitask"                # 한국어 특�
 # EMBED_MODEL_NAME = "BAAI/bge-large-zh-v1.5"                   # 대안 1
 # EMBED_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"  # 대안 2 (다국어)
 REQUIRED_FIELDS = ["id", "doc_type", "category", "content"]     # 유효성 검사
+
+# 구글드라이브 파일 다운로드
+def download_large_files():
+    '''github에 업로드 하지 못하는 100MB 이상의 파일들은 구글드라이브에 업로드한 뒤 다운로드 받아 사용'''
+    os.makedirs(DEFAULT_DATA_DIR, exist_ok=True)
+
+    files = {
+        "mfds_cosmetic_report.jsonl": "1dS7bVoGj5ftaQfB1o5Pl1RRoswEfkWHk",
+    }
+
+    for filename, file_id in files.items():
+        filepath = os.path.join(DEFAULT_DATA_DIR, filename)
+
+        if os.path.exists(filepath):
+            print(f"{filename} 이미 존재, 스킵")
+
+            continue
+        
+        print(f"{filename} 다운로드 중...")
+
+        gdown.download(id=file_id, output=filepath, quiet=False)
+
+        print(f"{filename} 다운로드 완료")
 
 def validate_document(doc: dict, index: int) -> bool:
     """필수 필드 존재 여부 확인"""
@@ -258,6 +283,14 @@ if __name__ == "__main__":
         help="Insert 후 검색 테스트 실행"
     )
     args = parser.parse_args()
+
+    if not args.files:
+        try:
+            download_large_files()
+        except Exception as e:
+            print(f"[ERROR] 파일 다운로드 실패: {e}")
+
+            exit(1)
 
     insert_documents(data_dir=DEFAULT_DATA_DIR, file_list=args.files)
 

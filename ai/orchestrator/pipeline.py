@@ -5,20 +5,21 @@ from ai.config.settings import settings
 from ai.orchestrator.router import decide
 from ai.orchestrator.evidence import build
 
-from ai.tools import rag_retriever_local, vision_client_mock
+from ai.tools import rag_retriever_local
+import ai.tools.vision_client as vision_client
 from ai.llm.generator import generate_report
 from ai.llm.validators import validate_report
 
-def build_rag_query(user_text: str, vision_result: dict | None) -> str:
+def build_rag_query(user_text: str, vision_result: Optional[dict]) -> str:
     if not vision_result:
+        return user_text
+    if vision_result.get("qc", {}).get("status") == "fail":
         return user_text
 
     findings = vision_result.get("findings", [])
-    # 점수 상위 2개만 섞기(데모용)
     top = sorted(findings, key=lambda x: x.get("score", 0), reverse=True)[:2]
     tags = [f"{x.get('region','')}-{x.get('name','')}" for x in top]
     tags = " ".join([t for t in tags if t])
-
     return f"{user_text}\n[vision_tags] {tags}"
 
 def _save_run(payloads: Dict[str, Any]) -> str:
@@ -42,7 +43,11 @@ def run(user_text: str, images: List[bytes], chat_history: List[Dict[str, Any]] 
     query = None
 
     if route.needs_vision:
-        vision_result = vision_client_mock.infer(images)
+        vision_result = vision_client.infer(images)
+
+        # # ✅ 얼굴 아니거나 QC fail이면 vision_result를 evidence에 반영하지 않게
+        # if vision_result and vision_result.get("qc", {}).get("status") == "fail":
+        #     vision_result = None
 
     if route.needs_rag:
         # 실제로는 user_text + vision 요약으로 query를 만들지만 데모는 간단히

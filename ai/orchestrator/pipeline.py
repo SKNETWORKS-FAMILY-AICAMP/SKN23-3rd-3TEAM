@@ -52,7 +52,7 @@ def run(user_text: str, images: List[bytes], chat_history: List[Dict[str, Any]] 
     if route.needs_rag:
         # 실제로는 user_text + vision 요약으로 query를 만들지만 데모는 간단히
         query = build_rag_query(user_text, vision_result)
-        rag_passages = rag_retriever_local.search(query=query, top_k=3)
+        rag_passages = rag_retriever_local.search(query=query, top_k=10)
 
     evidence = build(user_text=user_text,
                     vision_result=vision_result, 

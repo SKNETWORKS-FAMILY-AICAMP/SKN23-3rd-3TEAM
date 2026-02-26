@@ -59,8 +59,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   >(1);
 
   const navItems = [
-    { path: "/analysis", label: "피부 분석", icon: Microscope },
-    { path: "/wishlist", label: "위시리스트", icon: Heart },
+    // { path: "/analysis", label: "피부 분석", icon: Microscope },
+    // { path: "/wishlist", label: "위시리스트", icon: Heart },
+
+    { path: "/analysis", label: "피부 분석", icon: '/src/assets/icons/beauty.png' },
+    { path: "/wishlist", label: "위시리스트", icon: '/src/assets/icons/wish.png' },
   ];
 
   const handleNewChat = () => {
@@ -99,7 +102,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             className="flex items-center gap-2.5 group"
             onClick={onClose}
           >
-            <div
+            <div>
+              <img src="/src/assets/logo.png" alt="LOGO" style={{width: '60px'}} />
+            </div>
+            {/* <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105"
               style={{
                 background:
@@ -118,7 +124,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               >
                 by OliveYoung
               </span>
-            </div>
+            </div> */}
           </Link>
           <button
             onClick={onClose}
@@ -171,7 +177,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 key={item.path}
                 to={item.path}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-3 px-2 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "text-white"
                     : "text-gray-600 hover:text-gray-900"
@@ -198,7 +204,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }
                 }}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                {/* <Icon className="w-4 h-4 flex-shrink-0" /> */}
+                <div>
+                  <img src={item.icon} alt={item.label} style={{width: '30px'}} />
+                </div>
                 {item.label}
               </Link>
             );
@@ -230,7 +239,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
-                    <div
+                    {/* <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                       style={{
                         background: isActive
@@ -244,6 +253,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           color: isActive ? "white" : "#9CA3AF",
                         }}
                       />
+                    </div> */}
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <img src="/src/assets/icons/chat.png" style={{width: '100%'}} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">

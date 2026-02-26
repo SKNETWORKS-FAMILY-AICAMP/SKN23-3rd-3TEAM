@@ -34,12 +34,6 @@ interface Message {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────
-const MODELS = [
-  { id: "gpt4o", name: "GPT-4o Vision", desc: "OpenAI의 최신 멀티모달 모델. 이미지 분석 정확도 최상.", badge: "추천" },
-  { id: "claude", name: "Claude 3.5 Sonnet", desc: "Anthropic의 Claude. 상세한 피부 분석 설명에 강점.", badge: "" },
-  { id: "gemini", name: "Gemini 1.5 Pro", desc: "Google의 Gemini. 빠른 응답과 다국어 지원.", badge: "" },
-];
-
 const ANALYSIS_OPTIONS = [
   { value: "default", label: "분석 선택" },
   { value: "quick", label: "빠른 분석" },
@@ -302,8 +296,6 @@ export function ChatPage() {
   const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
 
   // chat_content=true 전용 state
-  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
-  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -461,77 +453,17 @@ export function ChatPage() {
     <div className="flex flex-col h-full bg-[#F8FBF3]">
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-5 py-3.5 flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
-          >
-            <Sparkles className="w-4 h-4 text-white" />
+      {
+        chat_content && (
+          <div className="bg-white border-b border-gray-100 px-5 py-3.5 flex-shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-800" style={{textAlign: 'center'}}>AI 피부 분석 챗봇</h2>
+              </div>
+            </div>
           </div>
-          <div>
-            <h2 className="text-sm font-semibold text-gray-800">AI 피부 분석 챗봇</h2>
-            <p className="text-[11px] text-gray-400">
-              {chat_content ? "이미지 업로드 후 분석을 시작하세요" : "분석 유형을 선택하고 이미지를 업로드해 보세요"}
-            </p>
-          </div>
-        </div>
-
-        {/* 모델 선택 드롭다운 (chat_content=true 전용) */}
-        {chat_content && (
-          <div className="relative">
-            <button
-              onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:border-[#85C13D] transition-colors"
-            >
-              <div className="w-2 h-2 rounded-full bg-[#85C13D]" />
-              <span className="hidden sm:block">{selectedModel.name}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-            </button>
-            <AnimatePresence>
-              {modelDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
-                >
-                  <div className="p-2">
-                    {MODELS.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => { setSelectedModel(model); setModelDropdownOpen(false); }}
-                        className={`w-full text-left px-3 py-3 rounded-xl transition-colors ${
-                          selectedModel.id === model.id ? "bg-[#E8F5D0]" : "hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span
-                            className="text-xs font-semibold"
-                            style={{ color: selectedModel.id === model.id ? "#4A7A1E" : "#374151" }}
-                          >
-                            {model.name}
-                          </span>
-                          {model.badge && (
-                            <span
-                              className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white"
-                              style={{ background: "#85C13D" }}
-                            >
-                              {model.badge}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-gray-500">{model.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
+        )
+      }
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
@@ -549,11 +481,14 @@ export function ChatPage() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-3`}
                 >
                   {msg.role === "bot" && (
-                    <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1 shadow-sm"
-                      style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
-                    >
-                      <Leaf className="w-4 h-4 text-white" />
+                    // <div
+                    //   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1 shadow-sm"
+                    //   style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
+                    // >
+                    //   <Leaf className="w-4 h-4 text-white" />
+                    // </div>
+                    <div>
+                      <img src="/src/assets/bot.png" style={{width: '36px'}} />
                     </div>
                   )}
                   <div className={`max-w-[75%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>

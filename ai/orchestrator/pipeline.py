@@ -33,9 +33,37 @@ def _save_run(payloads: Dict[str, Any]) -> str:
 
     return run_dir
 
+"""
+[수정 이력]
+2026-02-27 | 정석원 | 예외 처리 로직 추가(스킨관련 질문 아닐경우)
+"""
+def is_skin_domain(text: str) -> bool:
+    t = (text or "").lower()
+    keywords = [
+        "피부","여드름","홍조","모공","각질","트러블","색소","잡티","주름","건조","지성","민감",
+        "루틴","스킨케어","세안","클렌징","토너","에센스","세럼","크림","선크림","자외선",
+        "화장품","성분","레티놀","나이아신아마이드","비타민c","bha","aha","판테놀","세라마이드",
+    ]
+    return any(k in t for k in keywords)
+
 def run(user_text: str, images: List[bytes], chat_history: List[Dict[str, Any]] | None = None) -> Dict[str, Any]:
     if chat_history is None:
         chat_history = []
+    if not is_skin_domain(user_text):
+        return {
+            "chat_answer": "현재 피부/스킨케어 질문에만 답할 수 있어요. 피부 고민(예: 홍조, 여드름, 건조, 루틴 추천)으로 질문해 주세요.",
+            "summary": "도메인 밖 질문으로 판단되어 스킨케어 안내만 제공했습니다.",
+            "observations": [],
+            "recommendations": [
+                {"category": "Lifestyle", "items": ["피부 고민/증상/루틴/제품 성분 관련 질문으로 다시 입력해 주세요."]}
+            ],
+            "products": [],
+            "warnings": ["도메인 밖 요청(예: 노래 추천)에는 응답하지 않음"],
+            "red_flags": [],
+            "citations": [],
+        }
+    """ ----------------------------------"""
+
     route = decide(user_text=user_text, has_images=len(images) > 0)
 
     vision_result = None

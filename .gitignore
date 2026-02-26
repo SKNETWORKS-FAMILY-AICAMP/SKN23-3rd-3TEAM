@@ -191,7 +191,7 @@ pip-selfcheck.json
 
 chroma/
 vector_store/
-
+outputs/
 *.md
 
 # 100MB 넘는파일은 githumb에 업로드 불가 > ignore 처리

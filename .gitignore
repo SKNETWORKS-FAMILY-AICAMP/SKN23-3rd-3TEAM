@@ -189,8 +189,12 @@ pip-selfcheck.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,venv
 
+# vectorDB
 chroma/
 vector_store/
+# Frontend
+node_modules/
+front/dist/
 
 *.md
 *.ipynb

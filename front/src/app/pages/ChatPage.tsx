@@ -1,11 +1,11 @@
-import { Bot } from "@/app/components/ui/bot";
-import logoTextWebm from "@/assets/animations/logo_text.webm";
 import { useLocation } from "react-router";
+import { Bot } from "@/app/components/ui/bot";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import logoTextWebm from "@/assets/animations/logo_text.webm";
+import loadingWebm from "@/assets/animations/logo_loop_1.webm";
 import {
   X,
-  Leaf,
   Send,
   ZoomIn,
   Sparkles,
@@ -148,12 +148,9 @@ function EmptyChatState() {
   );
 }
 
-// ─── UploadSlotCard (chat_content=false 전용) ──────────────────────────
-function UploadSlotCard({
-  slot,
-  onUpload,
-  onRemove,
-}: {
+// ─── UploadSlotCard ──────────────────────────
+// 이미지 업로드 영역 컴포넌트
+function UploadSlotCard({ slot, onUpload, onRemove }: {
   slot: UploadSlot;
   onUpload: (id: string, file: File) => void;
   onRemove: (id: string) => void;
@@ -168,7 +165,7 @@ function UploadSlotCard({
         onClick={() => !slot.preview && inputRef.current?.click()}
       >
         {slot.preview ? (
-          <div className="relative w-full aspect-square rounded-xl overflow-hidden border-2 border-[#84C13D] cursor-pointer group">
+          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-[#84C13D] cursor-pointer group">
             <img src={slot.preview} alt={slot.label} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
               <button
@@ -202,31 +199,6 @@ function UploadSlotCard({
 
       <div className="flex items-center gap-1">
         <span className="text-[11px] font-medium text-gray-600">{slot.label}</span>
-        <div className="relative">
-          <button
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            className="text-gray-300 hover:text-[#84C13D] transition-colors"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-          </button>
-          <AnimatePresence>
-            {showTooltip && (
-              <motion.div
-                initial={{ opacity: 0, y: 4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 text-left"
-              >
-                <div className="bg-gray-800 text-white text-[11px] leading-relaxed rounded-xl px-3 py-2 shadow-xl">
-                  {slot.tooltip}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" style={{ borderTopColor: "#1F2937" }} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
     </div>
   );
@@ -479,7 +451,7 @@ export function ChatPage() {
                     <span className="text-[10px] text-gray-400 px-1">{msg.time}</span>
                   </div>
                   {msg.role === "user" && (
-                    <div className="w-8 h-8 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
                       <img
                         src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
                         alt="User"
@@ -492,27 +464,8 @@ export function ChatPage() {
             </AnimatePresence>
 
             {isSending && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-3"
-              >
-                <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
-                >
-                  <Leaf className="w-4 h-4 text-white" />
-                </div>
-                <div className="px-4 py-3 bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-md flex items-center gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={i}
-                      className="w-2 h-2 rounded-full bg-[#84C13D]"
-                      animate={{ y: [0, -4, 0] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                    />
-                  ))}
-                </div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="p-2 py-4">
+                <video src={loadingWebm} autoPlay loop muted playsInline className="w-19 h-auto" />
               </motion.div>
             )}
             <div ref={messagesEndRef} />

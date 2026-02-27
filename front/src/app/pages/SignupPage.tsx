@@ -14,7 +14,7 @@ function PasswordStrength({ password }: { password: string }) {
   ];
   const strength = checks.filter((c) => c.pass).length;
   const labels = ["", "약함", "보통", "강함", "매우 강함"];
-  const colors = ["", "#EF4444", "#F59E0B", "#85C13D", "#10B981"];
+  const colors = ["", "#EF4444", "#F59E0B", "#84C13D", "#10B981"];
 
   return (
     <div className="mt-2">
@@ -33,7 +33,7 @@ function PasswordStrength({ password }: { password: string }) {
         </span>
         <div className="flex gap-2.5">
           {checks.map((c) => (
-            <div key={c.label} className={`flex items-center gap-1 text-[10px] ${c.pass ? "text-[#85C13D]" : "text-gray-300"}`}>
+            <div key={c.label} className={`flex items-center gap-1 text-[10px] ${c.pass ? "text-[#84C13D]" : "text-gray-300"}`}>
               <Check className="w-2.5 h-2.5" />
               {c.label}
             </div>
@@ -114,7 +114,7 @@ export function SignupPage() {
         <div className="text-center mb-7">
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-            style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
+            style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
           >
             <Leaf className="w-6 h-6 text-white" />
           </div>
@@ -145,13 +145,13 @@ export function SignupPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="이메일 주소"
                       disabled={emailVerified}
-                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] focus:bg-white transition-all disabled:opacity-60"
+                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] focus:bg-white transition-all disabled:opacity-60"
                     />
                     <button
                       onClick={handleSendEmail}
                       disabled={!email || emailVerified || isLoading}
                       className="px-3 py-3 rounded-xl text-xs font-semibold text-white whitespace-nowrap disabled:opacity-50 transition-all"
-                      style={{ background: emailVerified ? "#10B981" : "#85C13D", minWidth: "80px" }}
+                      style={{ background: emailVerified ? "#10B981" : "#84C13D", minWidth: "80px" }}
                     >
                       {emailVerified ? (
                         <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5" />인증완료</span>
@@ -160,7 +160,7 @@ export function SignupPage() {
                   </div>
                   {emailSent && !emailVerified && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2">
-                      <div className="flex items-center gap-1.5 text-xs text-[#85C13D] mb-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-[#84C13D] mb-1.5">
                         <Mail className="w-3 h-3" />
                         인증 코드가 이메일로 발송되었습니다
                       </div>
@@ -170,12 +170,12 @@ export function SignupPage() {
                           onChange={(e) => setVerifyCode(e.target.value)}
                           placeholder="인증 코드 입력 (예: 1234)"
                           maxLength={6}
-                          className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#85C13D] transition-all"
+                          className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#84C13D] transition-all"
                         />
                         <button
                           onClick={handleVerify}
                           className="px-4 py-3 rounded-xl text-xs font-semibold text-white"
-                          style={{ background: "#85C13D" }}
+                          style={{ background: "#84C13D" }}
                         >
                           확인
                         </button>
@@ -195,7 +195,7 @@ export function SignupPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="비밀번호"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] focus:bg-white transition-all pr-11"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] focus:bg-white transition-all pr-11"
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -218,9 +218,9 @@ export function SignupPage() {
                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all pr-11 ${
                         passwordConfirm
                           ? passwordMatch
-                            ? "border-[#85C13D] focus:border-[#85C13D]"
+                            ? "border-[#84C13D] focus:border-[#84C13D]"
                             : "border-red-300 focus:border-red-400"
-                          : "border-gray-200 focus:border-[#85C13D]"
+                          : "border-gray-200 focus:border-[#84C13D]"
                       }`}
                     />
                     <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
@@ -229,7 +229,7 @@ export function SignupPage() {
                     {passwordConfirm && (
                       <div className="absolute right-9 top-1/2 -translate-y-1/2">
                         {passwordMatch ? (
-                          <Check className="w-4 h-4 text-[#85C13D]" />
+                          <Check className="w-4 h-4 text-[#84C13D]" />
                         ) : (
                           <X className="w-4 h-4 text-red-400" />
                         )}
@@ -249,7 +249,7 @@ export function SignupPage() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="실명 입력"
                     maxLength={20}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] transition-all"
                   />
                 </div>
 
@@ -261,7 +261,7 @@ export function SignupPage() {
                     onChange={(e) => setNickname(e.target.value)}
                     placeholder="닉네임 (선택)"
                     maxLength={12}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] transition-all"
                   />
                 </div>
 
@@ -269,16 +269,16 @@ export function SignupPage() {
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <div
                     className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                      agreed ? "border-transparent" : "border-gray-300 group-hover:border-[#85C13D]"
+                      agreed ? "border-transparent" : "border-gray-300 group-hover:border-[#84C13D]"
                     }`}
-                    style={agreed ? { background: "#85C13D" } : {}}
+                    style={agreed ? { background: "#84C13D" } : {}}
                     onClick={() => setAgreed(!agreed)}
                   >
                     {agreed && <Check className="w-3 h-3 text-white" />}
                   </div>
                   <span className="text-xs text-gray-500 leading-relaxed">
-                    <span className="text-[#85C13D] font-medium underline cursor-pointer">이용약관</span> 및{" "}
-                    <span className="text-[#85C13D] font-medium underline cursor-pointer">개인정보 처리방침</span>에 동의합니다 (필수)
+                    <span className="text-[#84C13D] font-medium underline cursor-pointer">이용약관</span> 및{" "}
+                    <span className="text-[#84C13D] font-medium underline cursor-pointer">개인정보 처리방침</span>에 동의합니다 (필수)
                   </span>
                 </label>
 
@@ -286,7 +286,7 @@ export function SignupPage() {
                   onClick={handleNext}
                   disabled={!step1Valid}
                   className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                  style={step1Valid ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
+                  style={step1Valid ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
                 >
                   다음 단계
                 </button>
@@ -310,9 +310,9 @@ export function SignupPage() {
                         key={type}
                         onClick={() => setSkinType(type)}
                         className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
-                          skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#85C13D]"
+                          skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                         }`}
-                        style={skinType === type ? { background: "#85C13D" } : {}}
+                        style={skinType === type ? { background: "#84C13D" } : {}}
                       >
                         {type}
                       </button>
@@ -327,9 +327,9 @@ export function SignupPage() {
                         key={c}
                         onClick={() => toggleConcern(c)}
                         className={`px-3 py-2 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1 ${
-                          concerns.includes(c) ? "border-transparent text-white" : "border-gray-200 text-gray-600 hover:border-[#85C13D]"
+                          concerns.includes(c) ? "border-transparent text-white" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                         }`}
-                        style={concerns.includes(c) ? { background: "#85C13D" } : {}}
+                        style={concerns.includes(c) ? { background: "#84C13D" } : {}}
                       >
                         {concerns.includes(c) && <Check className="w-3 h-3" />}
                         {c}
@@ -348,7 +348,7 @@ export function SignupPage() {
                     onClick={handleNext}
                     disabled={!step2Valid || isLoading}
                     className="flex-1 py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-                    style={step2Valid ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
+                    style={step2Valid ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -375,7 +375,7 @@ export function SignupPage() {
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", damping: 12, delay: 0.2 }}
                   className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
-                  style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)", boxShadow: "0 8px 24px rgba(133,193,61,0.4)" }}
+                  style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 8px 24px rgba(133,193,61,0.4)" }}
                 >
                   <Check className="w-10 h-10 text-white" />
                 </motion.div>
@@ -384,7 +384,7 @@ export function SignupPage() {
                 <button
                   onClick={() => navigate("/chat")}
                   className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all"
-                  style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
+                  style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
                 >
                   시작하기
                 </button>
@@ -396,7 +396,7 @@ export function SignupPage() {
         {step < 2 && (
           <p className="text-xs text-center text-gray-400 mt-4">
             이미 계정이 있으신가요?{" "}
-            <Link to="/login" className="font-medium hover:underline" style={{ color: "#85C13D" }}>
+            <Link to="/login" className="font-medium hover:underline" style={{ color: "#84C13D" }}>
               로그인
             </Link>
           </p>

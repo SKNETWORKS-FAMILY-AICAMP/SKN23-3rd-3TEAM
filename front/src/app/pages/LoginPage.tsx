@@ -43,7 +43,7 @@ export function LoginPage() {
         <div className="text-center mb-8">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-            style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
+            style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
           >
             <Leaf className="w-7 h-7 text-white" />
           </div>
@@ -69,7 +69,7 @@ export function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="이메일을 입력하세요"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] focus:bg-white transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] focus:bg-white transition-all"
                 autoComplete="email"
               />
             </div>
@@ -81,7 +81,7 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="비밀번호를 입력하세요"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] focus:bg-white transition-all pr-11"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] focus:bg-white transition-all pr-11"
                   autoComplete="current-password"
                 />
                 <button
@@ -95,7 +95,7 @@ export function LoginPage() {
               <div className="flex justify-end mt-1.5">
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-gray-400 hover:text-[#85C13D] transition-colors"
+                  className="text-xs text-gray-400 hover:text-[#84C13D] transition-colors"
                 >
                   비밀번호 찾기
                 </Link>
@@ -111,7 +111,7 @@ export function LoginPage() {
               }`}
               style={
                 isValid && !isLoading
-                  ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }
+                  ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }
                   : { background: "#9CA3AF" }
               }
             >
@@ -174,7 +174,7 @@ export function LoginPage() {
 
           <p className="text-xs text-center text-gray-400 mt-5">
             계정이 없으신가요?{" "}
-            <Link to="/signup" className="font-medium hover:underline" style={{ color: "#85C13D" }}>
+            <Link to="/signup" className="font-medium hover:underline" style={{ color: "#84C13D" }}>
               회원가입
             </Link>
           </p>
@@ -182,9 +182,9 @@ export function LoginPage() {
 
         <p className="text-center text-xs text-gray-400 mt-5 leading-relaxed">
           로그인함으로써{" "}
-          <span className="underline cursor-pointer hover:text-[#85C13D]">이용약관</span>
+          <span className="underline cursor-pointer hover:text-[#84C13D]">이용약관</span>
           {" "}및{" "}
-          <span className="underline cursor-pointer hover:text-[#85C13D]">개인정보 처리방침</span>
+          <span className="underline cursor-pointer hover:text-[#84C13D]">개인정보 처리방침</span>
           에 동의합니다.
         </p>
       </motion.div>

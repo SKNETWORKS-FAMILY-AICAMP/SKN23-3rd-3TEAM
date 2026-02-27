@@ -15,7 +15,7 @@ export const PRODUCTS = [
     image: "https://images.unsplash.com/photo-1688413467228-296b52dc4a34?w=400&h=400&fit=crop",
     tags: ["수분 부족", "건성", "복합성"],
     badge: "추천",
-    badgeColor: "#85C13D",
+    badgeColor: "#84C13D",
     desc: "7중 히알루론산과 세라마이드로 피부 장벽을 강화하고 깊은 보습을 제공합니다.",
     liked: true,
   },
@@ -115,7 +115,7 @@ export function WishlistPage() {
           </div>
           <span
             className="px-3 py-1.5 rounded-xl text-sm font-semibold text-white"
-            style={{ background: "#85C13D" }}
+            style={{ background: "#84C13D" }}
           >
             {likedProducts.size}개 저장됨
           </span>
@@ -128,9 +128,9 @@ export function WishlistPage() {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                selectedCategory === cat ? "text-white shadow-sm" : "bg-white text-gray-500 border border-gray-200 hover:border-[#85C13D]"
+                selectedCategory === cat ? "text-white shadow-sm" : "bg-white text-gray-500 border border-gray-200 hover:border-[#84C13D]"
               }`}
-              style={selectedCategory === cat ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)" } : {}}
+              style={selectedCategory === cat ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
             >
               {cat}
             </button>

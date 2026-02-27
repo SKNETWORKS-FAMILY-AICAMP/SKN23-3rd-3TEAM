@@ -78,7 +78,7 @@ function ScoreGauge({ score }: { score: number }) {
         />
         <defs>
           <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#85C13D" />
+            <stop offset="0%" stopColor="#84C13D" />
             <stop offset="100%" stopColor="#A8D870" />
           </linearGradient>
         </defs>
@@ -89,7 +89,7 @@ function ScoreGauge({ score }: { score: number }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
           className="text-3xl font-bold"
-          style={{ color: "#85C13D" }}
+          style={{ color: "#84C13D" }}
         >
           {score}
         </motion.span>
@@ -114,14 +114,14 @@ export function AnalysisPage() {
             <p className="text-sm text-gray-500 mt-0.5">AI가 분석한 나의 피부 상태</p>
           </div>
           <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-gray-100 shadow-sm">
-            <button className="p-1 hover:text-[#85C13D] transition-colors">
+            <button className="p-1 hover:text-[#84C13D] transition-colors">
               <ChevronLeft className="w-4 h-4 text-gray-400" />
             </button>
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" style={{ color: "#85C13D" }} />
+              <Calendar className="w-3.5 h-3.5" style={{ color: "#84C13D" }} />
               <span className="text-xs font-medium text-gray-700">{analysisDate}</span>
             </div>
-            <button className="p-1 hover:text-[#85C13D] transition-colors">
+            <button className="p-1 hover:text-[#84C13D] transition-colors">
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
           </div>
@@ -136,7 +136,7 @@ export function AnalysisPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id ? "text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
               }`}
-              style={activeTab === tab.id ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)" } : {}}
+              style={activeTab === tab.id ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
             >
               {tab.label}
             </button>
@@ -160,7 +160,7 @@ export function AnalysisPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <span
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold text-white"
-                        style={{ background: "#85C13D" }}
+                        style={{ background: "#84C13D" }}
                       >
                         복합성 피부
                       </span>
@@ -169,7 +169,7 @@ export function AnalysisPage() {
                       T존 피지 분비가 활발하고 볼 부위는 수분이 부족한{" "}
                       <strong>수분 부족형 복합성 피부</strong>입니다.
                     </p>
-                    <div className="mt-3 flex items-center gap-1.5 text-xs text-[#85C13D]">
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-[#84C13D]">
                       <TrendingUp className="w-3.5 h-3.5" />
                       지난달 대비 +4점 향상
                     </div>
@@ -262,7 +262,7 @@ export function AnalysisPage() {
                 <RadarChart data={RADAR_DATA} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                   <PolarGrid stroke="#E5E7EB" />
                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: "#6B7280" }} />
-                  <Radar name="현재" dataKey="A" stroke="#85C13D" fill="#85C13D" fillOpacity={0.3} />
+                  <Radar name="현재" dataKey="A" stroke="#84C13D" fill="#84C13D" fillOpacity={0.3} />
                   <Radar name="이상" dataKey="B" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.15} />
                   <Legend
                     formatter={(value) => <span className="text-xs text-gray-600">{value}</span>}
@@ -297,7 +297,7 @@ export function AnalysisPage() {
                     )}
                   />
                   <Line type="monotone" dataKey="moisture" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="elasticity" stroke="#85C13D" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="elasticity" stroke="#84C13D" strokeWidth={2} dot={{ r: 4 }} />
                   <Line type="monotone" dataKey="oil" stroke="#F59E0B" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -325,7 +325,7 @@ export function AnalysisPage() {
                       />
                       <span
                         className="absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-lg text-white"
-                        style={{ background: idx === 1 ? "#85C13D" : "#6B7280" }}
+                        style={{ background: idx === 1 ? "#84C13D" : "#6B7280" }}
                       >
                         {item.badge}
                       </span>
@@ -333,7 +333,7 @@ export function AnalysisPage() {
                     <div className="p-3">
                       <p className="text-xs text-gray-400 mb-1">{item.label}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold" style={{ color: idx === 1 ? "#85C13D" : "#6B7280" }}>
+                        <span className="text-xl font-bold" style={{ color: idx === 1 ? "#84C13D" : "#6B7280" }}>
                           {item.score}점
                         </span>
                         {idx === 1 && (
@@ -373,7 +373,7 @@ export function AnalysisPage() {
                         <span className="font-bold text-gray-800">{item.curr}</span>
                         <span
                           className="text-xs font-semibold mb-0.5"
-                          style={{ color: diff >= 0 ? "#85C13D" : "#EF4444" }}
+                          style={{ color: diff >= 0 ? "#84C13D" : "#EF4444" }}
                         >
                           {diff >= 0 ? `+${diff}` : diff}
                         </span>

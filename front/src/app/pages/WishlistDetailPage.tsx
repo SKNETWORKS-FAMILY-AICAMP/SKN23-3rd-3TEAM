@@ -38,7 +38,7 @@ export function WishlistDetailPage() {
           <p className="text-gray-500 font-medium">제품을 찾을 수 없습니다</p>
           <button
             onClick={() => navigate("/wishlist")}
-            className="mt-3 text-sm text-[#85C13D] hover:underline"
+            className="mt-3 text-sm text-[#84C13D] hover:underline"
           >
             위시리스트로 돌아가기
           </button>
@@ -161,8 +161,8 @@ export function WishlistDetailPage() {
               onClick={handleSave}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
                 savedToWishlist || isLiked
-                  ? "border-[#85C13D] text-[#85C13D] bg-[#E8F5D0]"
-                  : "border-gray-200 text-gray-600 hover:border-[#85C13D] hover:text-[#85C13D]"
+                  ? "border-[#84C13D] text-[#84C13D] bg-[#E8F5D0]"
+                  : "border-gray-200 text-gray-600 hover:border-[#84C13D] hover:text-[#84C13D]"
               }`}
             >
               {savedToWishlist ? (
@@ -184,7 +184,7 @@ export function WishlistDetailPage() {
               style={{
                 background: purchaseSuccess
                   ? "#10B981"
-                  : "linear-gradient(135deg, #85C13D, #6BA32E)",
+                  : "linear-gradient(135deg, #84C13D, #6BA32E)",
                 boxShadow: purchaseSuccess
                   ? "0 2px 8px rgba(16,185,129,0.3)"
                   : "0 2px 8px rgba(133,193,61,0.3)",
@@ -215,7 +215,7 @@ export function WishlistDetailPage() {
             const Icon = item.icon;
             return (
               <div key={item.label} className="bg-white rounded-xl p-3 border border-gray-100 text-center">
-                <Icon className="w-5 h-5 mx-auto mb-1.5" style={{ color: "#85C13D" }} />
+                <Icon className="w-5 h-5 mx-auto mb-1.5" style={{ color: "#84C13D" }} />
                 <p className="text-xs font-semibold text-gray-700">{item.label}</p>
                 <p className="text-[11px] text-gray-400">{item.desc}</p>
               </div>
@@ -237,9 +237,9 @@ export function WishlistDetailPage() {
             title: "사용 방법",
             content: (
               <ol className="space-y-2 text-sm text-gray-600">
-                <li className="flex gap-2"><span className="font-bold text-[#85C13D]">01</span> 세안 후 스킨 케어 중 적절한 단계에서 사용</li>
-                <li className="flex gap-2"><span className="font-bold text-[#85C13D]">02</span> 적당량을 덜어 얼굴에 고루 펴 바름</li>
-                <li className="flex gap-2"><span className="font-bold text-[#85C13D]">03</span> 부드럽게 두드려 흡수 촉진</li>
+                <li className="flex gap-2"><span className="font-bold text-[#84C13D]">01</span> 세안 후 스킨 케어 중 적절한 단계에서 사용</li>
+                <li className="flex gap-2"><span className="font-bold text-[#84C13D]">02</span> 적당량을 덜어 얼굴에 고루 펴 바름</li>
+                <li className="flex gap-2"><span className="font-bold text-[#84C13D]">03</span> 부드럽게 두드려 흡수 촉진</li>
               </ol>
             ),
           },
@@ -306,7 +306,7 @@ export function WishlistDetailPage() {
                   <span className="text-[11px] text-gray-400">{review.date}</span>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">{review.content}</p>
-                <button className="mt-1.5 text-[11px] text-gray-400 hover:text-[#85C13D] transition-colors">
+                <button className="mt-1.5 text-[11px] text-gray-400 hover:text-[#84C13D] transition-colors">
                   도움됨 {review.helpful}
                 </button>
               </div>

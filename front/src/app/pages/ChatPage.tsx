@@ -120,7 +120,7 @@ function EmptyChatState() {
         />
         <motion.div
           className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-xl"
-          style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
+          style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -138,7 +138,7 @@ function EmptyChatState() {
             animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1.2, 0.8] }}
             transition={{ duration: 2, repeat: Infinity, delay: s.delay }}
           >
-            <Sparkles style={{ width: s.size, height: s.size, color: "#85C13D" }} />
+            <Sparkles style={{ width: s.size, height: s.size, color: "#84C13D" }} />
           </motion.div>
         ))}
       </motion.div>
@@ -164,7 +164,7 @@ function EmptyChatState() {
           <button
             key={q}
             className="px-4 py-2 rounded-full text-xs font-medium border-2 transition-all duration-200 hover:-translate-y-0.5"
-            style={{ borderColor: "#85C13D", color: "#4A7A1E", background: "#F4FAE8" }}
+            style={{ borderColor: "#84C13D", color: "#4A7A1E", background: "#F4FAE8" }}
           >
             {q}
           </button>
@@ -181,7 +181,7 @@ function EmptyChatState() {
           <motion.div
             key={i}
             className="w-1.5 h-1.5 rounded-full"
-            style={{ background: "#85C13D" }}
+            style={{ background: "#84C13D" }}
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
           />
@@ -211,7 +211,7 @@ function UploadSlotCard({
         onClick={() => !slot.preview && inputRef.current?.click()}
       >
         {slot.preview ? (
-          <div className="relative w-full aspect-square rounded-xl overflow-hidden border-2 border-[#85C13D] cursor-pointer group">
+          <div className="relative w-full aspect-square rounded-xl overflow-hidden border-2 border-[#84C13D] cursor-pointer group">
             <img src={slot.preview} alt={slot.label} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
               <button
@@ -227,7 +227,7 @@ function UploadSlotCard({
             className="w-full aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-[#F4FAE8]"
             style={{ borderColor: "#C5E89A" }}
           >
-            <ImagePlus className="w-6 h-6 mb-1" style={{ color: "#85C13D" }} />
+            <ImagePlus className="w-6 h-6 mb-1" style={{ color: "#84C13D" }} />
             <span className="text-[11px] font-medium" style={{ color: "#6BA32E" }}>업로드</span>
           </div>
         )}
@@ -249,7 +249,7 @@ function UploadSlotCard({
           <button
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
-            className="text-gray-300 hover:text-[#85C13D] transition-colors"
+            className="text-gray-300 hover:text-[#84C13D] transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5" />
           </button>
@@ -515,7 +515,7 @@ export function ChatPage() {
                           ? "text-white rounded-br-md"
                           : "text-gray-800 bg-white border border-gray-100 shadow-sm rounded-bl-md"
                       }`}
-                      style={msg.role === "user" ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)" } : {}}
+                      style={msg.role === "user" ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
                     >
                       {formatContent(msg.content)}
                     </div>
@@ -542,7 +542,7 @@ export function ChatPage() {
               >
                 <div
                   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                  style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
+                  style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
                 >
                   <Leaf className="w-4 h-4 text-white" />
                 </div>
@@ -550,7 +550,7 @@ export function ChatPage() {
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={i}
-                      className="w-2 h-2 rounded-full bg-[#85C13D]"
+                      className="w-2 h-2 rounded-full bg-[#84C13D]"
                       animate={{ y: [0, -4, 0] }}
                       transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
                     />
@@ -577,7 +577,7 @@ export function ChatPage() {
                 <div className="flex items-center gap-1.5">
                   <span
                     className="text-xs font-semibold px-2 py-0.5 rounded-lg text-white"
-                    style={{ background: "#85C13D" }}
+                    style={{ background: "#84C13D" }}
                   >
                     {ANALYSIS_OPTIONS.find((o) => o.value === analysisType)?.label}
                   </span>
@@ -600,7 +600,7 @@ export function ChatPage() {
 
       {/* Input Area */}
       <div className="bg-white border-t border-gray-100 px-4 py-3 flex-shrink-0">
-        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl p-3 border-2 border-transparent focus-within:border-[#85C13D] transition-colors">
+        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl p-3 border-2 border-transparent focus-within:border-[#84C13D] transition-colors">
           <textarea
             ref={textareaRef}
             value={input}
@@ -617,8 +617,8 @@ export function ChatPage() {
               onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
                 analysisType !== "default"
-                  ? "border-[#85C13D] text-[#4A7A1E] bg-[#E8F5D0]"
-                  : "border-gray-200 text-gray-500 bg-white hover:border-[#85C13D]"
+                  ? "border-[#84C13D] text-[#4A7A1E] bg-[#E8F5D0]"
+                  : "border-gray-200 text-gray-500 bg-white hover:border-[#84C13D]"
               }`}
             >
               <span className="whitespace-nowrap">
@@ -664,7 +664,7 @@ export function ChatPage() {
               whileTap={{ scale: 0.9 }}
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
               style={{
-                background: canSend ? "linear-gradient(135deg, #85C13D, #6BA32E)" : "#E5E7EB",
+                background: canSend ? "linear-gradient(135deg, #84C13D, #6BA32E)" : "#E5E7EB",
               }}
             >
               <Send
@@ -709,7 +709,7 @@ export function ChatPage() {
                 </div>
                 <div
                   className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors"
-                  style={{ borderColor: "#85C13D" }}
+                  style={{ borderColor: "#84C13D" }}
                   onDragOver={(e) => { e.preventDefault(); }}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -722,13 +722,13 @@ export function ChatPage() {
                     className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                     style={{ background: "#E8F5D0" }}
                   >
-                    <ImagePlus className="w-7 h-7" style={{ color: "#85C13D" }} />
+                    <ImagePlus className="w-7 h-7" style={{ color: "#84C13D" }} />
                   </div>
                   <p className="font-medium text-gray-700 mb-1">이미지를 드래그 앤 드롭하거나</p>
                   <p className="text-sm text-gray-400 mb-4">클릭하여 파일을 선택하세요</p>
                   <span
                     className="inline-block px-4 py-2 rounded-xl text-sm font-medium text-white"
-                    style={{ background: "#85C13D" }}
+                    style={{ background: "#84C13D" }}
                   >
                     파일 선택
                   </span>

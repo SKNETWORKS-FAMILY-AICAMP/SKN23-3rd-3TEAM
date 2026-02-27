@@ -67,7 +67,7 @@ export function OnboardingPage() {
           >
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-xl"
-              style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
+              style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
             >
               <Leaf className="w-8 h-8 text-white" />
             </div>
@@ -101,7 +101,7 @@ export function OnboardingPage() {
             transition={{ delay: 0.15 }}
           >
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2.5">
-              성별 <span className="text-[#85C13D]">*</span>
+              성별 <span className="text-[#84C13D]">*</span>
             </label>
             <div className="flex gap-2">
               {["여성", "남성", "선택 안함"].map((g) => (
@@ -109,9 +109,9 @@ export function OnboardingPage() {
                   key={g}
                   onClick={() => setGender(g)}
                   className={`flex-1 py-3 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
-                    gender === g ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#85C13D]"
+                    gender === g ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                   }`}
-                  style={gender === g ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)" } : {}}
+                  style={gender === g ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
                 >
                   {g}
                 </button>
@@ -126,7 +126,7 @@ export function OnboardingPage() {
             transition={{ delay: 0.2 }}
           >
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2.5">
-              나이 <span className="text-[#85C13D]">*</span>
+              나이 <span className="text-[#84C13D]">*</span>
             </label>
             <div className="relative">
               <input
@@ -139,7 +139,7 @@ export function OnboardingPage() {
                 min={1}
                 max={120}
                 placeholder="나이를 입력하세요"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] focus:bg-white transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] focus:bg-white transition-all"
               />
               {age && (
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">세</span>
@@ -161,7 +161,7 @@ export function OnboardingPage() {
             transition={{ delay: 0.25 }}
           >
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2.5">
-              피부 타입 <span className="text-[#85C13D]">*</span>
+              피부 타입 <span className="text-[#84C13D]">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {SKIN_TYPES.map((type) => (
@@ -169,9 +169,9 @@ export function OnboardingPage() {
                   key={type}
                   onClick={() => setSkinType(type)}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 flex items-center gap-1.5 ${
-                    skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#85C13D]"
+                    skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                   }`}
-                  style={skinType === type ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)" } : {}}
+                  style={skinType === type ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
                 >
                   {skinType === type && <Check className="w-3.5 h-3.5" />}
                   {type}
@@ -200,9 +200,9 @@ export function OnboardingPage() {
                     key={c}
                     onClick={() => toggleConcern(c)}
                     className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all flex items-center gap-1.5 ${
-                      selected ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#85C13D]"
+                      selected ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                     }`}
-                    style={selected ? { background: "#85C13D" } : {}}
+                    style={selected ? { background: "#84C13D" } : {}}
                   >
                     {selected && <Check className="w-3 h-3" />}
                     {c}
@@ -219,7 +219,7 @@ export function OnboardingPage() {
               {!showAddConcern && (
                 <button
                   onClick={() => setShowAddConcern(true)}
-                  className="px-3 py-2 rounded-xl text-xs font-medium border-2 border-dashed border-gray-300 text-gray-400 hover:border-[#85C13D] hover:text-[#85C13D] transition-all flex items-center gap-1"
+                  className="px-3 py-2 rounded-xl text-xs font-medium border-2 border-dashed border-gray-300 text-gray-400 hover:border-[#84C13D] hover:text-[#84C13D] transition-all flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   직접 입력
@@ -245,13 +245,13 @@ export function OnboardingPage() {
                     }}
                     placeholder="피부 고민 직접 입력"
                     maxLength={12}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#85C13D] transition-all"
+                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] transition-all"
                   />
                   <button
                     onClick={addCustomConcern}
                     disabled={!newConcernInput.trim()}
                     className="px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-50"
-                    style={{ background: "#85C13D" }}
+                    style={{ background: "#84C13D" }}
                   >
                     추가
                   </button>
@@ -303,7 +303,7 @@ export function OnboardingPage() {
             className="w-full py-4 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             style={
               isValid
-                ? { background: "linear-gradient(135deg, #85C13D, #6BA32E)", boxShadow: "0 4px 20px rgba(133,193,61,0.4)" }
+                ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 20px rgba(133,193,61,0.4)" }
                 : { background: "#D1D5DB" }
             }
           >

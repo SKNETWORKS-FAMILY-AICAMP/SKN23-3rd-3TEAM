@@ -134,7 +134,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   isActive
                     ? {
                         background:
-                          "linear-gradient(135deg, #85C13D, #6BA32E)",
+                          "linear-gradient(135deg, #84C13D, #6BA32E)",
                         boxShadow:
                           "0 2px 8px rgba(133,193,61,0.25)",
                       }
@@ -224,11 +224,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover border-2"
-                  style={{ borderColor: "#85C13D" }}
+                  style={{ borderColor: "#84C13D" }}
                 />
                 <span
                   className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
-                  style={{ background: "#85C13D" }}
+                  style={{ background: "#84C13D" }}
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -252,7 +252,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               }`}
               style={
                 location.pathname === "/settings"
-                  ? { background: "#85C13D" }
+                  ? { background: "#84C13D" }
                   : {}
               }
             >

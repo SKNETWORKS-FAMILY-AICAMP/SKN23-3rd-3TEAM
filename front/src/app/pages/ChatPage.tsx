@@ -1,4 +1,5 @@
 import { Bot } from "@/app/components/ui/bot";
+import logoTextWebm from "@/assets/animations/logo_text.webm";
 import { useLocation } from "react-router";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -106,41 +107,15 @@ function EmptyChatState() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "backOut" }}
       >
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          style={{ background: "rgba(133,193,61,0.12)" }}
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute inset-2 rounded-full"
-          style={{ background: "rgba(133,193,61,0.2)" }}
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-        />
-        <motion.div
-          className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-xl"
-          style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <Leaf className="w-11 h-11 text-white" />
-        </motion.div>
-        {[
-          { top: "-8px", right: "4px", delay: 0, size: 16 },
-          { top: "4px", left: "-10px", delay: 0.6, size: 12 },
-          { bottom: "-4px", right: "-4px", delay: 1.1, size: 14 },
-        ].map((s, i) => (
-          <motion.div
-            key={i}
-            className="absolute"
-            style={{ top: s.top, right: s.right, left: s.left, bottom: s.bottom }}
-            animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1.2, 0.8] }}
-            transition={{ duration: 2, repeat: Infinity, delay: s.delay }}
-          >
-            <Sparkles style={{ width: s.size, height: s.size, color: "#84C13D" }} />
-          </motion.div>
-        ))}
+        <h2 className="font-bold text-[22px] text-[#84C13D] ">내 피부를 위한 AI 도우미</h2>
+      </motion.div>
+      <motion.div
+        className="relative mb-6"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "backOut" }}
+      >
+        <video src={logoTextWebm} autoPlay loop muted playsInline className="w-70 h-auto" />
       </motion.div>
 
       <motion.div
@@ -148,7 +123,6 @@ function EmptyChatState() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
       >
-        <h2 className="font-bold text-gray-800 mb-2">SKIN AI와 대화를 시작하세요</h2>
         <p className="text-sm text-gray-500 mb-6 leading-relaxed max-w-xs">
           피부 고민을 입력하거나, 분석 유형을 선택하고<br />이미지를 업로드해 정밀 피부 분석을 받아보세요
         </p>
@@ -168,23 +142,6 @@ function EmptyChatState() {
           >
             {q}
           </button>
-        ))}
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="flex gap-1.5 mt-8"
-      >
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: "#84C13D" }}
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
-          />
         ))}
       </motion.div>
     </div>

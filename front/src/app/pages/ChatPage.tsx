@@ -1,20 +1,18 @@
-import { useState, useRef, useEffect } from "react";
+import { Bot } from "@/app/components/ui/bot";
 import { useLocation } from "react-router";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
-  Send,
   X,
-  ZoomIn,
   Leaf,
+  Send,
+  ZoomIn,
   Sparkles,
   HelpCircle,
   ImagePlus,
   ChevronDown,
-  Paperclip,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 
-
-// ─── Types ────────────────────────────────────────────────────────────
 type AnalysisType = "default" | "quick" | "detailed" | "ingredient";
 
 interface UploadSlot {
@@ -309,9 +307,7 @@ export function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (!chat_content) {
-      setUploadSlots(getUploadSlots(analysisType));
-    }
+    setUploadSlots(getUploadSlots(analysisType));
   }, [analysisType]);
 
   // ── Handlers (chat_content=false) ────────────────────────────────────
@@ -481,15 +477,7 @@ export function ChatPage() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-3`}
                 >
                   {msg.role === "bot" && (
-                    // <div
-                    //   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1 shadow-sm"
-                    //   style={{ background: "linear-gradient(135deg, #85C13D, #6BA32E)" }}
-                    // >
-                    //   <Leaf className="w-4 h-4 text-white" />
-                    // </div>
-                    <div>
-                      <img src="/src/assets/bot.png" style={{width: '36px'}} />
-                    </div>
+                    <Bot />
                   )}
                   <div className={`max-w-[75%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
                     {/* 단일 이미지 (chat_content=true) */}
@@ -575,11 +563,10 @@ export function ChatPage() {
         )}
       </div>
 
-      {/* 이미지 업로드 슬롯 (chat_content=false 전용) */}
-      {!chat_content && (
-        <AnimatePresence>
-          {uploadSlots.length > 0 && (
-            <motion.div
+      {/* 이미지 업로드 슬롯 */}
+      <AnimatePresence>
+        {uploadSlots.length > 0 && (
+          <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -607,119 +594,88 @@ export function ChatPage() {
                   <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} />
                 ))}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Area */}
       <div className="bg-white border-t border-gray-100 px-4 py-3 flex-shrink-0">
-        <div
-          className={`flex items-end gap-2 bg-gray-50 rounded-2xl p-3 border-2 transition-colors ${
-            chat_content && isDragging ? "border-[#85C13D] bg-[#F0FAE3]" : "border-transparent focus-within:border-[#85C13D]"
-          }`}
-          onDragOver={chat_content ? (e) => { e.preventDefault(); setIsDragging(true); } : undefined}
-          onDragLeave={chat_content ? () => setIsDragging(false) : undefined}
-          onDrop={chat_content ? handleFileDrop : undefined}
-        >
-          {/* 이미지 업로드 버튼 (chat_content=true 전용) */}
-          {chat_content && (
-            <button
-              onClick={() => setUploadModalOpen(true)}
-              className="p-2 rounded-xl text-gray-400 hover:text-[#85C13D] hover:bg-[#E8F5D0] transition-colors flex-shrink-0"
-              title="이미지 업로드"
-            >
-              <Paperclip className="w-5 h-5" />
-            </button>
-          )}
-
+        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl p-3 border-2 border-transparent focus-within:border-[#85C13D] transition-colors">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder={chat_content ? "피부 고민을 입력하거나 이미지를 드래그해 주세요..." : "피부 고민을 입력하세요..."}
+            placeholder="피부 고민을 입력하세요..."
             className="flex-1 bg-transparent resize-none text-sm text-gray-800 placeholder-gray-400 outline-none max-h-[120px] leading-relaxed"
             rows={1}
           />
 
-          {/* 분석 유형 선택 (chat_content=false 전용) */}
-          {!chat_content && (
-            <div className="relative flex-shrink-0">
-              <button
-                onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
-                  analysisType !== "default"
-                    ? "border-[#85C13D] text-[#4A7A1E] bg-[#E8F5D0]"
-                    : "border-gray-200 text-gray-500 bg-white hover:border-[#85C13D]"
-                }`}
-              >
-                <span className="whitespace-nowrap">
-                  {ANALYSIS_OPTIONS.find((o) => o.value === analysisType)?.label}
-                </span>
-                <ChevronDown className="w-3 h-3" />
-              </button>
-              <AnimatePresence>
-                {analysisDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-full right-0 mb-2 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
-                  >
-                    {ANALYSIS_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                          analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {opt.value !== "default" && (
-                          <p className="text-[10px] text-gray-400 mt-0.5">{ANALYSIS_HINTS[opt.value]}</p>
-                        )}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+          {/* 분석 유형 선택 */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+                analysisType !== "default"
+                  ? "border-[#85C13D] text-[#4A7A1E] bg-[#E8F5D0]"
+                  : "border-gray-200 text-gray-500 bg-white hover:border-[#85C13D]"
+              }`}
+            >
+              <span className="whitespace-nowrap">
+                {ANALYSIS_OPTIONS.find((o) => o.value === analysisType)?.label}
+              </span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            <AnimatePresence>
+              {analysisDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full right-0 mb-2 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+                >
+                  {ANALYSIS_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
+                      className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
+                        analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {opt.value !== "default" && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">{ANALYSIS_HINTS[opt.value]}</p>
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            {chat_content ? (
-              <span className="text-[11px] text-gray-300">{input.length}/500</span>
-            ) : (
-              input.length > 100 && (
-                <span className="text-[11px] text-gray-300">{input.length.toLocaleString()}/10,000</span>
-              )
+            {input.length > 100 && (
+              <span className="text-[11px] text-gray-300">{input.length.toLocaleString()}/10,000</span>
             )}
             <motion.button
               onClick={handleSend}
-              disabled={chat_content ? (!input.trim() || isSending) : !canSend}
+              disabled={!canSend}
               whileTap={{ scale: 0.9 }}
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
               style={{
-                background: (chat_content ? (input.trim() && !isSending) : canSend)
-                  ? "linear-gradient(135deg, #85C13D, #6BA32E)"
-                  : "#E5E7EB",
+                background: canSend ? "linear-gradient(135deg, #85C13D, #6BA32E)" : "#E5E7EB",
               }}
             >
               <Send
                 className="w-4 h-4"
-                style={{
-                  color: (chat_content ? (input.trim() && !isSending) : canSend) ? "white" : "#9CA3AF",
-                }}
+                style={{ color: canSend ? "white" : "#9CA3AF" }}
               />
             </motion.button>
           </div>
         </div>
         <p className="text-[11px] text-gray-400 text-center mt-2">
-          {chat_content
-            ? "Enter 전송 • Shift+Enter 줄바꿈 • 이미지 드래그 앤 드롭 지원"
-            : "Enter 전송 · Shift+Enter 줄바꿈 · 최대 10,000자"}
+          Enter 전송 · Shift+Enter 줄바꿈 · 최대 10,000자
         </p>
       </div>
 

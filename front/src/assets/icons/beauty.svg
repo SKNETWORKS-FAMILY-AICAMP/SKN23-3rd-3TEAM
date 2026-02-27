@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_레이어_1" data-name=" 레이어 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66.66 67.41">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #84c13d;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: 5px;
+      }
+    </style>
+  </defs>
+  <g>
+    <line class="cls-1" x1="30.48" y1="27.28" x2="30.48" y2="32.89"/>
+    <line class="cls-1" x1="52.93" y1="27.28" x2="52.93" y2="32.89"/>
+    <path class="cls-1" d="M37.69,39.8s2.7,0,3.49-2.59.47-9.93.47-9.93"/>
+    <path class="cls-1" d="M33.26,46.67s7.91,5.56,15.53,0"/>
+  </g>
+  <path class="cls-1" d="M36.83,5.21h5.17c12.24,0,22.16,9.92,22.16,22.16v15.38c0,12.24-9.92,22.16-22.16,22.16h-5.17c-9.94,0-18.35-6.54-21.16-15.55"/>
+  <g>
+    <g>
+      <line class="cls-1" x1="20.62" y1="14.79" x2="20.62" y2="18.19"/>
+      <line class="cls-1" x1="20.62" y1="2.5" x2="20.62" y2="5.9"/>
+    </g>
+    <g>
+      <line class="cls-1" x1="25.07" y1="10.35" x2="28.47" y2="10.35"/>
+      <line class="cls-1" x1="12.78" y1="10.35" x2="16.18" y2="10.35"/>
+    </g>
+  </g>
+  <g>
+    <g>
+      <line class="cls-1" x1="10.35" y1="36.47" x2="10.35" y2="39.87"/>
+      <line class="cls-1" x1="10.35" y1="24.18" x2="10.35" y2="27.58"/>
+    </g>
+    <g>
+      <line class="cls-1" x1="14.79" y1="32.02" x2="18.19" y2="32.02"/>
+      <line class="cls-1" x1="2.5" y1="32.02" x2="5.9" y2="32.02"/>
+    </g>
+  </g>
+</svg>

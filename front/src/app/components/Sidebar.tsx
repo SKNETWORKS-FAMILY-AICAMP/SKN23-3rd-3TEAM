@@ -1,17 +1,7 @@
 import { useState } from "react";
+import { Icon } from "@/app/components/ui/icon"
+import { X, Plus, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
-import {
-  Leaf,
-  Plus,
-  Microscope,
-  Heart,
-  MessageCircle,
-  Settings,
-  User,
-  ChevronRight,
-  X,
-  LogOut,
-} from "lucide-react";
 
 const MOCK_CHATS = [
   {
@@ -46,24 +36,16 @@ const MOCK_CHATS = [
   },
 ];
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+interface SidebarProps { isOpen: boolean; onClose: () => void; }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeChatId, setActiveChatId] = useState<
-    number | null
-  >(1);
+  const [activeChatId, setActiveChatId] = useState<number | null>(1);
 
   const navItems = [
-    // { path: "/analysis", label: "피부 분석", icon: Microscope },
-    // { path: "/wishlist", label: "위시리스트", icon: Heart },
-
-    { path: "/analysis", label: "피부 분석", icon: '/src/assets/icons/beauty.png' },
-    { path: "/wishlist", label: "위시리스트", icon: '/src/assets/icons/wish.png' },
+    { path: "/analysis", label: "피부 분석", icon: 'beauty' as const },
+    { path: "/wishlist", label: "위시리스트", icon: 'wish' as const },
   ];
 
   const handleNewChat = () => {
@@ -97,51 +79,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-gray-50">
-          <Link
-            to="/chat"
-            className="flex items-center gap-2.5 group"
-            onClick={onClose}
-          >
-            <div>
-              <img src="/src/assets/logo.png" alt="LOGO" style={{width: '60px'}} />
-            </div>
-            {/* <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105"
-              style={{
-                background:
-                  "linear-gradient(135deg, #85C13D, #6BA32E)",
-              }}
-            >
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <span className="text-gray-900 font-semibold text-base tracking-tight">
-                SKIN AI
-              </span>
-              <span
-                className="block text-[10px] font-medium tracking-widest uppercase"
-                style={{ color: "#85C13D" }}
-              >
-                by OliveYoung
-              </span>
-            </div> */}
+          <Link to="/chat" className="flex items-center gap-2.5 group" onClick={onClose}>
+            <img src="/src/assets/logo.svg" alt="LOGO" style={{width: '50px'}} />
           </Link>
-          <button
-            onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* New Chat Button */}
         <div className="px-4 pt-4 pb-2">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group"
+            className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group cursor-pointer"
             style={{
-              background:
-                "linear-gradient(135deg, #85C13D, #6BA32E)",
+              background: "#84C13D",
               color: "white",
               boxShadow: "0 2px 8px rgba(133,193,61,0.3)",
             }}
@@ -157,7 +106,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4.5 h-4.5" />
             새로운 채팅 추가
           </button>
         </div>
@@ -168,7 +117,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             메뉴
           </p>
           {navItems.map((item) => {
-            const Icon = item.icon;
             const isActive =
               location.pathname === item.path ||
               location.pathname.startsWith(item.path + "/");
@@ -204,10 +152,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }
                 }}
               >
-                {/* <Icon className="w-4 h-4 flex-shrink-0" /> */}
-                <div>
-                  <img src={item.icon} alt={item.label} style={{width: '30px'}} />
-                </div>
+                <Icon name={item.icon} />
                 {item.label}
               </Link>
             );
@@ -221,9 +166,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </p>
           <div className="space-y-1">
             {MOCK_CHATS.map((chat) => {
-              const isActive =
-                location.pathname === "/chat" &&
-                activeChatId === chat.id;
+              const isActive = location.pathname === "/chat" && activeChatId === chat.id;
+
               return (
                 <button
                   key={chat.id}
@@ -238,25 +182,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       : "hover:bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-start gap-2.5">
-                    {/* <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{
-                        background: isActive
-                          ? "#85C13D"
-                          : "#F0F0F0",
-                      }}
-                    >
-                      <MessageCircle
-                        className="w-3.5 h-3.5"
-                        style={{
-                          color: isActive ? "white" : "#9CA3AF",
-                        }}
-                      />
-                    </div> */}
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <img src="/src/assets/icons/chat.png" style={{width: '100%'}} />
-                    </div>
+                  <div className="flex items-center gap-2.5">
+                    <Icon name="chat" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <p

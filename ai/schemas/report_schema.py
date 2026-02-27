@@ -22,6 +22,7 @@ class ProductItem(BaseModel):
     brand: str
     name: str
     why: str
+    url: Optional[str] = None          # ✅ 추가
     how_to_use: Optional[str] = None
     evidence_source_id: str  # rag_passages의 source_id와 매칭(프롬프트에서 강제)
 

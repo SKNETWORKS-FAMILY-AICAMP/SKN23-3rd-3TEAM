@@ -5,11 +5,26 @@ from ai.config.settings import settings
 from ai.orchestrator.router import decide
 from ai.orchestrator.evidence import build
 
+from ai.tools.web.web_retriever import search_web   # ✅ 추가260227
 from ai.tools import rag_retriever_local
 import ai.tools.vision_client as vision_client
 from ai.llm.generator import generate_report
 from ai.llm.validators import validate_report
 
+# ✅ 추가 260227 정석원
+def need_external(user_text: str, rag_passages: list, min_score: float = 0.6) -> bool:
+    if not rag_passages:
+        return True
+    best = max((p.get("score", 0.0) for p in rag_passages), default=0.0)
+    if best < min_score:
+        return True
+
+    t = (user_text or "").lower()
+    retail_triggers = ["올리브영", "추천", "구매", "링크", "url", "가격", "베스트", "top", "제품"]
+    if any(k in t for k in retail_triggers) and best < 0.85:
+        return True
+    return False
+# ----
 def build_rag_query(user_text: str, vision_result: Optional[dict]) -> str:
     if not vision_result:
         return user_text
@@ -69,6 +84,10 @@ def run(user_text: str, images: List[bytes], chat_history: List[Dict[str, Any]] 
     vision_result = None
     rag_passages = None
     query = None
+     # ✅ 추가260227
+    web_passages = []
+    web_error = None
+    #----
 
     if route.needs_vision:
         vision_result = vision_client.infer(images)
@@ -80,22 +99,37 @@ def run(user_text: str, images: List[bytes], chat_history: List[Dict[str, Any]] 
     if route.needs_rag:
         # 실제로는 user_text + vision 요약으로 query를 만들지만 데모는 간단히
         query = build_rag_query(user_text, vision_result)
-        rag_passages = rag_retriever_local.search(query=query, top_k=10)
+        rag_passages = rag_retriever_local.search(query=query, top_k=10) if route.needs_rag else []
+        # ✅ 추가260227
+        if need_external(user_text, rag_passages, min_score=0.6):
+            web_query = query
+
+            # ✅ 올리브영 관련이면 공식 도메인 바이어스
+            if "올리브영" in (user_text or ""):
+                web_query = f"{web_query} site:oliveyoung.co.kr"
+
+            web_passages = search_web(web_query, top_k=5)   # ✅ 3 -> 5 추천
 
     evidence = build(user_text=user_text,
                     vision_result=vision_result, 
                     rag_passages=rag_passages, 
+                    web_passages=web_passages,   # ✅ 추가
                     chat_history=chat_history)
     
     report_dict = generate_report(evidence)
 
     # Validator (스키마 강제)
-    report = validate_report(report_dict).model_dump()
+    report = validate_report(report_dict,evidence).model_dump()
 
     run_dir = _save_run({
         "request": {"user_text": user_text, "n_images": len(images)},
         "route": {"needs_vision": route.needs_vision, "needs_rag": route.needs_rag},
-        "tool_outputs": {"vision_result": vision_result, "rag_passages": rag_passages},
+        "tool_outputs": {
+            "vision_result": vision_result, 
+            "rag_passages": rag_passages,
+            "web_passages": web_passages,   # ✅ 추가
+            "web_error": web_error,   # ✅ 추가
+            },
         "report": report,
     })
 

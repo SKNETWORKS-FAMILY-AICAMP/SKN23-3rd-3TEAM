@@ -557,14 +557,14 @@ export function ChatPage() {
 
       {/* Input Area */}
       <div className="bg-white border-t border-gray-100 px-4 py-3 flex-shrink-0">
-        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl p-3 border-2 border-transparent focus-within:border-[#84C13D] transition-colors">
+        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl px-3 py-2 border-1 border-transparent focus-within:border-[#84C13D] transition-colors">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="피부 고민을 입력하세요..."
-            className="flex-1 bg-transparent resize-none text-sm text-gray-800 placeholder-gray-400 outline-none max-h-[120px] leading-relaxed"
+            placeholder="지금, AI와 피부 고민을 나눠보세요."
+            className="flex-1 bg-transparent resize-none text-sm text-gray-800 placeholder-gray-400 outline-none max-h-[120px] leading-relaxed py-1.5"
             rows={1}
           />
 
@@ -612,27 +612,22 @@ export function ChatPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            {input.length > 100 && (
-              <span className="text-[11px] text-gray-300">{input.length.toLocaleString()}/10,000</span>
-            )}
             <motion.button
               onClick={handleSend}
               disabled={!canSend}
               whileTap={{ scale: 0.9 }}
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
               style={{
-                background: canSend ? "linear-gradient(135deg, #84C13D, #6BA32E)" : "#E5E7EB",
+                background: canSend ? "#84C13D" : "#E5E7EB",
               }}
             >
-              <Send
-                className="w-4 h-4"
-                style={{ color: canSend ? "white" : "#9CA3AF" }}
+              <Send className="w-4.5 h-4.5" style={{ color: canSend ? "white" : "#9CA3AF" }}
               />
             </motion.button>
           </div>
         </div>
         <p className="text-[11px] text-gray-400 text-center mt-2">
-          Enter 전송 · Shift+Enter 줄바꿈 · 최대 10,000자
+          Enter 전송 · Shift+Enter 줄바꿈
         </p>
       </div>
 

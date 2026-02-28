@@ -1,56 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@/app/components/ui/icon"
 import { X, Plus, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { fetchChatRooms, type ChatRoom } from "@/app/api/chatApi";
+import { fetchCurrentUser, logout, type UserResponse } from "@/app/api/userApi";
 
-const MOCK_CHATS = [
-  {
-    id: 1,
-    title: "피부 분석 요청",
-    preview: "수분 부족형 복합성 피부로...",
-    time: "오늘",
-  },
-  {
-    id: 2,
-    title: "보습 크림 추천",
-    preview: "세라마이드 함유 제품을...",
-    time: "어제",
-  },
-  {
-    id: 3,
-    title: "여드름 케어 방법",
-    preview: "살리실산 성분 클렌저를...",
-    time: "어제",
-  },
-  {
-    id: 4,
-    title: "선크림 추천해줘",
-    preview: "SPF50+ PA++++ 제품으로...",
-    time: "2일 전",
-  },
-  {
-    id: 5,
-    title: "피부 타입 체크",
-    preview: "T존 지성, 볼 건성 복합성...",
-    time: "3일 전",
-  },
-];
+/** 생성일 → 상대적 날짜 표시 ("오늘", "어제", "N일 전") */
+function formatRelativeDate(iso: string): string {
+  const now = new Date();
+  const d = new Date(iso);
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "오늘";
+  if (diffDays === 1) return "어제";
+  return `${diffDays}일 전`;
+}
 
 interface SidebarProps { isOpen: boolean; onClose: () => void; }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeChatId, setActiveChatId] = useState<number | null>(1);
+  const [activeChatId, setActiveChatId] = useState<number | null>(null);
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [user, setUser] = useState<UserResponse | null>(null);
 
   const navItems = [
     { path: "/analysis", label: "피부 분석", icon: 'beauty' as const },
     { path: "/wishlist", label: "위시리스트", icon: 'wish' as const },
   ];
 
+  // 채팅방 목록 + 사용자 정보 조회
+  useEffect(() => {
+    fetchChatRooms()
+      .then(setChatRooms)
+      .catch((err: Error) => console.error("채팅방 목록 조회 실패:", err));
+
+    fetchCurrentUser()
+      .then(setUser)
+      .catch((err: Error) => console.error("사용자 정보 조회 실패:", err));
+  }, []);
+
   const handleNewChat = () => {
     setActiveChatId(null);
-    navigate("/chat", { state: { chat_content: false } });
+    navigate("/chat");
     onClose();
   };
 
@@ -165,15 +157,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             최근 채팅
           </p>
           <div className="space-y-1">
-            {MOCK_CHATS.map((chat) => {
-              const isActive = location.pathname === "/chat" && activeChatId === chat.id;
+            {chatRooms.map((chat) => {
+              const isActive = location.pathname === "/chat" && activeChatId === chat.chat_room_id;
 
               return (
                 <button
-                  key={chat.id}
+                  key={chat.chat_room_id}
                   onClick={() => {
-                    setActiveChatId(chat.id);
-                    navigate("/chat", { state: { chat_content: true } });
+                    setActiveChatId(chat.chat_room_id);
+                    navigate("/chat", { state: { chat_room_id: chat.chat_room_id } });
                     onClose();
                   }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer ${
@@ -194,15 +186,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                               : "#374151",
                           }}
                         >
-                          {chat.title}
+                          {chat.title ?? "새 채팅"}
                         </p>
                         <span className="text-[10px] text-gray-400 flex-shrink-0 ml-1">
-                          {chat.time}
+                          {formatRelativeDate(chat.created_at)}
                         </span>
                       </div>
-                      <p className="text-[11px] text-gray-400 truncate">
-                        {chat.preview}
-                      </p>
                     </div>
                   </div>
                 </button>
@@ -218,9 +207,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             onClick={onClose}
             className="flex items-center gap-2.5 flex-1 px-4 py-3 hover:bg-gray-50 transition-colors"
           >
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <img
-                src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
+                src={user?.profile_image_url ?? "https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"}
                 alt="Profile"
                 className="w-8 h-8 rounded-full object-cover border-2"
                 style={{ borderColor: "#84C13D" }}
@@ -232,10 +221,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-gray-800 truncate">
-                김민지
+                {user?.nickname ?? user?.name ?? ""}
               </p>
               <p className="text-[11px] text-gray-400 truncate">
-                복합성 피부
+                { user?.email ?? "" }
               </p>
             </div>
           </Link>
@@ -257,14 +246,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Settings className="w-3.5 h-3.5" />
               설정
             </Link>
-            <Link
-              to="/login"
-              onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+            <button
+              onClick={() => { logout(); navigate("/login", { replace: true }); onClose(); }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               로그아웃
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

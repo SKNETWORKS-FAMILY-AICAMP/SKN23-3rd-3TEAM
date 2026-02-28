@@ -15,14 +15,22 @@ import {
   ImagePlus,
   ChevronDown,
 } from "lucide-react";
+import {
+  createChatRoom,
+  fetchMessages,
+  sendMessage,
+  type ChatMessage,
+} from "@/app/api/chatApi";
+import { uploadImage } from "@/app/api/uploadApi";
 
-type AnalysisType = "default" | "quick" | "detailed" | "ingredient";
+type AnalysisType = "default" | "simple" | "detailed" | "ingredient";
 
 interface UploadSlot {
-  id: string;
-  label: string;
-  tooltip: string;
-  preview: string | null;
+  id      : string;
+  label   : string;
+  tooltip : string;
+  preview : string | null;  // blob URL (미리보기용)
+  file    : File   | null;  // 실제 파일 (S3 업로드용)
 }
 
 interface Message {
@@ -37,69 +45,65 @@ interface Message {
 // ─── Constants ────────────────────────────────────────────────────────
 const ANALYSIS_OPTIONS = [
   { value: "default", label: "분석 선택" },
-  { value: "quick", label: "빠른 분석" },
+  { value: "simple", label: "빠른 분석" },
   { value: "detailed", label: "정밀 분석" },
   { value: "ingredient", label: "성분 분석" },
 ];
 
 const ANALYSIS_HINTS: Record<string, string> = {
-  quick: "얼굴 정면 1장으로 빠른 피부 상태 분석",
+  simple: "얼굴 정면 1장으로 빠른 피부 상태 분석",
   detailed: "좌·정면·우측 3장으로 정밀 피부 분석",
   ingredient: "화장품 성분표 1장으로 성분 안전성 분석",
 };
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: 1,
-    role: "bot",
-    content: "안녕하세요! 저는 SKIN AI 피부 분석 챗봇이에요 🌿\n\n피부 이미지를 업로드하거나 피부 고민을 말씀해 주시면 맞춤형 분석과 제품을 추천해 드릴게요.",
-    time: "오전 10:00",
-  },
-  {
-    id: 2,
-    role: "user",
-    content: "제 피부가 요즘 너무 건조한데 어떤 보습제를 써야 할까요?",
-    time: "오전 10:02",
-  },
-  {
-    id: 3,
-    role: "bot",
-    content: "건조한 피부에는 세라마이드와 히알루론산이 함유된 보습제가 효과적이에요! 💧\n\n더 정확한 분석을 위해 피부 사진을 업로드해 주시면 피부 상태를 자세히 확인하고 맞춤 제품을 추천해 드릴게요. 아래 📎 버튼을 눌러 이미지를 업로드해 보세요.",
-    time: "오전 10:02",
-  },
-  {
-    id: 4,
-    role: "user",
-    content: "피부 분석 이미지를 업로드했어요",
-    image: "https://images.unsplash.com/photo-1710301496719-11d44e51dbe3?w=300&h=300&fit=crop",
-    time: "오전 10:04",
-  },
-  {
-    id: 5,
-    role: "bot",
-    content: "이미지 분석이 완료되었어요! 🔍\n\n**분석 결과:**\n• 피부 타입: 수분 부족형 복합성 피부\n• T존 부위: 약간의 피지 분비\n• 볼 부위: 수분 부족, 건조함\n• 예상 수분도: 62/100\n• 예상 피지도: 74/100\n\n**추천 케어:**\n1. 세라마이드 함유 보습크림 (저자극)\n2. 히알루론산 에센스 레이어링\n3. 판테놀 성분 진정 토너\n\n자세한 분석 결과는 **분석 탭**에서 확인하실 수 있어요!",
-    time: "오전 10:04",
-  },
-];
-
 const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
   switch (type) {
-    case "quick":
-      return [{ id: "front", label: "얼굴 정면", tooltip: "정면을 바라본 얼굴 사진을 업로드해 주세요. 밝은 자연광 아래에서 촬영하면 더 정확한 분석이 가능합니다.", preview: null }];
+    case "simple":
+      return [{ id: "front", label: "얼굴 정면", tooltip: "정면을 바라본 얼굴 사진을 업로드해 주세요. 밝은 자연광 아래에서 촬영하면 더 정확한 분석이 가능합니다.", preview: null, file: null }];
     case "detailed":
       return [
-        { id: "left", label: "얼굴 좌측", tooltip: "왼쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null },
-        { id: "front", label: "얼굴 정면", tooltip: "정면을 바라본 얼굴 사진을 업로드해 주세요. 눈, 코, 입이 모두 보이도록 촬영해 주세요.", preview: null },
-        { id: "right", label: "얼굴 우측", tooltip: "오른쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null },
+        { id: "left",  label: "얼굴 좌측", tooltip: "왼쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null, file: null },
+        { id: "front", label: "얼굴 정면", tooltip: "정면을 바라본 얼굴 사진을 업로드해 주세요. 눈, 코, 입이 모두 보이도록 촬영해 주세요.",  preview: null, file: null },
+        { id: "right", label: "얼굴 우측", tooltip: "오른쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null, file: null },
       ];
     case "ingredient":
-      return [{ id: "label", label: "성분 표시면", tooltip: "화장품 뒷면의 전성분 표기란이 선명하게 보이도록 촬영해 주세요. 텍스트가 모두 보여야 정확한 분석이 가능합니다.", preview: null }];
+      return [{ id: "label", label: "성분 표시면", tooltip: "화장품 뒷면의 전성분 표기란이 선명하게 보이도록 촬영해 주세요. 텍스트가 모두 보여야 정확한 분석이 가능합니다.", preview: null, file: null }];
     default:
       return [];
   }
 };
 
-// ─── EmptyChatState (chat_content=false 전용) ─────────────────────────
+// ─── image_url 파싱 ───────────────────────────────────────────────────
+// DB에서 split(",")으로 저장된 경우 각 요소에 ["  "  "] 같은 문자가 포함됨
+// regex로 실제 URL만 추출
+function parseImageUrls(raw: string[] | string | null): string[] {
+  if (!raw) return [];
+
+  const arr = Array.isArray(raw) ? raw : [raw];
+
+  return arr
+    .map((item) => {
+      const match = item.match(/https?:\/\/[^\s"'\[\]]+/);
+      return match ? match[0] : null;
+    })
+    .filter(Boolean) as string[];
+}
+
+// ─── API 메시지 → UI 메시지 변환 ─────────────────────────────────────
+function apiMsgToMessage(msg: ChatMessage): Message {
+  const urls   = parseImageUrls(msg.image_url);
+  const images = urls.length > 0 ? urls : undefined;
+  return {
+    id     : msg.message_id,
+    role   : msg.role === "assistant" ? "bot" : "user",
+    content: msg.content,
+    image  : images?.length === 1 ? images[0] : undefined,
+    images : images && images.length > 1 ? images : undefined,
+    time   : new Date(msg.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
+// ─── EmptyChatState (새 채팅 전용) ────────────────────────────────────
 function EmptyChatState() {
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 text-center">
@@ -151,7 +155,6 @@ function EmptyChatState() {
 }
 
 // ─── UploadSlotCard ──────────────────────────
-// 이미지 업로드 영역 컴포넌트
 function UploadSlotCard({ slot, onUpload, onRemove }: {
   slot: UploadSlot;
   onUpload: (id: string, file: File) => void;
@@ -208,28 +211,47 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
 // ─── Main Component ────────────────────────────────────────────────────
 export function ChatPage() {
   const { state } = useLocation();
-  const chat_content: boolean = state?.chat_content ?? false;
+
+  // state.chat_room_id가 있으면 기존 채팅, 없으면 새 채팅
+  const chat_content: boolean = !!(state?.chat_room_id);
+  const [chatRoomId, setChatRoomId] = useState<number | null>(state?.chat_room_id ?? null);
 
   // 공통 state
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // chat_content=false 전용 state
+  // 새 채팅 전용 state
   const [analysisType, setAnalysisType] = useState<AnalysisType>("default");
   const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>([]);
   const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
 
-  // chat_content=true 전용 state
+  // 기존 채팅 전용 state
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 다른 채팅방 클릭 시 chatRoomId 업데이트
   useEffect(() => {
-    setMessages(chat_content ? INITIAL_MESSAGES : []);
-  }, [chat_content]);
+    const newId = state?.chat_room_id ?? null;
+    setChatRoomId(newId);
+  }, [state?.chat_room_id]);
+
+  // chatRoomId가 있으면 메시지 내역 조회
+  useEffect(() => {
+    if (chatRoomId === null) {
+      setMessages([]);
+      return;
+    }
+    setIsLoadingHistory(true);
+    fetchMessages(chatRoomId)
+      .then((msgs) => setMessages(msgs.map(apiMsgToMessage)))
+      .catch((err: Error) => console.error("채팅 내역 조회 실패:", err))
+      .finally(() => setIsLoadingHistory(false));
+  }, [chatRoomId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -239,80 +261,77 @@ export function ChatPage() {
     setUploadSlots(getUploadSlots(analysisType));
   }, [analysisType]);
 
-  // ── Handlers (chat_content=false) ────────────────────────────────────
+  // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
   const handleUpload = (slotId: string, file: File) => {
     const url = URL.createObjectURL(file);
     setUploadSlots((prev) =>
-      prev.map((s) => s.id === slotId ? { ...s, preview: url } : s)
+      prev.map((s) => s.id === slotId ? { ...s, preview: url, file } : s)
     );
   };
 
   const handleRemove = (slotId: string) => {
     setUploadSlots((prev) =>
-      prev.map((s) => s.id === slotId ? { ...s, preview: null } : s)
+      prev.map((s) => s.id === slotId ? { ...s, preview: null, file: null } : s)
     );
   };
 
   const canSend = (input.trim().length > 0 || uploadSlots.some((s) => s.preview)) && !isSending;
 
+  // ── 메시지 전송 ───────────────────────────────────────────────────────
   const handleSend = async () => {
-    if (chat_content) {
-      if (!input.trim() || isSending) return;
-      const userMsg: Message = {
-        id: Date.now(),
-        role: "user",
-        content: input.trim(),
-        time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setIsSending(true);
-      setTimeout(() => {
-        const botMsg: Message = {
-          id: Date.now() + 1,
-          role: "bot",
-          content: "네, 말씀하신 내용을 바탕으로 분석 중이에요 🌿\n\n피부 이미지를 함께 제공해 주시면 더 정확한 분석이 가능해요. 이미지 업로드 버튼을 클릭하거나 드래그 앤 드롭으로 이미지를 올려주세요!",
-          time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-        };
-        setMessages((prev) => [...prev, botMsg]);
-        setIsSending(false);
-      }, 1500);
-    } else {
-      if (!canSend) return;
-      const previews = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
-      const userMsg: Message = {
-        id: Date.now(),
-        role: "user",
-        content: input.trim() || `${ANALYSIS_OPTIONS.find(o => o.value === analysisType)?.label || "분석"} 요청`,
-        images: previews.length > 0 ? previews : undefined,
-        time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setUploadSlots(getUploadSlots(analysisType));
-      setAnalysisType("default");
-      setIsSending(true);
-      if (textareaRef.current) textareaRef.current.style.height = "auto";
-      setTimeout(() => {
-        const botResponses: Record<AnalysisType, string> = {
-          quick: "이미지 분석이 완료되었어요! 🔍\n\n**빠른 분석 결과:**\n• 피부 타입: 수분 부족형 복합성 피부\n• T존: 약간의 피지 분비\n• 볼 부위: 수분 부족 감지\n• 종합 피부 점수: 69/100\n\n**추천 케어:**\n1. 세라마이드 보습크림 (저자극)\n2. 히알루론산 에센스 레이어링\n\n분석 탭에서 상세 결과를 확인하세요!",
-          detailed: "정밀 분석이 완료되었어요! 🔬\n\n**정밀 분석 결과:**\n• 피부 타입: 수분 부족형 복합성 피부\n• 왼쪽: 건조, 모공 확대 소견\n• 정면: T존 피지 분비 활발\n• 오른쪽: 색소침착 소견\n\n3방향 이미지로 더 정확한 분석이 이루어졌어요. 분석 탭에서 상세 결과를 확인하세요!",
-          ingredient: "성분 분석이 완료되었어요! 🧪\n\n**성분 안전성 결과:**\n• 등록된 성분 수: 24종\n• 안전 성분: 20종 ✅\n• 주의 성분: 3종 ⚠️\n• 위험 성분: 1종 ❌\n\n**주의 성분:** 파라벤류, 합성향료\n**특이 성분:** 레티놀 (임산부 주의)\n\n성분별 상세 설명은 분석 탭에서 확인하세요!",
-          default: "네, 말씀하신 내용을 바탕으로 분석 중이에요 🌿\n\n피부 이미지를 함께 제공해 주시면 더 정확한 분석이 가능해요. 위의 분석 유형을 선택해 이미지를 업로드해 보세요!",
-        };
-        const botMsg: Message = {
-          id: Date.now() + 1,
-          role: "bot",
-          content: botResponses[previews.length > 0 ? analysisType : "default"],
-          time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-        };
-        setMessages((prev) => [...prev, botMsg]);
-        setIsSending(false);
-      }, 1800);
+    if (!canSend) return;
+
+    const trimmedInput      = input.trim();
+    const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
+    const slotFiles         = uploadSlots.filter((s) => s.file).map((s) => s.file!);
+    const currentAnalysisType = analysisType;
+
+    // 업로드 이미지를 미리보기(blob URL)로 즉시 메시지에 표시
+    const userMsg: Message = {
+      id     : Date.now(),
+      role   : "user",
+      content: trimmedInput || `${ANALYSIS_OPTIONS.find(o => o.value === currentAnalysisType)?.label || "분석"} 요청`,
+      images : previews.length > 0 ? previews : undefined,
+      time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setUploadSlots(getUploadSlots(currentAnalysisType));
+    setAnalysisType("default");
+    setIsSending(true);
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+
+    try {
+      // 1. 이미지 파일들을 S3에 업로드하여 실제 URL 획득
+      let s3Urls: string[] = [];
+      if (slotFiles.length > 0) {
+        s3Urls = await Promise.all(slotFiles.map((file) => uploadImage(file, currentAnalysisType)));
+      }
+
+      // 2. 채팅방이 없으면 먼저 생성
+      let roomId = chatRoomId;
+      if (roomId === null) {
+        const room = await createChatRoom();
+        roomId = room.chat_room_id;
+        setChatRoomId(roomId);
+      }
+
+      // 3. 메시지 전송 (S3 URL 포함)
+      const result = await sendMessage(roomId, {
+        content   : userMsg.content,
+        model_type: currentAnalysisType,
+        image_url : s3Urls.length > 0 ? s3Urls : undefined,
+      });
+      const aiMsg = result.find((m) => m.role === "assistant");
+      if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
+    } catch (err) {
+      console.error("메시지 전송 실패:", err);
+    } finally {
+      setIsSending(false);
     }
   };
 
-  // ── Handlers (chat_content=true) ──────────────────────────────────────
+  // ── 드래그 앤 드롭 이미지 업로드 (미구현) ─────────────────────────
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -323,20 +342,20 @@ export function ChatPage() {
   const handleImageUpload = (file: File) => {
     const url = URL.createObjectURL(file);
     const userMsg: Message = {
-      id: Date.now(),
-      role: "user",
+      id     : Date.now(),
+      role   : "user",
       content: "피부 이미지를 분석해 주세요",
-      image: url,
-      time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+      image  : url,
+      time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
     };
     setMessages((prev) => [...prev, userMsg]);
     setIsSending(true);
     setTimeout(() => {
       const botMsg: Message = {
-        id: Date.now() + 1,
-        role: "bot",
+        id     : Date.now() + 1,
+        role   : "bot",
         content: "이미지를 분석하고 있어요... ✨\n\n분석이 완료되면 피부 상태와 맞춤 제품을 추천해 드릴게요!",
-        time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+        time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, botMsg]);
       setIsSending(false);
@@ -391,7 +410,12 @@ export function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        {!chat_content && messages.length === 0 ? (
+        {isLoadingHistory ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <video src={loadingWebm} autoPlay loop muted playsInline className="w-30 h-auto" />
+            <p className="text-sm text-gray-500">채팅 내역 불러오는 중...</p>
+          </div>
+        ) : !chat_content && messages.length === 0 ? (
           <EmptyChatState />
         ) : (
           <div className="px-4 py-4 space-y-4">
@@ -408,44 +432,50 @@ export function ChatPage() {
                     <Bot />
                   )}
                   <div className={`max-w-[75%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                    {/* 단일 이미지 (chat_content=true) */}
-                    {msg.image && (
-                      <div
-                        className="relative rounded-2xl overflow-hidden cursor-pointer group"
-                        onClick={() => setExpandedImage(msg.image!)}
-                      >
-                        <img src={msg.image} alt="Uploaded" className="max-w-[200px] max-h-[200px] object-cover rounded-2xl" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
-                          <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    )}
-                    {/* 복수 이미지 (chat_content=false) */}
-                    {msg.images && msg.images.length > 0 && (
-                      <div className={`flex gap-2 ${msg.images.length > 1 ? "flex-row" : ""}`}>
-                        {msg.images.map((img, idx) => (
-                          <div
-                            key={idx}
-                            className="relative rounded-2xl overflow-hidden cursor-pointer group"
-                            onClick={() => setExpandedImage(img)}
-                          >
-                            <img src={img} alt="Uploaded" className="max-w-[140px] max-h-[140px] object-cover rounded-2xl" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
-                              <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                     <div
-                      className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                      className={`rounded-2xl text-sm leading-relaxed overflow-hidden ${
                         msg.role === "user"
-                          ? "text-white rounded-br-md"
+                          ? "text-white rounded-br-md shadow-sm bg-[#84c13d]"
                           : "text-gray-800 bg-white border border-gray-100 shadow-sm rounded-bl-md"
                       }`}
-                      style={msg.role === "user" ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
                     >
-                      {formatContent(msg.content)}
+                      {/* 단일 이미지 */}
+                      {msg.image && (
+                        <div
+                          className="relative overflow-hidden cursor-pointer group p-3 pb-0"
+                          onClick={() => setExpandedImage(msg.image!)}
+                        >
+                          <img src={msg.image} alt="Uploaded" className="w-[130px] h-[130px] object-cover rounded-2xl" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      )}
+                      {/* 복수 이미지 */}
+                      {msg.images && msg.images.length > 0 && (
+                        <div className={`grid gap-0.5 ${
+                          msg.images.length === 1 ? "grid-cols-1" :
+                          msg.images.length === 2 ? "grid-cols-2" :
+                          "grid-cols-3"
+                        }`}>
+                          {msg.images.map((img, idx) => (
+                            <div
+                              key={idx}
+                              className="relative overflow-hidden cursor-pointer group p-3 pb-0"
+                              onClick={() => setExpandedImage(img)}
+                            >
+                              <img src={img} alt="Uploaded" className="w-[130px] h-[130px] object-cover rounded-2xl" />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* 텍스트 */}
+                      <div className="px-4 py-3">
+                        {formatContent(msg.content)}
+                      </div>
                     </div>
                     <span className="text-[10px] text-gray-400 px-1">{msg.time}</span>
                   </div>

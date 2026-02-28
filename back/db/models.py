@@ -160,13 +160,15 @@ class ChatMessage:
     @staticmethod
     def from_dict(row: dict) -> "ChatMessage":
         """ DB 조회 결과 dict → ChatMessage 객체 변환 """
+        img_url = row.get("image_url")
+
         return ChatMessage(
             message_id   = row["message_id"],
             chat_room_id = row["chat_room_id"],
             role         = row["role"],
             model_type   = row["model_type"],
             content      = row.get("content"),
-            image_url    = row.get("image_url"),   # pymysql이 JSON을 자동 파싱
+            image_url    = img_url.split(",") if img_url else [],
             created_at   = row.get("created_at"),
         )
 

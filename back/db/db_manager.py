@@ -133,8 +133,10 @@ def execute_write(sql: str, params: tuple = ()) -> int:
     try:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
+            last_id  = cursor.lastrowid
+            row_count = cursor.rowcount
         conn.commit()
-        return cursor.lastrowid if cursor.lastrowid else cursor.rowcount
+        return last_id if last_id else row_count
     except Exception as e:
         conn.rollback()  # 실패 시 롤백
         raise RuntimeError(f"[DB 쓰기 오류] {e}") from e

@@ -88,7 +88,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="px-4 pt-4 pb-2">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group cursor-pointer"
+            className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group cursor-pointer"
             style={{
               background: "#84C13D",
               color: "white",
@@ -112,7 +112,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="px-4 pt-2 pb-1">
+        <nav className="px-4 pt-3">
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-2">
             메뉴
           </p>
@@ -125,7 +125,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 key={item.path}
                 to={item.path}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-2 py-1.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "text-white"
                     : "text-gray-600 hover:text-gray-900"
@@ -176,7 +176,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     navigate("/chat", { state: { chat_content: true } });
                     onClose();
                   }}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-200 group ${
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer ${
                     isActive
                       ? "bg-[#E8F5D0]"
                       : "hover:bg-gray-50"
@@ -212,36 +212,34 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Profile / Bottom nav */}
-        <div className="border-t border-gray-100 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Link
-              to="/settings"
-              onClick={onClose}
-              className="flex items-center gap-2.5 flex-1 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              <div className="relative">
-                <img
-                  src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full object-cover border-2"
-                  style={{ borderColor: "#84C13D" }}
-                />
-                <span
-                  className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
-                  style={{ background: "#84C13D" }}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-800 truncate">
-                  김민지
-                </p>
-                <p className="text-[11px] text-gray-400 truncate">
-                  복합성 피부
-                </p>
-              </div>
-            </Link>
-          </div>
-          <div className="flex gap-1">
+        <div className="border-t border-gray-100 ">
+          <Link
+            to="/settings"
+            onClick={onClose}
+            className="flex items-center gap-2.5 flex-1 px-4 py-3 hover:bg-gray-50 transition-colors"
+          >
+            <div className="relative">
+              <img
+                src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover border-2"
+                style={{ borderColor: "#84C13D" }}
+              />
+              <span
+                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
+                style={{ background: "#84C13D" }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-800 truncate">
+                김민지
+              </p>
+              <p className="text-[11px] text-gray-400 truncate">
+                복합성 피부
+              </p>
+            </div>
+          </Link>
+          <div className="flex gap-1 px-4 py-2 pb-3">
             <Link
               to="/settings"
               onClick={onClose}

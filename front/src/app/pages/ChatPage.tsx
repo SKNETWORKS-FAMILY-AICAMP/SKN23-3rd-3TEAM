@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import logoTextWebm from "@/assets/animations/logo_text.webm";
 import loadingWebm from "@/assets/animations/logo_loop_1.webm";
+import infoImg1 from "@/assets/info_1.png";
+import infoImg2 from "@/assets/info_2.png";
 import {
   X,
   Send,
@@ -156,7 +158,6 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
   onRemove: (id: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
     <div className="flex flex-col items-center gap-1.5 relative">
@@ -223,7 +224,6 @@ export function ChatPage() {
   const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
 
   // chat_content=true 전용 state
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -330,7 +330,6 @@ export function ChatPage() {
       time: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
     };
     setMessages((prev) => [...prev, userMsg]);
-    setUploadModalOpen(false);
     setIsSending(true);
     setTimeout(() => {
       const botMsg: Message = {
@@ -484,26 +483,30 @@ export function ChatPage() {
               className="bg-white border-t border-gray-100 px-4 pt-3 pb-2 flex-shrink-0"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-lg text-white"
-                    style={{ background: "#84C13D" }}
-                  >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-3 py-1 rounded-lg text-white" style={{ background: "#84C13D" }}>
                     {ANALYSIS_OPTIONS.find((o) => o.value === analysisType)?.label}
                   </span>
                   <span className="text-[11px] text-gray-400">{ANALYSIS_HINTS[analysisType]}</span>
                 </div>
-                <span className="text-[11px] text-gray-400">
-                  {uploadSlots.filter((s) => s.preview).length}/{uploadSlots.length} 업로드됨
-                </span>
+                <button className="p-1 cursor-pointer" onClick={() => { setUploadSlots(getUploadSlots('default')); setAnalysisType("default"); }}>
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
               </div>
-              <div
-                className={`grid gap-3 ${uploadSlots.length === 1 ? "grid-cols-1 max-w-[100px]" : uploadSlots.length === 3 ? "grid-cols-3 max-w-[320px]" : "grid-cols-2"}`}
-              >
-                {uploadSlots.map((slot) => (
-                  <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} />
-                ))}
+              <div className="flex items-center">
+                <div className="flex flex-row max-w-[1000px]">
+                  <div className="flex items-center justify-center">
+                    <img src={ analysisType === 'ingredient' ? infoImg2 : infoImg1 } alt="" />
+                  </div>
+                  <div className="w-px self-stretch bg-gray-100 mx-4" />
+                  <div className={`basis-1/2 grid place-content-center gap-3 ${uploadSlots.length === 1 ? "grid-cols-1 max-w-[150px]" : uploadSlots.length === 3 ? "grid-cols-3 max-w-[450px]" : "grid-cols-2"}`}>
+                    {uploadSlots.map((slot) => (
+                      <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} />
+                    ))}
+                  </div>
+                </div>
               </div>
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -525,7 +528,7 @@ export function ChatPage() {
           <div className="relative flex-shrink-0">
             <button
               onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
                 analysisType !== "default"
                   ? "border-[#84C13D] text-[#4A7A1E] bg-[#E8F5D0]"
                   : "border-gray-200 text-gray-500 bg-white hover:border-[#84C13D]"
@@ -583,79 +586,6 @@ export function ChatPage() {
           Enter 전송 · Shift+Enter 줄바꿈
         </p>
       </div>
-
-      {/* 이미지 업로드 모달 (chat_content=true 전용) */}
-      {chat_content && (
-        <AnimatePresence>
-          {uploadModalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-              onClick={() => setUploadModalOpen(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", damping: 20 }}
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-semibold text-gray-800">이미지 업로드</h3>
-                  <button
-                    onClick={() => setUploadModalOpen(false)}
-                    className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-500" />
-                  </button>
-                </div>
-                <div
-                  className="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors"
-                  style={{ borderColor: "#84C13D" }}
-                  onDragOver={(e) => { e.preventDefault(); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const file = e.dataTransfer.files[0];
-                    if (file) handleImageUpload(file);
-                  }}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                    style={{ background: "#E8F5D0" }}
-                  >
-                    <ImagePlus className="w-7 h-7" style={{ color: "#84C13D" }} />
-                  </div>
-                  <p className="font-medium text-gray-700 mb-1">이미지를 드래그 앤 드롭하거나</p>
-                  <p className="text-sm text-gray-400 mb-4">클릭하여 파일을 선택하세요</p>
-                  <span
-                    className="inline-block px-4 py-2 rounded-xl text-sm font-medium text-white"
-                    style={{ background: "#84C13D" }}
-                  >
-                    파일 선택
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-400 text-center mt-4">
-                  JPG, PNG, WebP 형식 지원 • 최대 10MB
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file);
-                  }}
-                />
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
 
       {/* 이미지 확대 모달 (공통) */}
       <AnimatePresence>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_레이어_1" data-name=" 레이어 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72.18 65.06">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #84c13d;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 5px;
+      }
+    </style>
+  </defs>
+  <polyline class="cls-1" points="23.18 43.32 14.78 2.5 2.5 2.5"/>
+  <polyline class="cls-1" points="18.08 10.49 69.68 10.49 61.43 44.37 23.93 44.37"/>
+  <circle class="cls-1" cx="28.48" cy="57.91" r="4.65"/>
+  <circle class="cls-1" cx="55.6" cy="57.91" r="4.65"/>
+</svg>

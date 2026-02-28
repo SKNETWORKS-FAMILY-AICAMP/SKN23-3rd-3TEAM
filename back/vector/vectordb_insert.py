@@ -234,25 +234,16 @@ def insert_documents(data_dir: str = None, file_list: list[str] = None):
     print(f"{'=' * 55}")
 
 # 검색 테스트 (Insert 후 확인용)
-def search_test():
+def search_test(query):
     print("\n[검색 테스트]")
 
     collection = get_db_collection()
 
-    query = "건조한 피부 장벽 관리 성분"
-
     print(f"  쿼리: '{query}'")
-    print(f"  필터: doc_type=ingredient, category=barrier\n")
 
     results = collection.query(
         query_texts=[query],
         n_results=3,
-        where={
-            "$and": [
-                {"doc_type": {"$eq": "ingredient"}},
-                {"category": {"$eq": "barrier"}},
-            ]
-        },
         include=["documents", "metadatas", "distances"]
     )
 
@@ -266,6 +257,7 @@ def search_test():
         print(f"  ID            : {doc_id}")
         print(f"  유사도 거리   : {dist:.4f}")
         print(f"  ingredient_tag: {meta.get('ingredient_tag')}")
+        print(f"  source: {meta.get('source')}")
         print(f"  내용 미리보기 : {doc[:60]}...")
         print()
 
@@ -278,10 +270,6 @@ if __name__ == "__main__":
         "--files", type=str, nargs="+", default=None,
         help="Insert할 JSONL 파일 경로 (여러 개 가능, 예: --files a.jsonl b.jsonl)"
     )
-    parser.add_argument(
-        "--test", action="store_true",
-        help="Insert 후 검색 테스트 실행"
-    )
     args = parser.parse_args()
 
     if not args.files:
@@ -293,6 +281,3 @@ if __name__ == "__main__":
             exit(1)
 
     insert_documents(data_dir=DEFAULT_DATA_DIR, file_list=args.files)
-
-    if args.test:
-        search_test()

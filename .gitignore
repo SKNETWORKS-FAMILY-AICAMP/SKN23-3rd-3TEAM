@@ -195,6 +195,7 @@ vector_store/
 # Frontend
 node_modules/
 front/dist/
+outputs/
 
 *.md
 *.ipynb

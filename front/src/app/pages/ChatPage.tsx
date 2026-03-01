@@ -1,5 +1,6 @@
 import { useLocation } from "react-router";
 import { Bot } from "@/app/components/ui/bot";
+import defaultProfile from "@/assets/profile.png"
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import logoTextWebm from "@/assets/animations/logo_text.webm";
@@ -482,7 +483,7 @@ export function ChatPage() {
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
                       <img
-                        src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
+                        src={defaultProfile}
                         alt="User"
                         className="w-full h-full object-cover"
                       />
@@ -558,7 +559,7 @@ export function ChatPage() {
           <div className="relative flex-shrink-0">
             <button
               onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                 analysisType !== "default"
                   ? "border-[#84C13D] text-[#4A7A1E] bg-[#E8F5D0]"
                   : "border-gray-200 text-gray-500 bg-white hover:border-[#84C13D]"
@@ -582,7 +583,7 @@ export function ChatPage() {
                     <button
                       key={opt.value}
                       onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
+                      className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
                         analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
@@ -602,7 +603,7 @@ export function ChatPage() {
               onClick={handleSend}
               disabled={!canSend}
               whileTap={{ scale: 0.9 }}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer"
               style={{
                 background: canSend ? "#84C13D" : "#E5E7EB",
               }}

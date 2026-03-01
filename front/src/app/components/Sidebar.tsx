@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@/app/components/ui/icon"
+import defaultProfile from "@/assets/profile.png"
 import { X, Plus, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { fetchChatRooms, type ChatRoom } from "@/app/api/chatApi";
@@ -209,14 +210,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <div className="relative flex-shrink-0">
               <img
-                src={user?.profile_image_url ?? "https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"}
+                src={user?.profile_image_url ?? defaultProfile}
                 alt="Profile"
                 className="w-8 h-8 rounded-full object-cover border-2"
                 style={{ borderColor: "#84C13D" }}
-              />
-              <span
-                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
-                style={{ background: "#84C13D" }}
               />
             </div>
             <div className="flex-1 min-w-0">

@@ -1,3 +1,4 @@
+import defaultProfile from "@/assets/profile.png"
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { uploadProfileImage } from "@/app/api/uploadApi";
@@ -67,7 +68,7 @@ export function SettingsPage() {
         setProfileImageUrl(user.profile_image_url ?? null);
         setNickname(user.nickname);
         setAge(user.age?.toString() ?? "");
-        setGender(GENDER_LABEL[user.gender]);
+        setGender(GENDER_LABEL[user.gender] ?? "선택 안함");
 
         if (user.skin_concern) {
           const concerns = user.skin_concern.split(",").map((s) => s.trim()).filter(Boolean);
@@ -230,7 +231,7 @@ export function SettingsPage() {
                             </div>
                           ) : (
                             <img
-                              src={profileImageUrl ?? "https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=80&h=80&fit=crop"}
+                              src={profileImageUrl ?? defaultProfile}
                               alt="Profile"
                               className="w-20 h-20 rounded-2xl object-cover border-2"
                               style={{ borderColor: "#84C13D" }}
@@ -435,7 +436,7 @@ export function SettingsPage() {
                           disabled={isSaving || isUploadingPhoto}
                           className="w-full py-3.5 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-70"
                           style={{
-                            background: saved ? "#10B981" : "linear-gradient(135deg, #84C13D, #6BA32E)",
+                            background: saved ? "#10B981" : "#84C13D",
                             boxShadow: "0 4px 14px rgba(133,193,61,0.35)",
                           }}
                         >

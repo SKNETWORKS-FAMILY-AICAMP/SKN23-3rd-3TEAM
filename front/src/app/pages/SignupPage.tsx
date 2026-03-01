@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as authApi from "../api/authApi";
 import * as userApi from "../api/userApi";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
@@ -106,7 +107,7 @@ export function SignupPage() {
     setEmailError("");
     setIsSending(true);
     try {
-      await userApi.sendEmailCode(email);
+      await authApi.sendEmailCode(email);
       setEmailSent(true);
       setEmailVerified(false);
       setVerifyCode("");
@@ -127,7 +128,7 @@ export function SignupPage() {
     setVerifyError("");
     setIsVerifying(true);
     try {
-      const valid = await userApi.verifyEmailCode(email, verifyCode);
+      const valid = await authApi.verifyEmailCode(email, verifyCode);
       if (valid) {
         setEmailVerified(true);
       } else {
@@ -151,7 +152,7 @@ export function SignupPage() {
       setSignupError("");
       try {
         // 1. 회원가입 (서버에서 OTP 재검증 포함)
-        await userApi.signup({
+        await authApi.signup({
           email,
           name,
           nickname         : nickname.trim() || name,
@@ -162,7 +163,7 @@ export function SignupPage() {
         });
 
         // 2. 자동 로그인 (토큰 발급)
-        await userApi.login(email, password);
+        await authApi.login(email, password);
 
         // 3. 프로필 추가 정보 저장 (선택 입력)
         const GENDER_TO_API: Record<string, "male" | "female" | null> = {

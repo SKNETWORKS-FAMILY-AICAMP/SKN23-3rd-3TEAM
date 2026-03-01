@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
 import logoIdle from "@/assets/animations/logo_idle_1.webm";
-import { login } from "@/app/api/userApi";
+import { login } from "@/app/api/authApi";
 
 export function LoginPage() {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { Leaf, Mail, Eye, EyeOff, Check, ChevronLeft, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import * as userApi from "../api/userApi";
+import * as authApi from "../api/authApi";
 
 const TIMER_SECONDS = 600; // 10분
 
@@ -103,7 +103,7 @@ export function ForgotPasswordPage() {
     setSendError("");
     setIsSending(true);
     try {
-      await userApi.sendEmailCode(email);
+      await authApi.sendEmailCode(email);
       setCodeSent(true);
       setCode("");
       setCodeError("");
@@ -124,7 +124,7 @@ export function ForgotPasswordPage() {
     }
     setIsLoading(true);
     try {
-      const valid = await userApi.verifyEmailCode(email, code);
+      const valid = await authApi.verifyEmailCode(email, code);
       if (valid) {
         setCodeVerified(true);
         if (timerRef.current) clearInterval(timerRef.current);
@@ -145,7 +145,7 @@ export function ForgotPasswordPage() {
     setResetError("");
     setIsLoading(true);
     try {
-      await userApi.resetPassword(email, code, newPassword);
+      await authApi.resetPassword(email, code, newPassword);
       setStep(2);
     } catch (e) {
       setResetError(e instanceof Error ? e.message : "재설정에 실패했습니다. 처음부터 다시 시도해 주세요.");

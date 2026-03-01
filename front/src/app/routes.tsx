@@ -9,6 +9,7 @@ import { SignupPage } from "./pages/SignupPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
 
 /** 로그인 필요 페이지 — 미인증 시 /chat으로 리다이렉트 */
 function PrivateRoute() {
@@ -39,4 +40,5 @@ export const router = createBrowserRouter([
   { path: "/signup", Component: SignupPage },
   { path: "/forgot-password", Component: ForgotPasswordPage },
   { path: "/onboarding", Component: OnboardingPage },
+  { path: "/oauth/callback", Component: OAuthCallbackPage },
 ]);

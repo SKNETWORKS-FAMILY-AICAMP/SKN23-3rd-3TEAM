@@ -124,15 +124,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             메뉴
           </p>
           {navItems.map((item) => {
-            const isActive =
-              location.pathname === item.path ||
-              location.pathname.startsWith(item.path + "/");
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
             const commonClass = `w-full flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              isActive ? "text-white" : "text-gray-600 hover:text-gray-900"
+              isActive ? "text-white" : "text-gray-600"
             }`;
-            const activeStyle = isActive
-              ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 2px 8px rgba(133,193,61,0.25)" }
-              : {};
+            const activeStyle = isActive ? { background: "#84C13D", boxShadow: "0 2px 8px rgba(133,193,61,0.25)" } : {};
 
             if (!isLoggedIn) {
               return (
@@ -159,7 +155,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "#F0FAE3"; }}
                 onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = ""; }}
               >
-                <Icon name={item.icon} />
+                <Icon name={item.icon} variant={isActive ? 'white' : 'green'} />
                 {item.label}
               </Link>
             );

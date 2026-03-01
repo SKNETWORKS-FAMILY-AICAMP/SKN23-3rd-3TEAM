@@ -162,6 +162,12 @@ class ChatMessage:
     def from_dict(row: dict) -> "ChatMessage":
         """ DB 조회 결과 dict → ChatMessage 객체 변환 """
         img_url = row.get("image_url")
+        if isinstance(img_url, str):
+            try:
+                parsed = json.loads(img_url)
+                img_url = parsed if isinstance(parsed, list) else [img_url]
+            except (json.JSONDecodeError, ValueError):
+                img_url = [u.strip() for u in img_url.split(",") if u.strip()]
 
         return ChatMessage(
             message_id   = row["message_id"],
@@ -169,7 +175,7 @@ class ChatMessage:
             role         = row["role"],
             model_type   = row["model_type"],
             content      = row.get("content"),
-            image_url    = img_url.split(",") if img_url else [],
+            image_url    = img_url or [],
             created_at   = row.get("created_at"),
         )
 

@@ -79,8 +79,6 @@ def create_user(data: UserCreate) -> User:
     """
     if is_email_taken(data.email):
         raise ValueError("이미 사용 중인 이메일입니다.")
-    if is_nickname_taken(data.nickname):
-        raise ValueError("이미 사용 중인 닉네임입니다.")
 
     user_id = execute_write(
         """
@@ -142,9 +140,6 @@ def update_user(user_id: int, data: UserUpdate) -> User:
     fields = {k: v for k, v in data.model_dump().items() if v is not None}
     if not fields:
         raise ValueError("수정할 내용이 없습니다.")
-
-    if "nickname" in fields and is_nickname_taken(fields["nickname"]):
-        raise ValueError("이미 사용 중인 닉네임입니다.")
 
     set_clause = ", ".join([f"{key} = %s" for key in fields])
     values = tuple(fields.values()) + (user_id,)

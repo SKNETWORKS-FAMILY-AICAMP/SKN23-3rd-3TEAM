@@ -8,7 +8,6 @@ user_router.py
     PATCH  /users/me                   내 정보 수정
     DELETE /users/me                   회원 탈퇴
     GET    /users/check/email          이메일 중복 확인
-    GET    /users/check/nickname       닉네임 중복 확인
     POST   /users/email/send-code      이메일 OTP 발송
     POST   /users/email/verify-code    이메일 OTP 확인
     POST   /users/password/reset       비밀번호 재설정 (OTP 검증 포함)
@@ -174,7 +173,7 @@ def send_email_code(body: EmailSendRequest):
     - SendGrid를 통해 6자리 코드 발송
 
     프론트 요청 예시:
-        POST /users/email/send-code
+        POST /g
         { "email": "test@test.com" }
     응답:
         { "message": "인증 코드가 발송되었습니다." }
@@ -253,18 +252,6 @@ def check_email(email: str):
     """
     return {"available": not user_service.is_email_taken(email)}
 
-
-@router.get("/check/nickname")
-def check_nickname(nickname: str):
-    """
-    닉네임 중복 확인.
-
-    프론트 요청 예시:
-        GET /users/check/nickname?nickname=길동이
-    응답:
-        { "available": true }
-    """
-    return {"available": not user_service.is_nickname_taken(nickname)}
 
 
 # ─────────────────────────────────────────────

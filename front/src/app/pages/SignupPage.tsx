@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as authApi from "../api/authApi";
 import * as userApi from "../api/userApi";
+import type { KeywordItem } from "../api/userApi";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import logoIdle from "@/assets/animations/logo_idle_1.webm";
@@ -45,7 +46,13 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
-const SKIN_TYPES = ["건성", "지성", "복합성", "중성", "민감성"];
+const FALLBACK_SKIN_TYPE_KEYWORDS: KeywordItem[] = [
+  { keyword_id: -1, type: "skin_type", keyword: "dry",       label: "건성",  description: null },
+  { keyword_id: -2, type: "skin_type", keyword: "oily",      label: "지성",  description: null },
+  { keyword_id: -3, type: "skin_type", keyword: "combo",     label: "복합성", description: null },
+  { keyword_id: -4, type: "skin_type", keyword: "normal",    label: "중성",  description: null },
+  { keyword_id: -5, type: "skin_type", keyword: "sensitive", label: "민감성", description: null },
+];
 const DEFAULT_CONCERNS = ["각질", "건조", "모공", "미백", "민감", "블랙헤드", "아토피", "유분", "장벽", "주름", "트러블", "피지", "흉터"];
 
 export function SignupPage() {
@@ -64,6 +71,15 @@ export function SignupPage() {
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [agreed, setAgreed] = useState(false);
+
+  // skin_type 키워드 목록 (마운트 시 로드)
+  const [skinTypeKeywords, setSkinTypeKeywords] = useState<KeywordItem[]>(FALLBACK_SKIN_TYPE_KEYWORDS);
+
+  useEffect(() => {
+    userApi.fetchKeywords("skin_type")
+      .then((keywords) => { if (keywords.length > 0) setSkinTypeKeywords(keywords); })
+      .catch(() => { /* 폴백 유지 */ });
+  }, []);
 
   // 피부 정보
   const [gender, setGender] = useState<"여성" | "남성" | "">("");
@@ -171,10 +187,12 @@ export function SignupPage() {
           "남성": "male",
           ""    : null,
         };
+        const skinKeywordId = skinTypeKeywords.find((k) => k.label === skinType)?.keyword_id ?? null;
         const profileUpdate: Parameters<typeof userApi.updateCurrentUser>[0] = {};
-        if (gender)          profileUpdate.gender       = GENDER_TO_API[gender];
-        if (age)             profileUpdate.age          = Number(age);
-        if (concerns.length) profileUpdate.skin_concern = concerns.join(",");
+        if (gender)                      profileUpdate.gender       = GENDER_TO_API[gender];
+        if (age)                         profileUpdate.age          = Number(age);
+        if (skinKeywordId !== null && skinKeywordId > 0) profileUpdate.skin_type = skinKeywordId;
+        if (concerns.length)             profileUpdate.skin_concern = concerns.join(",");
         if (Object.keys(profileUpdate).length > 0) {
           await userApi.updateCurrentUser(profileUpdate).catch(() => {});
         }
@@ -513,18 +531,21 @@ export function SignupPage() {
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-2">피부 타입 <span className="text-red-400">*</span></label>
                   <div className="flex flex-wrap gap-2">
-                    {SKIN_TYPES.map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setSkinType(type)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all cursor-pointer ${
-                          skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
-                        }`}
-                        style={skinType === type ? { background: "#84C13D" } : {}}
-                      >
-                        {type}
-                      </button>
-                    ))}
+                    {skinTypeKeywords.map((k) => {
+                      const label = k.label ?? k.keyword;
+                      return (
+                        <button
+                          key={k.keyword_id}
+                          onClick={() => setSkinType(label)}
+                          className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all cursor-pointer ${
+                            skinType === label ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
+                          }`}
+                          style={skinType === label ? { background: "#84C13D" } : {}}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div>

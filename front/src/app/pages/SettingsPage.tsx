@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { uploadProfileImage } from "@/app/api/uploadApi";
 import loadingWebm from "@/assets/animations/logo_loop_1.webm";
-import { fetchCurrentUser, updateCurrentUser } from "@/app/api/userApi";
+import { fetchCurrentUser, updateCurrentUser, fetchKeywords, KeywordItem } from "@/app/api/userApi";
 import {
   User,
   Lock,
@@ -23,7 +23,14 @@ const SECTIONS = [
   { id: "social", label: "소셜 연동", icon: Link2 },
 ];
 
-const SKIN_TYPES = ["건성", "지성", "복합성", "중성", "민감성"];
+/** API 응답이 없을 때 사용할 피부 타입 폴백 목록 */
+const FALLBACK_SKIN_TYPES: KeywordItem[] = [
+  { keyword_id: -1, type: "skin_type", keyword: "dry",       label: "건성",  description: null },
+  { keyword_id: -2, type: "skin_type", keyword: "oily",      label: "지성",  description: null },
+  { keyword_id: -3, type: "skin_type", keyword: "combo",     label: "복합성", description: null },
+  { keyword_id: -4, type: "skin_type", keyword: "normal",    label: "중성",  description: null },
+  { keyword_id: -5, type: "skin_type", keyword: "sensitive", label: "민감성", description: null },
+];
 const DEFAULT_CONCERNS = ["각질", "건조", "모공", "미백", "민감", "블랙헤드", "아토피", "유분", "장벽", "주름", "트러블", "피지", "흉터"];
 
 /** back gender 값 → 화면 표시 레이블 */
@@ -46,7 +53,8 @@ export function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("선택 안함");
-  const [skinType, setSkinType] = useState("복합성");
+  const [skinType, setSkinType] = useState("");           // 선택된 label 문자열
+  const [skinTypeKeywords, setSkinTypeKeywords] = useState<KeywordItem[]>(FALLBACK_SKIN_TYPES);
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
   const [customConcerns, setCustomConcerns] = useState<string[]>([]);
   const [showAddConcern, setShowAddConcern] = useState(false);
@@ -58,11 +66,14 @@ export function SettingsPage() {
   const profileInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<{ gender?: string; age?: string; skinType?: string }>({});
 
-  // ─── 사용자 정보 조회 (back: GET /users/me → user_service.get_user_by_id) ───
+  // ─── 사용자 정보 + skin_type 키워드 목록 동시 조회 ───
   useEffect(() => {
     setIsLoadingUser(true);
-    fetchCurrentUser()
-      .then((user) => {
+    Promise.all([fetchCurrentUser(), fetchKeywords("skin_type")])
+      .then(([user, keywords]) => {
+        // keywords 목록 설정 (빈 배열이면 폴백 유지)
+        if (keywords.length > 0) setSkinTypeKeywords(keywords);
+
         setName(user.name);
         setEmail(user.email);
         setProfileImageUrl(user.profile_image_url ?? null);
@@ -70,15 +81,16 @@ export function SettingsPage() {
         setAge(user.age?.toString() ?? "");
         setGender(GENDER_LABEL[user.gender] ?? "선택 안함");
 
+        // skin_type (keyword_id) → label 변환
+        const matched = keywords.find((k) => k.keyword_id === user.skin_type);
+        setSkinType(matched?.label ?? "");
+
         if (user.skin_concern) {
           const concerns = user.skin_concern.split(",").map((s) => s.trim()).filter(Boolean);
-          // 기본 목록에 없는 항목은 customConcerns로 분류
           const customs = concerns.filter((c) => !DEFAULT_CONCERNS.includes(c));
           setCustomConcerns(customs);
           setSelectedConcerns(concerns);
         }
-        // skin_type은 keyword_id(int)로 저장됨 — keywords 테이블 조회 후 label 매핑 필요
-        // TODO: GET /keywords?type=skin_type 연동 후 setSkinType() 처리
       })
       .catch((err: Error) => setFetchError(err.message))
       .finally(() => setIsLoadingUser(false));
@@ -152,11 +164,13 @@ export function SettingsPage() {
     setIsSaving(true);
     setSaveError(null);
     try {
+      const skinKeywordId = skinTypeKeywords.find((k) => k.label === skinType)?.keyword_id ?? null;
       await updateCurrentUser({
         nickname,
-        age          : age ? Number(age) : null,
-        gender       : GENDER_TO_API[gender] ?? null,
-        skin_concern : selectedConcerns.length > 0 ? selectedConcerns.join(",") : null,
+        age              : age ? Number(age) : null,
+        gender           : GENDER_TO_API[gender] ?? null,
+        skin_type        : skinKeywordId,
+        skin_concern     : selectedConcerns.length > 0 ? selectedConcerns.join(",") : null,
         profile_image_url: profileImageUrl,
       });
       setSaved(true);
@@ -320,22 +334,25 @@ export function SettingsPage() {
                             피부 타입 {fieldErrors.skinType && <span className="font-normal">— {fieldErrors.skinType}</span>}
                           </label>
                           <div className="flex flex-wrap gap-2">
-                            {SKIN_TYPES.map((t) => (
-                              <button
-                                key={t}
-                                onClick={() => { setSkinType(t); setFieldErrors((p) => ({ ...p, skinType: undefined })); }}
-                                className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all cursor-pointer ${
-                                  skinType === t
-                                    ? "text-white border-transparent"
-                                    : fieldErrors.skinType
-                                      ? "border-red-200 text-gray-600 hover:border-red-400"
-                                      : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
-                                }`}
-                                style={skinType === t ? { background: "#84C13D" } : {}}
-                              >
-                                {t}
-                              </button>
-                            ))}
+                            {skinTypeKeywords.map((k) => {
+                              const label = k.label ?? k.keyword;
+                              return (
+                                <button
+                                  key={k.keyword_id}
+                                  onClick={() => { setSkinType(label); setFieldErrors((p) => ({ ...p, skinType: undefined })); }}
+                                  className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all cursor-pointer ${
+                                    skinType === label
+                                      ? "text-white border-transparent"
+                                      : fieldErrors.skinType
+                                        ? "border-red-200 text-gray-600 hover:border-red-400"
+                                        : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
+                                  }`}
+                                  style={skinType === label ? { background: "#84C13D" } : {}}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
 

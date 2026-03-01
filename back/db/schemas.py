@@ -288,3 +288,21 @@ class PasswordResetRequest(BaseModel):
     email        : EmailStr
     code         : str
     new_password : str
+
+
+# ─────────────────────────────────────────────
+# 8. Keyword 스키마
+# ─────────────────────────────────────────────
+
+class KeywordResponse(BaseModel):
+    """
+    키워드 조회 응답
+    - skin_type, gender 등 공통 코드 테이블
+    """
+    keyword_id  : int
+    type        : str
+    keyword     : str
+    label       : Optional[str] = None
+    description : Optional[str] = None
+
+    model_config = {"from_attributes": True}

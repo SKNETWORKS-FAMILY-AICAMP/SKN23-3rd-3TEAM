@@ -4,7 +4,8 @@ import defaultProfile from "@/assets/profile.png"
 import { X, Plus, LogOut, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { fetchChatRooms, type ChatRoom } from "@/app/api/chatApi";
-import { fetchCurrentUser, logout, type UserResponse } from "@/app/api/userApi";
+import { fetchCurrentUser, type UserResponse } from "@/app/api/userApi";
+import { logout } from "@/app/api/authApi";
 
 /** 생성일 → 상대적 날짜 표시 ("오늘", "어제", "N일 전") */
 function formatRelativeDate(iso: string): string {

@@ -4,8 +4,8 @@ auth_service.py
 목적  : 인증 및 로그인 관련 비즈니스 로직 담당
 역할  :
     1. local 로그인 수단 등록 (비밀번호 해시 포함)
-    2. 소셜 로그인 수단 등록 (google / kakao)
-    3. local 이메일/비밀번호 로그인 검증
+    2. local 이메일/비밀번호 로그인 검증
+    3. Google / Kakao 소셜 로그인 처리
     4. 로그인 수단 조회
 
 흐름:
@@ -14,22 +14,45 @@ auth_service.py
                     → models.AuthProvider / User 로 변환 후 반환
 
 의존성:
-    user_service.get_user_by_email() 호출 (단방향)
-    auth_service → user_service (user_service는 auth_service를 import하지 않음)
+    auth_service → user_service (단방향)
+    JWT 발급은 routers/deps.py의 create_access_token() 사용
 ─────────────────────────────────────────────────────────────
 """
 
+import os
 import bcrypt
+import httpx
 from typing import Optional
 
-from db.db_manager import execute_one, execute_write
+from dotenv import load_dotenv
+
+from db.db_manager import execute_one, execute_write, execute_query
 from db.models import AuthProvider, User
-from db.schemas import AuthProviderCreate
-from services.user_service import get_user_by_email
+from db.schemas import AuthProviderCreate, UserCreate
+from services.user_service import (
+    get_user_by_email,
+    get_user_by_id,
+    create_user,
+)
+# JWT 발급은 deps.py에서 통합 관리
+from routers.deps import create_access_token
+
+load_dotenv()
+
+# ─────────────────────────────────────────────
+# 환경변수 로드
+# ─────────────────────────────────────────────
+GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")
+
+KAKAO_CLIENT_ID      = os.getenv("KAKAO_CLIENT_ID")
+KAKAO_CLIENT_SECRET  = os.getenv("KAKAO_CLIENT_SECRET")
+KAKAO_REDIRECT_URI   = os.getenv("KAKAO_REDIRECT_URI")
 
 
 # ─────────────────────────────────────────────
-# 내부 헬퍼
+# 1. 비밀번호 헬퍼
 # ─────────────────────────────────────────────
 
 def _hash_password(plain_password: str) -> str:
@@ -43,7 +66,7 @@ def _verify_password(plain_password: str, hashed: str) -> bool:
 
 
 # ─────────────────────────────────────────────
-# 1. 로그인 수단 등록
+# 2. local 로그인 수단 등록 / 검증
 # ─────────────────────────────────────────────
 
 def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthProvider:
@@ -53,18 +76,11 @@ def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthPr
     - create_user() 호출 직후 함께 사용
 
     사용 예시:
-        from services.user_service import create_user
-        from services.auth_service import register_local_auth
-
         user = create_user(data)
         auth = register_local_auth(user.user_id, user.email, "plain_password_123")
     """
-    # 이미 등록된 local 수단이 있으면 예외 발생
     existing = execute_one(
-        """
-        SELECT auth_id FROM auth_providers
-        WHERE user_id = %s AND provider_type = 'local'
-        """,
+        "SELECT auth_id FROM auth_providers WHERE user_id = %s AND provider_type = 'local'",
         (user_id,)
     )
     if existing:
@@ -87,55 +103,23 @@ def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthPr
     return get_auth_by_id(auth_id)
 
 
-def register_social_auth(user_id: int, provider_type: str, provider_id: str) -> AuthProvider:
-    """
-    소셜 로그인 수단 등록 (google / kakao).
-    - 이미 연결된 소셜 계정이면 예외 발생
-
-    사용 예시:
-        auth = register_social_auth(user.user_id, "google", "google_uid_abc123")
-    """
-    existing = execute_one(
-        """
-        SELECT auth_id FROM auth_providers
-        WHERE provider_type = %s AND provider_id = %s
-        """,
-        (provider_type, provider_id)
-    )
-    if existing:
-        raise ValueError(f"이미 연결된 {provider_type} 계정입니다.")
-
-    auth_id = execute_write(
-        """
-        INSERT INTO auth_providers (user_id, provider_type, provider_id)
-        VALUES (%s, %s, %s)
-        """,
-        (user_id, provider_type, provider_id)
-    )
-    return get_auth_by_id(auth_id)
-
-
-# ─────────────────────────────────────────────
-# 2. 로그인 검증
-# ─────────────────────────────────────────────
-
-def login_local(email: str, plain_password: str) -> User:
+def login_local(email: str, plain_password: str) -> dict:
     """
     local 이메일/비밀번호 로그인 검증.
-    - 이메일 미존재, 비밀번호 불일치, 계정 비활성 시 예외 발생
-    - 성공 시 User 반환 (JWT 발급은 라우터에서 처리)
+    - 성공 시 JWT 토큰과 User 반환
+    - JWT 발급은 deps.py의 create_access_token() 사용
 
     사용 예시:
-        user = login_local("test@test.com", "plain_password_123")
+        result = login_local("test@test.com", "plain_password_123")
+        token  = result["access_token"]
+        user   = result["user"]
     """
-    # user_service에서 사용자 조회 (단방향 의존)
     user = get_user_by_email(email)
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
     if not user.is_active:
         raise ValueError("비활성화된 계정입니다.")
 
-    # local 로그인 수단 조회
     auth_row = execute_one(
         """
         SELECT password_hash FROM auth_providers
@@ -148,19 +132,189 @@ def login_local(email: str, plain_password: str) -> User:
     if not _verify_password(plain_password, auth_row["password_hash"]):
         raise ValueError("비밀번호가 일치하지 않습니다.")
 
-    return user
+    # deps.py의 create_access_token 사용 (user_id만 전달)
+    token = create_access_token(user.user_id)
+    return {"access_token": token, "token_type": "bearer", "user": user}
 
 
-def login_social(provider_type: str, provider_id: str) -> User:
+# ─────────────────────────────────────────────
+# 3. Google 소셜 로그인
+# ─────────────────────────────────────────────
+
+def get_google_login_url() -> str:
     """
-    소셜 로그인 검증 (google / kakao).
-    - provider_type + provider_id로 연결된 계정 조회
-    - 연결된 계정이 없으면 예외 발생 (회원가입 필요)
-    - 성공 시 User 반환 (JWT 발급은 라우터에서 처리)
+    Google OAuth 인증 URL 생성.
+    - 프론트에서 이 URL로 리디렉션하면 Google 로그인 화면으로 이동
 
     사용 예시:
-        user = login_social("google", "google_uid_abc123")
+        url = get_google_login_url()
+        return RedirectResponse(url)
     """
+    return (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        f"?client_id={GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={GOOGLE_REDIRECT_URI}"
+        "&response_type=code"
+        "&scope=openid email profile"
+    )
+
+
+async def google_callback(code: str) -> dict:
+    """
+    Google 인증 콜백 처리.
+    1. code → access_token 교환
+    2. access_token → Google 사용자 정보 조회
+    3. 신규 유저면 자동 회원가입 + 소셜 로그인 수단 등록
+       기존 유저면 로그인 처리
+    4. JWT 발급 후 반환
+
+    사용 예시:
+        result = await google_callback(code)
+        token  = result["access_token"]
+        user   = result["user"]
+    """
+    async with httpx.AsyncClient() as client:
+
+        # 1. code → access_token 교환
+        token_res = await client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code"          : code,
+                "client_id"     : GOOGLE_CLIENT_ID,
+                "client_secret" : GOOGLE_CLIENT_SECRET,
+                "redirect_uri"  : GOOGLE_REDIRECT_URI,
+                "grant_type"    : "authorization_code",
+            }
+        )
+        token_data   = token_res.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise ValueError(f"Google access_token 발급 실패: {token_data}")
+
+        # 2. access_token → Google 사용자 정보 조회
+        user_res = await client.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        user_info   = user_res.json()
+        provider_id = user_info.get("id")       # Google 고유 사용자 ID
+        email       = user_info.get("email")
+        name        = user_info.get("name", "")
+
+        if not provider_id or not email:
+            raise ValueError("Google 사용자 정보 조회 실패")
+
+    # 3. 신규/기존 유저 처리
+    user = _get_or_create_social_user(
+        provider_type = "google",
+        provider_id   = provider_id,
+        email         = email,
+        name          = name,
+    )
+
+    # 4. JWT 발급 (deps.py 사용)
+    token = create_access_token(user.user_id)
+    return {"access_token": token, "token_type": "bearer", "user": user}
+
+
+# ─────────────────────────────────────────────
+# 4. Kakao 소셜 로그인
+# ─────────────────────────────────────────────
+
+def get_kakao_login_url() -> str:
+    """
+    Kakao OAuth 인증 URL 생성.
+    - 프론트에서 이 URL로 리디렉션하면 카카오 로그인 화면으로 이동
+
+    사용 예시:
+        url = get_kakao_login_url()
+        return RedirectResponse(url)
+    """
+    return (
+        "https://kauth.kakao.com/oauth/authorize"
+        f"?client_id={KAKAO_CLIENT_ID}"
+        f"&redirect_uri={KAKAO_REDIRECT_URI}"
+        "&response_type=code"
+    )
+
+
+async def kakao_callback(code: str) -> dict:
+    """
+    Kakao 인증 콜백 처리.
+    1. code → access_token 교환
+    2. access_token → Kakao 사용자 정보 조회
+    3. 신규 유저면 자동 회원가입 + 소셜 로그인 수단 등록
+       기존 유저면 로그인 처리
+    4. JWT 발급 후 반환
+
+    사용 예시:
+        result = await kakao_callback(code)
+        token  = result["access_token"]
+        user   = result["user"]
+    """
+    async with httpx.AsyncClient() as client:
+
+        # 1. code → access_token 교환
+        token_res = await client.post(
+            "https://kauth.kakao.com/oauth/token",
+            data={
+                "code"          : code,
+                "client_id"     : KAKAO_CLIENT_ID,
+                "client_secret" : KAKAO_CLIENT_SECRET,
+                "redirect_uri"  : KAKAO_REDIRECT_URI,
+                "grant_type"    : "authorization_code",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        token_data   = token_res.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise ValueError(f"Kakao access_token 발급 실패: {token_data}")
+
+        # 2. access_token → Kakao 사용자 정보 조회
+        user_res = await client.get(
+            "https://kapi.kakao.com/v2/user/me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        user_info     = user_res.json()
+        provider_id   = str(user_info.get("id"))  # Kakao 고유 사용자 ID
+        kakao_account = user_info.get("kakao_account", {})
+        email         = kakao_account.get("email")
+        name          = kakao_account.get("profile", {}).get("nickname", "")
+
+        if not provider_id or not email:
+            raise ValueError("Kakao 사용자 정보 조회 실패 (이메일 동의 필요)")
+
+    # 3. 신규/기존 유저 처리
+    user = _get_or_create_social_user(
+        provider_type = "kakao",
+        provider_id   = provider_id,
+        email         = email,
+        name          = name,
+    )
+
+    # 4. JWT 발급 (deps.py 사용)
+    token = create_access_token(user.user_id)
+    return {"access_token": token, "token_type": "bearer", "user": user}
+
+
+# ─────────────────────────────────────────────
+# 5. 소셜 로그인 공통 헬퍼
+# ─────────────────────────────────────────────
+
+def _get_or_create_social_user(
+    provider_type : str,
+    provider_id   : str,
+    email         : str,
+    name          : str,
+) -> User:
+    """
+    소셜 로그인 공통 처리.
+    - 이미 해당 소셜 계정으로 가입된 유저 → 바로 반환
+    - 같은 이메일로 가입된 유저 → 소셜 로그인 수단만 추가 연결
+    - 완전 신규 유저 → 자동 회원가입 + 소셜 로그인 수단 등록
+    """
+    # 이미 해당 소셜 계정으로 가입된 유저 확인
     auth_row = execute_one(
         """
         SELECT user_id FROM auth_providers
@@ -168,21 +322,43 @@ def login_social(provider_type: str, provider_id: str) -> User:
         """,
         (provider_type, provider_id)
     )
-    if not auth_row:
-        raise ValueError(f"연결된 {provider_type} 계정이 없습니다. 회원가입이 필요합니다.")
+    if auth_row:
+        return get_user_by_id(auth_row["user_id"])
 
-    from services.user_service import get_user_by_id
-    user = get_user_by_id(auth_row["user_id"])
-    if not user:
-        raise ValueError("연결된 사용자를 찾을 수 없습니다.")
-    if not user.is_active:
-        raise ValueError("비활성화된 계정입니다.")
+    # 같은 이메일로 가입된 유저 확인 → 소셜 수단만 추가 연결
+    existing_user = get_user_by_email(email)
+    if existing_user:
+        execute_write(
+            """
+            INSERT INTO auth_providers (user_id, provider_type, provider_id)
+            VALUES (%s, %s, %s)
+            """,
+            (existing_user.user_id, provider_type, provider_id)
+        )
+        return existing_user
 
+    # 완전 신규 유저 → 자동 회원가입
+    # 닉네임 중복 방지를 위해 provider_id 뒤 6자리 붙임
+    nickname = f"{name}_{provider_id[-6:]}" if name else f"user_{provider_id[-6:]}"
+    user = create_user(UserCreate(
+        email          = email,
+        name           = name or "소셜유저",
+        nickname       = nickname,
+        terms_agreed   = True,
+        privacy_agreed = True,
+    ))
+    execute_write(
+        """
+        INSERT INTO auth_providers (user_id, provider_type, provider_id)
+        VALUES (%s, %s, %s)
+        """,
+        (user.user_id, provider_type, provider_id)
+    )
     return user
 
 
 # ─────────────────────────────────────────────
-# 3. 로그인 수단 조회
+# 6. 로그인 수단 조회
 # ─────────────────────────────────────────────
 
 def get_auth_by_id(auth_id: int) -> Optional[AuthProvider]:
@@ -205,43 +381,12 @@ def get_auth_by_user(user_id: int) -> list[AuthProvider]:
     - 한 계정에 local + 소셜 복수 연결 가능
 
     사용 예시:
-        auths = get_auth_by_user(1)
-        provider_types = [a.provider_type for a in auths]
+        auths     = get_auth_by_user(1)
+        providers = [a.provider_type for a in auths]
         # 예: ["local", "google"]
     """
-    from db.db_manager import execute_query
     rows = execute_query(
         "SELECT * FROM auth_providers WHERE user_id = %s",
         (user_id,)
     )
     return [AuthProvider.from_dict(row) for row in rows]
-
-# ─────────────────────────────────────────────
-# 7. 비밀번호 재설정
-# ─────────────────────────────────────────────
-
-def reset_password(email: str, new_password: str) -> bool:
-    """
-    비밀번호 재설정.
-    - auth_providers의 password_hash를 새 비밀번호 해시로 업데이트
-    - OTP 검증은 라우터에서 처리 후 호출
-
-    사용 예시:
-        reset_password("user@example.com", "new_password_123!")
-    """
-    user = get_user_by_email(email)
-    if not user:
-        raise ValueError("존재하지 않는 이메일입니다.")
-
-    hashed = _hash_password(new_password)
-    affected = execute_write(
-        """
-        UPDATE auth_providers
-        SET password_hash = %s
-        WHERE user_id = %s AND provider_type = 'local'
-        """,
-        (hashed, user.user_id)
-    )
-    if affected == 0:
-        raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
-    return True

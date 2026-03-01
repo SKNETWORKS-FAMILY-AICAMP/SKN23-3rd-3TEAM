@@ -6,7 +6,7 @@ analysis_router.py
     GET    /analysis                       내 분석 히스토리 조회
     GET    /analysis/latest                가장 최근 분석 결과 조회
     GET    /analysis/{analysis_id}         분석 결과 단건 조회
-    DELETE /analysis/{analysis_id}        분석 결과 삭제 (soft delete)
+    DELETE /analysis/{analysis_id}         분석 결과 삭제 (soft delete)
 ─────────────────────────────────────────────────────────────
 """
 

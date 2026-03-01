@@ -13,6 +13,7 @@ models.py
 ─────────────────────────────────────────────────────────────
 """
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
@@ -191,12 +192,14 @@ class SkinAnalysisResult:
     @staticmethod
     def from_dict(row: dict) -> "SkinAnalysisResult":
         """ DB 조회 결과 dict → SkinAnalysisResult 객체 변환 """
+        raw_img  = row["image_url"]
+        raw_data = row["analysis_data"]
         return SkinAnalysisResult(
             analysis_id   = row["analysis_id"],
             user_id       = row["user_id"],
-            image_url     = row["image_url"],      # pymysql이 JSON을 자동 파싱
+            image_url     = json.loads(raw_img)  if isinstance(raw_img,  str) else raw_img,
             model_type    = row["model_type"],
-            analysis_data = row["analysis_data"],  # pymysql이 JSON을 자동 파싱
+            analysis_data = json.loads(raw_data) if isinstance(raw_data, str) else raw_data,
             created_at    = row["created_at"],
             deleted_at    = row.get("deleted_at"),
         )

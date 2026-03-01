@@ -293,3 +293,34 @@ def delete_user(user_id: int) -> bool:
         (datetime.now(), user_id)
     )
     return affected > 0
+
+
+# ─────────────────────────────────────────────
+# 7. 비밀번호 재설정
+# ─────────────────────────────────────────────
+
+def reset_password(email: str, new_password: str) -> bool:
+    """
+    비밀번호 재설정.
+    - auth_providers의 password_hash를 새 비밀번호 해시로 업데이트
+    - OTP 검증은 라우터에서 처리 후 호출
+
+    사용 예시:
+        reset_password("user@example.com", "new_password_123!")
+    """
+    user = get_user_by_email(email)
+    if not user:
+        raise ValueError("존재하지 않는 이메일입니다.")
+
+    hashed = _hash_password(new_password)
+    affected = execute_write(
+        """
+        UPDATE auth_providers
+        SET password_hash = %s
+        WHERE user_id = %s AND provider_type = 'local'
+        """,
+        (hashed, user.user_id)
+    )
+    if affected == 0:
+        raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
+    return True

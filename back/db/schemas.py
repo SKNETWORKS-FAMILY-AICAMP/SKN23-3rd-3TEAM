@@ -258,3 +258,33 @@ class WishlistResponse(BaseModel):
     added_at            : datetime
 
     model_config = {"from_attributes": True}
+
+
+# ─────────────────────────────────────────────
+# 7. 이메일 인증 스키마
+# ─────────────────────────────────────────────
+
+class EmailSendRequest(BaseModel):
+    """
+    이메일 인증 코드 발송 요청
+    - 회원가입 / 비밀번호 찾기 모두 공통 사용
+    """
+    email : EmailStr
+
+
+class EmailVerifyRequest(BaseModel):
+    """
+    이메일 인증 코드 확인 요청
+    """
+    email : EmailStr
+    code  : str
+
+
+class PasswordResetRequest(BaseModel):
+    """
+    비밀번호 재설정 요청
+    - OTP 검증 후 새 비밀번호로 변경
+    """
+    email        : EmailStr
+    code         : str
+    new_password : str

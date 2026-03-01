@@ -10,23 +10,23 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 
-/** access_token 없으면 /login으로 리다이렉트 */
+/** 로그인 필요 페이지 — 미인증 시 /chat으로 리다이렉트 */
 function PrivateRoute() {
   return localStorage.getItem("access_token")
     ? <Outlet />
-    : <Navigate to="/login" replace />;
+    : <Navigate to="/chat" replace />;
 }
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <PrivateRoute />,
+    Component: Layout,
     children: [
+      { index: true, element: <Navigate to="/chat" replace /> },
+      { path: "chat", Component: ChatPage },          // 비로그인 접근 가능
       {
-        Component: Layout,
+        element: <PrivateRoute />,                    // 로그인 필요
         children: [
-          { index: true, element: <Navigate to="/chat" replace /> },
-          { path: "chat", Component: ChatPage },
           { path: "analysis", Component: AnalysisPage },
           { path: "wishlist", Component: WishlistPage },
           { path: "wishlist/:id", Component: WishlistDetailPage },

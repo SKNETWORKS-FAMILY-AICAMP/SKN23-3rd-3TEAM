@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from db.schemas import UserCreate, UserUpdate, UserResponse, EmailSendRequest, EmailVerifyRequest, PasswordResetRequest
 from services import user_service
+from services import auth_service
 from services import email_service
 from .deps import get_current_user_id, create_access_token
 
@@ -87,7 +88,7 @@ def signup(body: SignupRequest):
             privacy_agreed = body.privacy_agreed,
         )
         user = user_service.create_user(user_data)
-        user_service.register_local_auth(user.user_id, user.email, body.password)
+        auth_service.register_local_auth(user.user_id, user.email, body.password)
         return _to_response(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -104,7 +105,7 @@ def login(body: LoginRequest):
         { "email": "test@test.com", "password": "pass1234!" }
     """
     try:
-        user = user_service.login_local(body.email, body.password)
+        user = auth_service.login_local(body.email, body.password)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
@@ -230,7 +231,7 @@ def reset_password(body: PasswordResetRequest):
         raise HTTPException(status_code=400, detail="이메일 인증 코드가 유효하지 않거나 만료되었습니다.")
 
     try:
-        user_service.reset_password(body.email, body.new_password)
+        auth_service.reset_password(body.email, body.new_password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"message": "비밀번호가 변경되었습니다."}

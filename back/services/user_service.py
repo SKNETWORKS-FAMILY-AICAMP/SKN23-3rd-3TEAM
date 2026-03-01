@@ -1,43 +1,24 @@
 """
 user_service.py
 ─────────────────────────────────────────────────────────────
-목적  : 사용자 관련 비즈니스 로직 담당
+목적  : 사용자 데이터 관리 비즈니스 로직 담당
 역할  :
-    1. 회원가입 (local / 소셜)
-    2. 로그인 (local 비밀번호 검증)
-    3. 사용자 조회 (user_id / email)
-    4. 프로필 수정 (닉네임, 피부정보, S3 이미지 URL 등)
-    5. 회원 탈퇴 (soft delete)
-    6. 닉네임 / 이메일 중복 확인
+    1. 회원 생성
+    2. 사용자 조회 (user_id / email)
+    3. 프로필 수정 (닉네임, 피부정보, S3 이미지 URL 등)
+    4. 회원 탈퇴 (soft delete)
+    5. 이메일 / 닉네임 중복 확인
 
-흐름:
-    FastAPI 라우터 → user_service 함수 호출
-                    → db_manager 헬퍼로 DB 접근
-                    → models.User 로 변환 후 반환
+인증/로그인 관련 로직은 auth_service.py에서 담당
 ─────────────────────────────────────────────────────────────
 """
 
-import bcrypt
 from datetime import datetime
 from typing import Optional
 
-from db.db_manager import execute_one, execute_write, execute_query
-from db.models import User, AuthProvider
-from db.schemas import UserCreate, UserUpdate, AuthProviderCreate
-
-
-# ─────────────────────────────────────────────
-# 내부 헬퍼
-# ─────────────────────────────────────────────
-
-def _hash_password(plain_password: str) -> str:
-    """ 평문 비밀번호 → bcrypt 해시 변환 """
-    return bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-def _verify_password(plain_password: str, hashed: str) -> bool:
-    """ 평문 비밀번호와 해시 일치 여부 확인 """
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed.encode("utf-8"))
+from db.db_manager import execute_one, execute_write
+from db.models import User
+from db.schemas import UserCreate, UserUpdate
 
 
 # ─────────────────────────────────────────────
@@ -77,7 +58,7 @@ def is_nickname_taken(nickname: str) -> bool:
 
 
 # ─────────────────────────────────────────────
-# 2. 회원가입
+# 2. 회원 생성
 # ─────────────────────────────────────────────
 
 def create_user(data: UserCreate) -> User:
@@ -85,14 +66,15 @@ def create_user(data: UserCreate) -> User:
     신규 회원 생성.
     - 이메일/닉네임 중복 시 예외 발생
     - users 테이블에 INSERT 후 생성된 User 반환
+    - 로그인 수단 등록은 auth_service.register_local_auth() 에서 처리
 
     사용 예시:
         user = create_user(UserCreate(
-            email="test@test.com",
-            name="홍길동",
-            nickname="길동이",
-            terms_agreed=True,
-            privacy_agreed=True
+            email          = "test@test.com",
+            name           = "홍길동",
+            nickname       = "길동이",
+            terms_agreed   = True,
+            privacy_agreed = True,
         ))
     """
     if is_email_taken(data.email):
@@ -110,102 +92,8 @@ def create_user(data: UserCreate) -> User:
     return get_user_by_id(user_id)
 
 
-def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthProvider:
-    """
-    local 로그인 수단 등록.
-    - 비밀번호를 bcrypt로 해시 후 auth_providers에 INSERT
-    - create_user() 호출 직후 함께 사용
-
-    사용 예시:
-        user = create_user(data)
-        auth = register_local_auth(user.user_id, user.email, "plain_password_123")
-    """
-    hashed = _hash_password(plain_password)
-    auth_data = AuthProviderCreate(
-        user_id       = user_id,
-        provider_type = "local",
-        provider_id   = email,
-        password_hash = hashed,
-    )
-    auth_id = execute_write(
-        """
-        INSERT INTO auth_providers (user_id, provider_type, provider_id, password_hash)
-        VALUES (%s, %s, %s, %s)
-        """,
-        (auth_data.user_id, auth_data.provider_type, auth_data.provider_id, auth_data.password_hash)
-    )
-    row = execute_one(
-        "SELECT * FROM auth_providers WHERE auth_id = %s",
-        (auth_id,)
-    )
-    return AuthProvider.from_dict(row)
-
-
-def register_social_auth(user_id: int, provider_type: str, provider_id: str) -> AuthProvider:
-    """
-    소셜 로그인 수단 등록 (google / kakao).
-    - 이미 연결된 소셜 계정이면 예외 발생
-
-    사용 예시:
-        auth = register_social_auth(user.user_id, "google", "google_uid_abc123")
-    """
-    existing = execute_one(
-        "SELECT auth_id FROM auth_providers WHERE provider_type = %s AND provider_id = %s",
-        (provider_type, provider_id)
-    )
-    if existing:
-        raise ValueError(f"이미 연결된 {provider_type} 계정입니다.")
-
-    auth_id = execute_write(
-        """
-        INSERT INTO auth_providers (user_id, provider_type, provider_id)
-        VALUES (%s, %s, %s)
-        """,
-        (user_id, provider_type, provider_id)
-    )
-    row = execute_one(
-        "SELECT * FROM auth_providers WHERE auth_id = %s",
-        (auth_id,)
-    )
-    return AuthProvider.from_dict(row)
-
-
 # ─────────────────────────────────────────────
-# 3. 로그인
-# ─────────────────────────────────────────────
-
-def login_local(email: str, plain_password: str) -> User:
-    """
-    local 이메일/비밀번호 로그인.
-    - 이메일 미존재, 비밀번호 불일치, 계정 비활성 시 예외 발생
-    - 성공 시 User 반환 (JWT 발급은 라우터에서 처리)
-
-    사용 예시:
-        user = login_local("test@test.com", "plain_password_123")
-    """
-    user = get_user_by_email(email)
-    if not user:
-        raise ValueError("존재하지 않는 이메일입니다.")
-    if not user.is_active:
-        raise ValueError("비활성화된 계정입니다.")
-
-    auth_row = execute_one(
-        """
-        SELECT password_hash FROM auth_providers
-        WHERE user_id = %s AND provider_type = 'local'
-        """,
-        (user.user_id,)
-    )
-    if not auth_row:
-        raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
-    if not _verify_password(plain_password, auth_row["password_hash"]):
-        raise ValueError("비밀번호가 일치하지 않습니다.")
-
-    return user
-
-
-# ─────────────────────────────────────────────
-# 4. 사용자 조회
+# 3. 사용자 조회
 # ─────────────────────────────────────────────
 
 def get_user_by_id(user_id: int) -> Optional[User]:
@@ -239,7 +127,7 @@ def get_user_by_email(email: str) -> Optional[User]:
 
 
 # ─────────────────────────────────────────────
-# 5. 프로필 수정
+# 4. 프로필 수정
 # ─────────────────────────────────────────────
 
 def update_user(user_id: int, data: UserUpdate) -> User:
@@ -251,16 +139,13 @@ def update_user(user_id: int, data: UserUpdate) -> User:
     사용 예시:
         updated = update_user(1, UserUpdate(nickname="새닉네임", age=25))
     """
-    # 수정할 필드만 추출 (None 제외)
     fields = {k: v for k, v in data.model_dump().items() if v is not None}
     if not fields:
         raise ValueError("수정할 내용이 없습니다.")
 
-    # 닉네임 변경 시 중복 확인
     if "nickname" in fields and is_nickname_taken(fields["nickname"]):
         raise ValueError("이미 사용 중인 닉네임입니다.")
 
-    # 동적 UPDATE 쿼리 생성
     set_clause = ", ".join([f"{key} = %s" for key in fields])
     values = tuple(fields.values()) + (user_id,)
 
@@ -272,7 +157,7 @@ def update_user(user_id: int, data: UserUpdate) -> User:
 
 
 # ─────────────────────────────────────────────
-# 6. 회원 탈퇴
+# 5. 회원 탈퇴
 # ─────────────────────────────────────────────
 
 def delete_user(user_id: int) -> bool:

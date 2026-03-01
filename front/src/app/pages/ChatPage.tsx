@@ -1,5 +1,6 @@
-import { useLocation } from "react-router";
+import { useLocation, Link } from "react-router";
 import { Bot } from "@/app/components/ui/bot";
+import defaultProfile from "@/assets/profile.png"
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import logoTextWebm from "@/assets/animations/logo_text.webm";
@@ -14,11 +15,13 @@ import {
   HelpCircle,
   ImagePlus,
   ChevronDown,
+  Lock,
 } from "lucide-react";
 import {
   createChatRoom,
   fetchMessages,
   sendMessage,
+  sendGuestMessage,
   type ChatMessage,
 } from "@/app/api/chatApi";
 import { uploadImage } from "@/app/api/uploadApi";
@@ -225,10 +228,20 @@ export function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const isLoggedIn = !!localStorage.getItem("access_token");
+
   // 새 채팅 전용 state
   const [analysisType, setAnalysisType] = useState<AnalysisType>("default");
   const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>([]);
   const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
+  const [showAnalysisToast, setShowAnalysisToast] = useState(false);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerAnalysisToast = () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setShowAnalysisToast(true);
+    toastTimerRef.current = setTimeout(() => setShowAnalysisToast(false), 3000);
+  };
 
   // 기존 채팅 전용 state
   const [isDragging, setIsDragging] = useState(false);
@@ -302,28 +315,40 @@ export function ChatPage() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     try {
-      // 1. 이미지 파일들을 S3에 업로드하여 실제 URL 획득
-      let s3Urls: string[] = [];
-      if (slotFiles.length > 0) {
-        s3Urls = await Promise.all(slotFiles.map((file) => uploadImage(file, currentAnalysisType)));
-      }
+      if (!isLoggedIn) {
+        // 비로그인: 게스트 엔드포인트 사용 (DB 저장 없음)
+        const result = await sendGuestMessage(trimmedInput);
+        const aiMsg: Message = {
+          id     : Date.now() + 1,
+          role   : "bot",
+          content: result.content,
+          time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        // 1. 이미지 파일들을 S3에 업로드하여 실제 URL 획득
+        let s3Urls: string[] = [];
+        if (slotFiles.length > 0) {
+          s3Urls = await Promise.all(slotFiles.map((file) => uploadImage(file, currentAnalysisType)));
+        }
 
-      // 2. 채팅방이 없으면 먼저 생성
-      let roomId = chatRoomId;
-      if (roomId === null) {
-        const room = await createChatRoom();
-        roomId = room.chat_room_id;
-        setChatRoomId(roomId);
-      }
+        // 2. 채팅방이 없으면 먼저 생성
+        let roomId = chatRoomId;
+        if (roomId === null) {
+          const room = await createChatRoom();
+          roomId = room.chat_room_id;
+          setChatRoomId(roomId);
+        }
 
-      // 3. 메시지 전송 (S3 URL 포함)
-      const result = await sendMessage(roomId, {
-        content   : userMsg.content,
-        model_type: currentAnalysisType,
-        image_url : s3Urls.length > 0 ? s3Urls : undefined,
-      });
-      const aiMsg = result.find((m) => m.role === "assistant");
-      if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
+        // 3. 메시지 전송 (S3 URL 포함)
+        const result = await sendMessage(roomId, {
+          content   : userMsg.content,
+          model_type: currentAnalysisType,
+          image_url : s3Urls.length > 0 ? s3Urls : undefined,
+        });
+        const aiMsg = result.find((m) => m.role === "assistant");
+        if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
+      }
     } catch (err) {
       console.error("메시지 전송 실패:", err);
     } finally {
@@ -482,7 +507,7 @@ export function ChatPage() {
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
                       <img
-                        src="https://images.unsplash.com/photo-1634469875582-a0885fc2f589?w=40&h=40&fit=crop"
+                        src={defaultProfile}
                         alt="User"
                         className="w-full h-full object-cover"
                       />
@@ -556,53 +581,67 @@ export function ChatPage() {
 
           {/* 분석 유형 선택 */}
           <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                analysisType !== "default"
-                  ? "border-[#84C13D] text-[#4A7A1E] bg-[#E8F5D0]"
-                  : "border-gray-200 text-gray-500 bg-white hover:border-[#84C13D]"
-              }`}
-            >
-              <span className="whitespace-nowrap">
-                {ANALYSIS_OPTIONS.find((o) => o.value === analysisType)?.label}
-              </span>
-              <ChevronDown className="w-3 h-3" />
-            </button>
-            <AnimatePresence>
-              {analysisDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute bottom-full right-0 mb-2 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+            {isLoggedIn ? (
+              /* 로그인 상태 — 정상 동작 */
+              <>
+                <button
+                  onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                    analysisType !== "default"
+                      ? "border-[#84C13D] text-[#4A7A1E] bg-[#E8F5D0]"
+                      : "border-gray-200 text-gray-500 bg-white hover:border-[#84C13D]"
+                  }`}
                 >
-                  {ANALYSIS_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                        analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                  <span className="whitespace-nowrap">
+                    {ANALYSIS_OPTIONS.find((o) => o.value === analysisType)?.label}
+                  </span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                <AnimatePresence>
+                  {analysisDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute bottom-full right-0 mb-2 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
                     >
-                      <span>{opt.label}</span>
-                      {opt.value !== "default" && (
-                        <p className="text-[10px] text-gray-400 mt-0.5">{ANALYSIS_HINTS[opt.value]}</p>
-                      )}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      {ANALYSIS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
+                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
+                            analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {opt.value !== "default" && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">{ANALYSIS_HINTS[opt.value]}</p>
+                          )}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            ) : (
+              /* 비로그인 상태 — 잠금 버튼 (클릭 시 토스트) */
+              <button
+                onClick={triggerAnalysisToast}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-400 bg-white cursor-pointer"
+              >
+                <Lock className="w-3 h-3" />
+                <span className="whitespace-nowrap">분석 선택</span>
+              </button>
+            )}
           </div>
-
+          {/* 전송 버튼 */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <motion.button
               onClick={handleSend}
               disabled={!canSend}
               whileTap={{ scale: 0.9 }}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer"
               style={{
                 background: canSend ? "#84C13D" : "#E5E7EB",
               }}
@@ -616,6 +655,33 @@ export function ChatPage() {
           Enter 전송 · Shift+Enter 줄바꿈
         </p>
       </div>
+
+      {/* 분석 기능 로그인 안내 토스트 */}
+      <AnimatePresence>
+        {showAnalysisToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
+            style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
+          >
+            <Lock className="w-4 h-4 flex-shrink-0" style={{ color: "#84C13D" }} />
+            <span className="flex-1 text-xs leading-relaxed">
+              분석 기능은 <strong>회원 전용</strong> 기능입니다.
+            </span>
+            <Link
+              to="/login"
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: "#84C13D", color: "white" }}
+              onClick={() => setShowAnalysisToast(false)}
+            >
+              로그인
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 이미지 확대 모달 (공통) */}
       <AnimatePresence>

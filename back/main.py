@@ -23,6 +23,7 @@ from routers.chat_router     import router as chat_router
 from routers.analysis_router import router as analysis_router
 from routers.wishlist_router import router as wishlist_router
 from routers.upload_router   import router as upload_router
+from routers.keyword_router  import router as keyword_router
 
 load_dotenv()
 
@@ -78,6 +79,7 @@ app.include_router(chat_router)      # /chats/...
 app.include_router(analysis_router)  # /analysis/...
 app.include_router(wishlist_router)  # /wishlist/...
 app.include_router(upload_router)    # /upload
+app.include_router(keyword_router)   # /keywords
 
 
 # ─────────────────────────────────────────────

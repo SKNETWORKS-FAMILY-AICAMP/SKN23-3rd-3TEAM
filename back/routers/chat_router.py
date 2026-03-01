@@ -2,10 +2,11 @@
 chat_router.py
 ─────────────────────────────────────────────────────────────
 엔드포인트 목록:
-    POST   /chats                       채팅방 생성
-    GET    /chats                       내 채팅방 목록 조회
-    GET    /chats/{chat_room_id}        채팅방 단건 조회
-    DELETE /chats/{chat_room_id}        채팅방 삭제 (soft delete)
+    POST   /chats                           채팅방 생성
+    GET    /chats                           내 채팅방 목록 조회
+    GET    /chats/{chat_room_id}            채팅방 단건 조회
+    DELETE /chats/{chat_room_id}            채팅방 삭제 (soft delete)
+    POST   /chats/guest/message             비로그인 텍스트 채팅 (DB 저장 없음)
     POST   /chats/{chat_room_id}/messages   메시지 전송 (AI 응답 포함)
     GET    /chats/{chat_room_id}/messages   채팅 히스토리 조회
 ─────────────────────────────────────────────────────────────
@@ -13,6 +14,7 @@ chat_router.py
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
+from pydantic import BaseModel
 
 from db.schemas import (
     ChatRoomCreate, ChatRoomResponse,
@@ -89,6 +91,33 @@ def delete_chat_room(chat_room_id: int, user_id: int = Depends(get_current_user_
     if room.user_id != user_id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
     chat_service.delete_chat_room(chat_room_id)
+
+
+# ─────────────────────────────────────────────
+# 비로그인 게스트 채팅 (DB 저장 없음)
+# ─────────────────────────────────────────────
+
+class GuestMessageRequest(BaseModel):
+    content: str
+
+class GuestMessageResponse(BaseModel):
+    role   : str
+    content: str
+
+@router.post("/guest/message", response_model=GuestMessageResponse)
+def guest_message(body: GuestMessageRequest):
+    """
+    비로그인 사용자 텍스트 채팅.
+    인증 불필요, DB 저장 없음. 텍스트 입력만 허용.
+
+    프론트 요청 예시:
+        POST /chats/guest/message
+        { "content": "건성 피부에 맞는 수분크림 추천해줘" }
+    응답:
+        { "role": "assistant", "content": "세라마이드가 풍부한..." }
+    """
+    ai_response_text = "[AI 응답 예시] 건성 피부에는 세라마이드 함유 보습크림을 추천드립니다."
+    return GuestMessageResponse(role="assistant", content=ai_response_text)
 
 
 # ─────────────────────────────────────────────

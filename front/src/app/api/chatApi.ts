@@ -8,6 +8,7 @@
  *   POST   /chats                           → createChatRoom()
  *   GET    /chats/{chat_room_id}/messages   → fetchMessages()
  *   POST   /chats/{chat_room_id}/messages   → sendMessage()
+ *   POST   /chats/guest/message             → sendGuestMessage()  (비로그인 전용)
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -22,6 +23,11 @@ function getToken(): string {
 // ─────────────────────────────────────────────
 // 타입 정의 (back/db/schemas.py 대응)
 // ─────────────────────────────────────────────
+
+export interface GuestMessageResponse {
+  role   : string;
+  content: string;
+}
 
 export interface ChatRoom {
   chat_room_id : number;
@@ -88,6 +94,23 @@ export async function fetchMessages(chatRoomId: number): Promise<ChatMessage[]> 
     throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
   }
   return res.json() as Promise<ChatMessage[]>;
+}
+
+/**
+ * 비로그인 사용자 텍스트 채팅 (DB 저장 없음, 인증 불필요).
+ * back: POST /chats/guest/message
+ */
+export async function sendGuestMessage(content: string): Promise<GuestMessageResponse> {
+  const res = await fetch(`${API_BASE}/chats/guest/message`, {
+    method  : "POST",
+    headers : { "Content-Type": "application/json" },
+    body    : JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+  }
+  return res.json() as Promise<GuestMessageResponse>;
 }
 
 /**

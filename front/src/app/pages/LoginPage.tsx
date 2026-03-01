@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
 import logoIdle from "@/assets/animations/logo_idle_1.webm";
-import { login } from "@/app/api/userApi";
+import { login } from "@/app/api/authApi";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export function LoginPage() {
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-7">
-          <h2 className="text-gray-900 font-semibold mb-6">로그인</h2>
+          <h2 className="text-gray-900 font-semibold mb-6 text-center">로그인</h2>
 
           {/* 에러 메시지 */}
           {error && (

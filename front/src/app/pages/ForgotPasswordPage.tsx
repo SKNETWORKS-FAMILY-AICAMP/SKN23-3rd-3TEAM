@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
-import { Leaf, Mail, Eye, EyeOff, Check, ChevronLeft, AlertCircle } from "lucide-react";
+import { Leaf, Mail, Eye, EyeOff, Check, ChevronLeft, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import * as authApi from "../api/authApi";
 
-const STEPS = ["이메일 인증", "비밀번호 재설정", "완료"];
+const TIMER_SECONDS = 600; // 10분
 
 function PasswordStrengthBar({ password }: { password: string }) {
   const checks = [
@@ -35,51 +36,122 @@ function PasswordStrengthBar({ password }: { password: string }) {
   );
 }
 
+/** 초 → "M:SS" 포맷 */
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+
+  // 이메일 / 코드
   const [email, setEmail] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
+
+  // 새 비밀번호
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // 로딩 / 에러
+  const [isSending, setIsSending] = useState(false);   // 발송 버튼
+  const [isLoading, setIsLoading] = useState(false);    // 확인·재설정 버튼
+  const [sendError, setSendError] = useState("");
   const [codeError, setCodeError] = useState("");
+  const [resetError, setResetError] = useState("");
 
-  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
-  const isNewPasswordValid = newPassword.length >= 8 && /[a-zA-Z]/.test(newPassword) && /[0-9]/.test(newPassword);
-  const canReset = isNewPasswordValid && passwordsMatch;
+  // 카운트다운 타이머
+  const [timeLeft, setTimeLeft] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleSendCode = async () => {
-    if (!email) return;
-    setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setCodeSent(true);
-    setIsLoading(false);
+  /** 타이머 시작 (재발송 시에도 재호출) */
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimeLeft(TIMER_SECONDS);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
   };
 
+  // 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
+  const isNewPasswordValid =
+    newPassword.length >= 8 &&
+    /[a-zA-Z]/.test(newPassword) &&
+    /[0-9]/.test(newPassword);
+  const canReset = isNewPasswordValid && passwordsMatch;
+
+  /** 인증 코드 발송 */
+  const handleSendCode = async () => {
+    if (!email) return;
+    setSendError("");
+    setIsSending(true);
+    try {
+      await authApi.sendEmailCode(email);
+      setCodeSent(true);
+      setCode("");
+      setCodeError("");
+      startTimer();
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : "발송에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  /** 인증 코드 확인 */
   const handleVerifyCode = async () => {
     setCodeError("");
-    if (code.length < 4) {
-      setCodeError("올바른 인증 코드를 입력해주세요");
+    if (code.length < 6) {
+      setCodeError("6자리 인증 코드를 입력해주세요");
       return;
     }
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setCodeVerified(true);
-    setIsLoading(false);
-    setStep(1);
+    try {
+      const valid = await authApi.verifyEmailCode(email, code);
+      if (valid) {
+        setCodeVerified(true);
+        if (timerRef.current) clearInterval(timerRef.current);
+        setStep(1);
+      } else {
+        setCodeError("인증 코드가 올바르지 않거나 만료되었습니다.");
+      }
+    } catch (e) {
+      setCodeError(e instanceof Error ? e.message : "확인에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  /** 비밀번호 재설정 */
   const handleResetPassword = async () => {
     if (!canReset) return;
+    setResetError("");
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsLoading(false);
-    setStep(2);
+    try {
+      await authApi.resetPassword(email, code, newPassword);
+      setStep(2);
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : "재설정에 실패했습니다. 처음부터 다시 시도해 주세요.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -116,6 +188,7 @@ export function ForgotPasswordPage() {
           </div>
 
           <AnimatePresence mode="wait">
+            {/* ── Step 0: 이메일 인증 ── */}
             {step === 0 && (
               <motion.div
                 key="step0"
@@ -128,93 +201,145 @@ export function ForgotPasswordPage() {
                   가입한 이메일을 입력하시면 인증 코드를 보내드립니다.
                 </p>
 
+                {/* 이메일 입력 + 발송 버튼 */}
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1.5">이메일</label>
                   <div className="flex gap-2">
                     <input
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setSendError("");
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && !codeSent && handleSendCode()}
                       placeholder="가입한 이메일 주소"
-                      disabled={codeSent && codeVerified}
-                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] transition-all"
+                      disabled={codeVerified}
+                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] transition-all disabled:opacity-60"
                     />
                     <button
                       onClick={handleSendCode}
-                      disabled={!email || isLoading}
-                      className="px-3 py-3 rounded-xl text-xs font-semibold text-white whitespace-nowrap disabled:opacity-50 min-w-[72px]"
+                      disabled={!email || isSending || codeVerified}
+                      className="px-3 py-3 rounded-xl text-xs font-semibold text-white whitespace-nowrap disabled:opacity-50 min-w-[72px] transition-all"
                       style={{ background: "#84C13D" }}
                     >
-                      {isLoading ? (
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+                      {isSending ? (
+                        <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                       ) : codeSent ? "재발송" : "발송"}
                     </button>
                   </div>
+
+                  {/* 발송 에러 */}
+                  {sendError && (
+                    <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1.5">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" />{sendError}
+                    </p>
+                  )}
                 </div>
 
+                {/* ── 코드 입력 영역 (발송 후 표시) ── */}
                 <AnimatePresence>
                   {codeSent && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
-                      className="space-y-2"
+                      className="space-y-2 overflow-hidden"
                     >
+                      {/* 발송 확인 배너 */}
                       <div className="flex items-center gap-1.5 text-xs text-[#84C13D] bg-[#E8F5D0] px-3 py-2 rounded-xl">
-                        <Mail className="w-3.5 h-3.5" />
-                        {email}로 인증 코드가 발송되었습니다
+                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>
+                          <span className="font-semibold">{email}</span>로 인증 코드가 발송되었습니다
+                        </span>
                       </div>
+
                       <div>
                         <label className="text-xs font-medium text-gray-500 block mb-1.5">인증 코드</label>
                         <input
                           value={code}
-                          onChange={(e) => { setCode(e.target.value); setCodeError(""); }}
+                          onChange={(e) => {
+                            setCode(e.target.value.replace(/\D/g, ""));
+                            setCodeError("");
+                          }}
+                          onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
                           placeholder="6자리 인증 코드 입력"
                           maxLength={6}
-                          className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all ${
-                            codeError ? "border-red-300" : "border-gray-200 focus:border-[#84C13D]"
+                          inputMode="numeric"
+                          className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all tracking-widest font-mono ${
+                            codeError
+                              ? "border-red-300 focus:border-red-400"
+                              : "border-gray-200 focus:border-[#84C13D]"
                           }`}
                         />
+
+                        {/* 코드 에러 */}
                         {codeError && (
                           <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
-                            <AlertCircle className="w-3 h-3" />{codeError}
+                            <AlertCircle className="w-3 h-3 flex-shrink-0" />{codeError}
                           </p>
                         )}
-                        <p className="text-[11px] text-gray-400 mt-1">
-                          코드 유효 시간: <span className="font-medium text-[#84C13D]">4:59</span>
-                        </p>
+
+                        {/* 카운트다운 */}
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-[11px] text-gray-400">
+                            코드 유효 시간:{" "}
+                            <span
+                              className="font-semibold"
+                              style={{ color: timeLeft > 60 ? "#84C13D" : "#EF4444" }}
+                            >
+                              {timeLeft > 0 ? formatTime(timeLeft) : "만료됨"}
+                            </span>
+                          </p>
+                          {timeLeft === 0 && (
+                            <button
+                              onClick={handleSendCode}
+                              disabled={isSending}
+                              className="text-[11px] text-[#84C13D] font-medium hover:underline disabled:opacity-50"
+                            >
+                              재발송
+                            </button>
+                          )}
+                        </div>
                       </div>
+
+                      {/* 코드 확인 버튼 */}
                       <button
                         onClick={handleVerifyCode}
-                        disabled={!code || isLoading}
+                        disabled={!code || isLoading || timeLeft === 0}
                         className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
                         style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
                       >
                         {isLoading ? (
                           <span className="flex items-center justify-center gap-2">
-                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" />
                             확인 중...
                           </span>
-                        ) : (
-                          "인증 코드 확인"
-                        )}
+                        ) : "인증 코드 확인"}
                       </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
+                {/* 최초 발송 버튼 (코드 미발송 상태) */}
                 {!codeSent && (
                   <button
                     onClick={handleSendCode}
-                    disabled={!email || isLoading}
+                    disabled={!email || isSending}
                     className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
                     style={email ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
                   >
-                    인증 코드 발송
+                    {isSending ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        발송 중...
+                      </span>
+                    ) : "인증 코드 발송"}
                   </button>
                 )}
               </motion.div>
             )}
 
+            {/* ── Step 1: 새 비밀번호 설정 ── */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -283,6 +408,14 @@ export function ForgotPasswordPage() {
                   )}
                 </div>
 
+                {/* 재설정 에러 */}
+                {resetError && (
+                  <div className="flex items-center gap-2 text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {resetError}
+                  </div>
+                )}
+
                 <button
                   onClick={handleResetPassword}
                   disabled={!canReset || isLoading}
@@ -291,16 +424,15 @@ export function ForgotPasswordPage() {
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       저장 중...
                     </span>
-                  ) : (
-                    "비밀번호 재설정"
-                  )}
+                  ) : "비밀번호 재설정"}
                 </button>
               </motion.div>
             )}
 
+            {/* ── Step 2: 완료 ── */}
             {step === 2 && (
               <motion.div
                 key="step2"

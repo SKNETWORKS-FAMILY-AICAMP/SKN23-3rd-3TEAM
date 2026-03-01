@@ -50,6 +50,10 @@ KAKAO_CLIENT_ID      = os.getenv("KAKAO_CLIENT_ID")
 KAKAO_CLIENT_SECRET  = os.getenv("KAKAO_CLIENT_SECRET")
 KAKAO_REDIRECT_URI   = os.getenv("KAKAO_REDIRECT_URI")
 
+NAVER_CLIENT_ID      = os.getenv("NAVER_CLIENT_ID")
+NAVER_CLIENT_SECRET  = os.getenv("NAVER_CLIENT_SECRET")
+NAVER_REDIRECT_URI   = os.getenv("NAVER_REDIRECT_URI")
+
 
 # ─────────────────────────────────────────────
 # 1. 비밀번호 헬퍼
@@ -205,7 +209,7 @@ async def google_callback(code: str) -> dict:
             raise ValueError("Google 사용자 정보 조회 실패")
 
     # 3. 신규/기존 유저 처리
-    user = _get_or_create_social_user(
+    user, is_new = _get_or_create_social_user(
         provider_type = "google",
         provider_id   = provider_id,
         email         = email,
@@ -214,7 +218,7 @@ async def google_callback(code: str) -> dict:
 
     # 4. JWT 발급 (deps.py 사용)
     token = create_access_token(user.user_id)
-    return {"access_token": token, "token_type": "bearer", "user": user}
+    return {"access_token": token, "token_type": "bearer", "user": user, "is_new": is_new}
 
 
 # ─────────────────────────────────────────────
@@ -286,7 +290,7 @@ async def kakao_callback(code: str) -> dict:
             raise ValueError("Kakao 사용자 정보 조회 실패 (이메일 동의 필요)")
 
     # 3. 신규/기존 유저 처리
-    user = _get_or_create_social_user(
+    user, is_new = _get_or_create_social_user(
         provider_type = "kakao",
         provider_id   = provider_id,
         email         = email,
@@ -295,11 +299,96 @@ async def kakao_callback(code: str) -> dict:
 
     # 4. JWT 발급 (deps.py 사용)
     token = create_access_token(user.user_id)
-    return {"access_token": token, "token_type": "bearer", "user": user}
+    return {"access_token": token, "token_type": "bearer", "user": user, "is_new": is_new}
 
 
 # ─────────────────────────────────────────────
-# 5. 소셜 로그인 공통 헬퍼
+# 5. Naver 소셜 로그인
+# ─────────────────────────────────────────────
+
+def get_naver_login_url() -> str:
+    """
+    Naver OAuth 인증 URL 생성.
+    - state 파라미터는 CSRF 방지용 임의 문자열 (Naver 필수 요구)
+    - 프론트에서 이 URL로 리디렉션하면 네이버 로그인 화면으로 이동
+
+    사용 예시:
+        url = get_naver_login_url()
+        return RedirectResponse(url)
+    """
+    import secrets
+    state = secrets.token_urlsafe(16)
+    return (
+        "https://nid.naver.com/oauth2.0/authorize"
+        f"?client_id={NAVER_CLIENT_ID}"
+        f"&redirect_uri={NAVER_REDIRECT_URI}"
+        "&response_type=code"
+        f"&state={state}"
+    )
+
+
+async def naver_callback(code: str, state: str) -> dict:
+    """
+    Naver 인증 콜백 처리.
+    1. code + state → access_token 교환
+    2. access_token → Naver 사용자 정보 조회
+    3. 신규 유저면 자동 회원가입 + 소셜 로그인 수단 등록
+       기존 유저면 로그인 처리
+    4. JWT 발급 후 반환
+
+    사용 예시:
+        result = await naver_callback(code, state)
+        token  = result["access_token"]
+        user   = result["user"]
+    """
+    async with httpx.AsyncClient() as client:
+
+        # 1. code → access_token 교환
+        token_res = await client.get(
+            "https://nid.naver.com/oauth2.0/token",
+            params={
+                "grant_type"    : "authorization_code",
+                "client_id"     : NAVER_CLIENT_ID,
+                "client_secret" : NAVER_CLIENT_SECRET,
+                "redirect_uri"  : NAVER_REDIRECT_URI,
+                "code"          : code,
+                "state"         : state,
+            }
+        )
+        token_data   = token_res.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise ValueError(f"Naver access_token 발급 실패: {token_data}")
+
+        # 2. access_token → Naver 사용자 정보 조회
+        user_res = await client.get(
+            "https://openapi.naver.com/v1/nid/me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        user_info   = user_res.json()
+        response    = user_info.get("response", {})
+        provider_id = str(response.get("id", ""))
+        email       = response.get("email")
+        name        = response.get("name", "")
+
+        if not provider_id or not email:
+            raise ValueError("Naver 사용자 정보 조회 실패 (이메일 동의 필요)")
+
+    # 3. 신규/기존 유저 처리
+    user, is_new = _get_or_create_social_user(
+        provider_type = "naver",
+        provider_id   = provider_id,
+        email         = email,
+        name          = name,
+    )
+
+    # 4. JWT 발급 (deps.py 사용)
+    token = create_access_token(user.user_id)
+    return {"access_token": token, "token_type": "bearer", "user": user, "is_new": is_new}
+
+
+# ─────────────────────────────────────────────
+# 6. 소셜 로그인 공통 헬퍼
 # ─────────────────────────────────────────────
 
 def _get_or_create_social_user(
@@ -307,12 +396,12 @@ def _get_or_create_social_user(
     provider_id   : str,
     email         : str,
     name          : str,
-) -> User:
+) -> tuple[User, bool]:
     """
     소셜 로그인 공통 처리.
-    - 이미 해당 소셜 계정으로 가입된 유저 → 바로 반환
-    - 같은 이메일로 가입된 유저 → 소셜 로그인 수단만 추가 연결
-    - 완전 신규 유저 → 자동 회원가입 + 소셜 로그인 수단 등록
+    - 이미 해당 소셜 계정으로 가입된 유저 → (user, False) 반환
+    - 같은 이메일로 가입된 유저 → 소셜 수단 추가 연결 후 (user, False) 반환
+    - 완전 신규 유저 → 자동 회원가입 + 소셜 수단 등록 후 (user, True) 반환
     """
     # 이미 해당 소셜 계정으로 가입된 유저 확인
     auth_row = execute_one(
@@ -323,7 +412,7 @@ def _get_or_create_social_user(
         (provider_type, provider_id)
     )
     if auth_row:
-        return get_user_by_id(auth_row["user_id"])
+        return get_user_by_id(auth_row["user_id"]), False
 
     # 같은 이메일로 가입된 유저 확인 → 소셜 수단만 추가 연결
     existing_user = get_user_by_email(email)
@@ -335,7 +424,7 @@ def _get_or_create_social_user(
             """,
             (existing_user.user_id, provider_type, provider_id)
         )
-        return existing_user
+        return existing_user, False
 
     # 완전 신규 유저 → 자동 회원가입
     # 닉네임 중복 방지를 위해 provider_id 뒤 6자리 붙임
@@ -354,7 +443,7 @@ def _get_or_create_social_user(
         """,
         (user.user_id, provider_type, provider_id)
     )
-    return user
+    return user, True
 
 
 # ─────────────────────────────────────────────

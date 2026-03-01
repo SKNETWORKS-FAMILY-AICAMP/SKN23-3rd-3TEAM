@@ -164,7 +164,7 @@ class MessageCreate(BaseModel):
     """
     chat_room_id : int
     role         : Literal["user", "assistant", "system"]
-    model_type   : Literal["simple", "detailed", "ingredient"]
+    model_type   : Literal["simple", "detailed", "ingredient", "default"] = "default"
     content      : Optional[str]       = None  # 텍스트 메시지
     image_url    : Optional[list[str]] = None  # S3 이미지 URL 배열
 

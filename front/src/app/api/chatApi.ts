@@ -120,7 +120,7 @@ export async function sendGuestMessage(content: string): Promise<GuestMessageRes
  */
 export async function sendMessage(
   chatRoomId : number,
-  body       : { content: string; model_type: string; image_url?: string[] },
+  body       : { content: string; model_type?: string; image_url?: string[] },
 ): Promise<ChatMessage[]> {
   const res = await fetch(`${API_BASE}/chats/${chatRoomId}/messages`, {
     method  : "POST",
@@ -131,7 +131,7 @@ export async function sendMessage(
     body: JSON.stringify({
       chat_room_id : chatRoomId,
       role         : "user",
-      model_type   : body.model_type,
+      ...(body.model_type && { model_type: body.model_type }),
       content      : body.content,
       image_url    : body.image_url ?? null,
     }),

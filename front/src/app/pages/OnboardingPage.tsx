@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Leaf, Check, Plus, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Check, Plus, X, ArrowRight } from "lucide-react";
+import logoIdle from "@/assets/animations/logo_idle_1.webm";
+import { fetchKeywords, updateCurrentUser, type KeywordItem } from "@/app/api/userApi";
 
 const SKIN_TYPES = ["건성", "지성", "복합성", "중성", "민감성"];
-const DEFAULT_CONCERNS = ["수분 부족", "모공 케어", "미백", "탄력", "여드름", "색소침착", "홍조", "주름"];
+const DEFAULT_CONCERNS = ["각질", "건조", "모공", "미백", "민감", "블랙헤드", "아토피", "유분", "장벽", "주름", "트러블", "피지", "흉터"];
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -16,6 +18,14 @@ export function OnboardingPage() {
   const [showAddConcern, setShowAddConcern] = useState(false);
   const [newConcernInput, setNewConcernInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [skinTypeKeywords, setSkinTypeKeywords] = useState<KeywordItem[]>([]);
+
+  // 피부 타입 키워드 ID 매핑용 데이터 로드
+  useEffect(() => {
+    fetchKeywords("skin_type")
+      .then(setSkinTypeKeywords)
+      .catch(() => {}); // 실패해도 진행 가능
+  }, []);
 
   const allConcerns = [...DEFAULT_CONCERNS, ...customConcerns];
 
@@ -45,8 +55,25 @@ export function OnboardingPage() {
   const handleComplete = async () => {
     if (!isValid) return;
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    navigate("/chat");
+    try {
+      // 피부 타입 문자열 → keyword_id 매핑
+      const skinTypeKeyword = skinTypeKeywords.find(
+        (k) => k.label === skinType || k.keyword === skinType
+      );
+
+      await updateCurrentUser({
+        gender      : gender === "여성" ? "female" : "male",
+        age         : Number(age),
+        skin_type   : skinTypeKeyword?.keyword_id ?? null,
+        skin_concern: selectedConcerns.length > 0 ? selectedConcerns.join(",") : null,
+      });
+    } catch (err) {
+      console.error("온보딩 저장 실패:", err);
+      // 저장 실패해도 채팅으로 이동
+    } finally {
+      setIsLoading(false);
+      navigate("/chat");
+    }
   };
 
   return (
@@ -57,29 +84,11 @@ export function OnboardingPage() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-[460px]"
       >
+        <div className="flex items-center justify-center mx-auto mb-3">
+          <video src={logoIdle} autoPlay loop muted playsInline className="w-40 h-auto" />
+        </div>
         {/* Logo + Welcome */}
         <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, ease: "backOut" }}
-            className="relative inline-block mb-4"
-          >
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-xl"
-              style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
-            >
-              <Leaf className="w-8 h-8 text-white" />
-            </div>
-            <motion.div
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-md"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.4, type: "spring" }}
-            >
-              <span className="text-[10px]">👋</span>
-            </motion.div>
-          </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -104,14 +113,14 @@ export function OnboardingPage() {
               성별 <span className="text-[#84C13D]">*</span>
             </label>
             <div className="flex gap-2">
-              {["여성", "남성", "선택 안함"].map((g) => (
+              {["여성", "남성"].map((g) => (
                 <button
                   key={g}
                   onClick={() => setGender(g)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
+                  className={`flex-1 py-3 rounded-xl text-sm font-medium border-2 transition-all duration-200 cursor-pointer ${
                     gender === g ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                   }`}
-                  style={gender === g ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
+                  style={gender === g ? { background: "#84C13D" } : {}}
                 >
                   {g}
                 </button>
@@ -141,9 +150,6 @@ export function OnboardingPage() {
                 placeholder="나이를 입력하세요"
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#84C13D] focus:bg-white transition-all"
               />
-              {age && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">세</span>
-              )}
             </div>
           </motion.div>
 
@@ -168,7 +174,7 @@ export function OnboardingPage() {
                 <button
                   key={type}
                   onClick={() => setSkinType(type)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 flex items-center gap-1.5 ${
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                     skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                   }`}
                   style={skinType === type ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
@@ -188,9 +194,8 @@ export function OnboardingPage() {
           >
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
               피부 고민
-              <span className="ml-1.5 text-[11px] font-normal text-gray-400 normal-case">(선택, 복수 선택 가능)</span>
+              <span className="ml-1.5 text-[11px] font-normal text-gray-400 normal-case">(복수 선택 가능)</span>
             </label>
-            <p className="text-[11px] text-gray-400 mb-2.5">해당하는 피부 고민을 모두 선택해 주세요</p>
             <div className="flex flex-wrap gap-2">
               {allConcerns.map((c) => {
                 const selected = selectedConcerns.includes(c);
@@ -199,7 +204,7 @@ export function OnboardingPage() {
                   <button
                     key={c}
                     onClick={() => toggleConcern(c)}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all flex items-center gap-1.5 ${
+                    className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                       selected ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                     }`}
                     style={selected ? { background: "#84C13D" } : {}}
@@ -219,7 +224,7 @@ export function OnboardingPage() {
               {!showAddConcern && (
                 <button
                   onClick={() => setShowAddConcern(true)}
-                  className="px-3 py-2 rounded-xl text-xs font-medium border-2 border-dashed border-gray-300 text-gray-400 hover:border-[#84C13D] hover:text-[#84C13D] transition-all flex items-center gap-1"
+                  className="px-3 py-2 rounded-xl text-xs font-medium border-2 border-dashed border-gray-300 text-gray-400 hover:border-[#84C13D] hover:text-[#84C13D] transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   직접 입력
@@ -268,7 +273,7 @@ export function OnboardingPage() {
         </div>
 
         {/* Info summary */}
-        {isValid && (
+        {/* {isValid && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -287,7 +292,7 @@ export function OnboardingPage() {
               )}
             </div>
           </motion.div>
-        )}
+        )} */}
 
         {/* CTA */}
         <motion.div
@@ -300,10 +305,10 @@ export function OnboardingPage() {
             onClick={handleComplete}
             disabled={!isValid || isLoading}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-4 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             style={
               isValid
-                ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 20px rgba(133,193,61,0.4)" }
+                ? { background: "#84C13D", boxShadow: "0 4px 20px rgba(133,193,61,0.4)" }
                 : { background: "#D1D5DB" }
             }
           >
@@ -322,7 +327,7 @@ export function OnboardingPage() {
 
           <button
             onClick={() => navigate("/chat")}
-            className="w-full py-3 rounded-2xl text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-full py-3 rounded-2xl text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             나중에 설정할게요
           </button>

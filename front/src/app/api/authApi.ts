@@ -17,6 +17,20 @@ import type { UserResponse } from "./userApi";
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 // ─────────────────────────────────────────────
+// 소셜 로그인
+// ─────────────────────────────────────────────
+
+/**
+ * 소셜 로그인 시작 — 브라우저를 백엔드 OAuth URL로 이동시킨다.
+ * 백엔드가 Google/Kakao 인증 페이지로 리디렉션하고,
+ * 인증 완료 후 /oauth/callback?token=<jwt> 로 돌아온다.
+ * back: GET /auth/{provider}/login
+ */
+export function startSocialLogin(provider: "google" | "kakao" | "naver"): void {
+  window.location.href = `${API_BASE}/auth/${provider}/login`;
+}
+
+// ─────────────────────────────────────────────
 // 타입 정의
 // ─────────────────────────────────────────────
 

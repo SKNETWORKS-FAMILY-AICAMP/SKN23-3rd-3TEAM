@@ -7,6 +7,7 @@ import logoTextWebm from "@/assets/animations/logo_text.webm";
 import loadingWebm from "@/assets/animations/logo_loop_1.webm";
 import infoImg1 from "@/assets/info_1.png";
 import infoImg2 from "@/assets/info_2.png";
+import ReactMarkdown from 'react-markdown'
 import {
   X,
   Send,
@@ -65,8 +66,8 @@ const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
       return [{ id: "front", label: "얼굴 정면", tooltip: "정면을 바라본 얼굴 사진을 업로드해 주세요. 밝은 자연광 아래에서 촬영하면 더 정확한 분석이 가능합니다.", preview: null, file: null }];
     case "detailed":
       return [
-        { id: "left",  label: "얼굴 좌측", tooltip: "왼쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null, file: null },
         { id: "front", label: "얼굴 정면", tooltip: "정면을 바라본 얼굴 사진을 업로드해 주세요. 눈, 코, 입이 모두 보이도록 촬영해 주세요.",  preview: null, file: null },
+        { id: "left",  label: "얼굴 좌측", tooltip: "왼쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null, file: null },
         { id: "right", label: "얼굴 우측", tooltip: "오른쪽 45° 각도에서 촬영한 얼굴 사진을 업로드해 주세요. 귀가 보이도록 촬영하면 좋습니다.", preview: null, file: null },
       ];
     case "ingredient":
@@ -227,6 +228,7 @@ export function ChatPage() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const skipFetchRef = useRef(false); // 새 채팅방 생성 시 불필요한 fetchMessages 방지
 
   const isLoggedIn = !!localStorage.getItem("access_token");
 
@@ -257,6 +259,11 @@ export function ChatPage() {
   useEffect(() => {
     if (chatRoomId === null) {
       setMessages([]);
+      return;
+    }
+    // 새 채팅방 생성 직후(handleSend 중)에는 fetch 건너뜀
+    if (skipFetchRef.current) {
+      skipFetchRef.current = false;
       return;
     }
     setIsLoadingHistory(true);
@@ -334,20 +341,32 @@ export function ChatPage() {
 
         // 2. 채팅방이 없으면 먼저 생성
         let roomId = chatRoomId;
+        const isNewRoom = roomId === null;
         if (roomId === null) {
           const room = await createChatRoom();
           roomId = room.chat_room_id;
+          skipFetchRef.current = true; // fetchMessages useEffect 건너뜀
           setChatRoomId(roomId);
         }
 
         // 3. 메시지 전송 (S3 URL 포함)
         const result = await sendMessage(roomId, {
           content   : userMsg.content,
-          model_type: currentAnalysisType,
+          model_type: currentAnalysisType !== "default" ? currentAnalysisType : undefined,
           image_url : s3Urls.length > 0 ? s3Urls : undefined,
         });
-        const aiMsg = result.find((m) => m.role === "assistant");
-        if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
+
+        if (isNewRoom) {
+          // 새 채팅방: 낙관적 유저 메시지를 API 결과로 교체 (user + bot 모두 포함)
+          setMessages((prev) => {
+            const withoutOptimistic = prev.filter((m) => m.id !== userMsg.id);
+            return [...withoutOptimistic, ...result.map(apiMsgToMessage)];
+          });
+        } else {
+          // 기존 채팅방: 봇 메시지만 추가
+          const aiMsg = result.find((m) => m.role === "assistant");
+          if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
+        }
       }
     } catch (err) {
       console.error("메시지 전송 실패:", err);
@@ -404,17 +423,6 @@ export function ChatPage() {
     }
   };
 
-  const formatContent = (content: string) => {
-    return content.split("\n").map((line, i) => {
-      const boldLine = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-      return (
-        <span key={i}>
-          <span dangerouslySetInnerHTML={{ __html: boldLine }} />
-          {i < content.split("\n").length - 1 && <br />}
-        </span>
-      );
-    });
-  };
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -499,7 +507,27 @@ export function ChatPage() {
                       )}
                       {/* 텍스트 */}
                       <div className="px-4 py-3">
-                        {formatContent(msg.content)}
+                        {msg.role === "bot" ? (
+                          <ReactMarkdown
+                            components={{
+                              p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                              em:     ({ children }) => <em className="italic">{children}</em>,
+                              ul:     ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                              ol:     ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                              li:     ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
+                              h1:     ({ children }) => <h1 className="text-base font-bold mb-2">{children}</h1>,
+                              h2:     ({ children }) => <h2 className="text-sm font-bold mb-1">{children}</h2>,
+                              h3:     ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
+                              code:   ({ children }) => <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>,
+                              hr:     () => <hr className="my-2 border-gray-200" />,
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <span className="whitespace-pre-wrap">{msg.content}</span>
+                        )}
                       </div>
                     </div>
                     <span className="text-[10px] text-gray-400 px-1">{msg.time}</span>

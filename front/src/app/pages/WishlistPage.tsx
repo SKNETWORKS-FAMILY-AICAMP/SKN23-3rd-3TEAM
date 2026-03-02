@@ -1,8 +1,8 @@
-import { Link } from "react-router";
+import { ExternalLink } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import loadingWebm from "@/assets/animations/logo_loop_1.webm";
-import { Heart, Loader2, PackageOpen, Trash2, ChevronRight } from "lucide-react";
+import { Heart, Loader2, PackageOpen, Trash2 } from "lucide-react";
 import { fetchWishlist, removeFromWishlist, type WishlistItem } from "@/app/api/wishlistApi";
 
 /** added_at ISO 문자열 → "YYYY.MM.DD" 형식 변환 */
@@ -100,20 +100,29 @@ export function WishlistPage() {
                   </div>
 
                   {/* 제목 + 추가일 */}
-                  <Link
-                    to={`/wishlist/${item.wish_id}`}
-                    className="flex-1 min-w-0 group"
+                  <a
+                    href={item.product_description ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex-1 min-w-0 group ${item.product_description ? "cursor-pointer" : "cursor-default"}`}
                   >
                     <p className="text-sm font-medium text-gray-800 truncate group-hover:text-[#84C13D] transition-colors">
                       {item.product_name}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">{formatDate(item.added_at)}</p>
-                  </Link>
+                  </a>
 
-                  {/* 상세 이동 화살표 */}
-                  <Link to={`/wishlist/${item.wish_id}`} className="flex-shrink-0 text-gray-300 hover:text-[#84C13D] transition-colors">
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
+                  {/* 외부 링크 이동 아이콘 */}
+                  {item.product_description && (
+                    <a
+                      href={item.product_description}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 text-gray-300 hover:text-[#84C13D] transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
 
                   {/* 삭제 버튼 */}
                   <button

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
-import { Leaf, Mail, Eye, EyeOff, Check, ChevronLeft, AlertCircle, Loader2 } from "lucide-react";
+import logoIdle from "@/assets/animations/logo_idle_1.webm";
+import { Mail, Eye, EyeOff, Check, ChevronLeft, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import * as authApi from "../api/authApi";
 
@@ -162,14 +163,10 @@ export function ForgotPasswordPage() {
         className="w-full max-w-[400px]"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg"
-            style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
-          >
-            <Leaf className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-gray-900 font-bold">SKIN AI</h1>
+        <div className="text-center">
+          <Link to="/chat" className="flex items-center justify-center mx-auto">
+            <video src={logoIdle} autoPlay loop muted playsInline className="w-45 h-auto" />
+          </Link>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-7">
@@ -220,8 +217,7 @@ export function ForgotPasswordPage() {
                     <button
                       onClick={handleSendCode}
                       disabled={!email || isSending || codeVerified}
-                      className="px-3 py-3 rounded-xl text-xs font-semibold text-white whitespace-nowrap disabled:opacity-50 min-w-[72px] transition-all"
-                      style={{ background: "#84C13D" }}
+                      className="px-3 py-3 rounded-xl text-xs font-semibold text-white bg-[#84C13D] whitespace-nowrap disabled:opacity-50 min-w-[72px] transition-all cursor-pointer"
                     >
                       {isSending ? (
                         <Loader2 className="w-4 h-4 animate-spin mx-auto" />
@@ -306,8 +302,8 @@ export function ForgotPasswordPage() {
                       <button
                         onClick={handleVerifyCode}
                         disabled={!code || isLoading || timeLeft === 0}
-                        className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-                        style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
+                        className="w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-[#84C13D] transition-all cursor-pointer disabled:opacity-50"
+                        style={{ boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
                       >
                         {isLoading ? (
                           <span className="flex items-center justify-center gap-2">
@@ -320,22 +316,6 @@ export function ForgotPasswordPage() {
                   )}
                 </AnimatePresence>
 
-                {/* 최초 발송 버튼 (코드 미발송 상태) */}
-                {!codeSent && (
-                  <button
-                    onClick={handleSendCode}
-                    disabled={!email || isSending}
-                    className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-                    style={email ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
-                  >
-                    {isSending ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        발송 중...
-                      </span>
-                    ) : "인증 코드 발송"}
-                  </button>
-                )}
               </motion.div>
             )}
 
@@ -419,8 +399,8 @@ export function ForgotPasswordPage() {
                 <button
                   onClick={handleResetPassword}
                   disabled={!canReset || isLoading}
-                  className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 mt-2"
-                  style={canReset ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
+                  className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 mt-2 cursor-pointer"
+                  style={canReset ? {background: "#84C13D",  boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : { background: "#D1D5DB" }}
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -444,8 +424,8 @@ export function ForgotPasswordPage() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", damping: 12, delay: 0.2 }}
-                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-                  style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 8px 24px rgba(133,193,61,0.4)" }}
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#84C13D]"
+                  style={{boxShadow: "0 8px 24px rgba(133,193,61,0.4)" }}
                 >
                   <Check className="w-8 h-8 text-white" />
                 </motion.div>
@@ -455,8 +435,8 @@ export function ForgotPasswordPage() {
                 </p>
                 <button
                   onClick={() => navigate("/login")}
-                  className="w-full py-3.5 rounded-xl text-sm font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)", boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
+                  className="w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-[#84C13D]"
+                  style={{boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
                 >
                   로그인하러 가기
                 </button>

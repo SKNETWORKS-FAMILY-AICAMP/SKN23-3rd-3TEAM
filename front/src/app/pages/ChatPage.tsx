@@ -360,6 +360,7 @@ export function ChatPage() {
   // 기존 채팅 전용 state
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   // 다른 채팅방 클릭 시 chatRoomId 업데이트
   useEffect(() => {
@@ -538,12 +539,39 @@ export function ChatPage() {
     }
   };
 
-  // ── 드래그 앤 드롭 이미지 업로드 (미구현) ─────────────────────────
+  // ── 드래그 앤 드롭 이미지 업로드 ─────────────────────────────────
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    const hasImage = Array.from(e.dataTransfer.items).some((i) => i.type.startsWith("image/"));
+    if (hasImage) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    dragCounterRef.current = 0;
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) handleImageUpload(file);
+    if (!file || !file.type.startsWith("image/")) return;
+
+    // 업로드 슬롯이 열려있으면 첫 번째 빈 슬롯에 채움
+    if (uploadSlots.length > 0) {
+      const emptySlot = uploadSlots.find((s) => !s.preview);
+      if (emptySlot) handleUpload(emptySlot.id, file);
+      return;
+    }
+
+    handleImageUpload(file);
   };
 
   const handleImageUpload = (file: File) => {
@@ -589,7 +617,43 @@ export function ChatPage() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full bg-[#F8FBF3]">
+    <div
+      className="relative flex flex-col h-full bg-[#F8FBF3]"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleFileDrop}
+    >
+
+      {/* 드래그 오버레이 */}
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none"
+            style={{ background: "rgba(244,250,232,0.92)" }}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="flex flex-col items-center gap-3 px-10 py-8 rounded-3xl border-2 border-dashed"
+              style={{ borderColor: "#84C13D" }}
+            >
+              <ImagePlus className="w-12 h-12" style={{ color: "#84C13D" }} />
+              <p className="text-sm font-semibold" style={{ color: "#4A7A1E" }}>
+                {uploadSlots.length > 0 ? "슬롯에 이미지를 놓으세요" : "이미지를 여기에 놓으세요"}
+              </p>
+              <p className="text-xs" style={{ color: "#84C13D" }}>
+                JPG, PNG, WEBP 등 이미지 파일 지원
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       {

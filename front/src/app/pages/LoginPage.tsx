@@ -157,7 +157,7 @@ export function LoginPage() {
               type="button"
               onClick={() => startSocialLogin("google")}
               aria-label="구글로 로그인"
-              className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 bg-white transition-all duration-200 cursor-pointer hover:bg-gray-50 active:scale-95"
+              className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white transition-all duration-200 cursor-pointer hover:bg-gray-50 active:scale-95"
             >
               <svg width="20" height="20" viewBox="0 0 18 18">
                 <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
@@ -172,7 +172,7 @@ export function LoginPage() {
               type="button"
               onClick={() => startSocialLogin("kakao")}
               aria-label="카카오로 로그인"
-              className="w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer hover:brightness-95 active:scale-95"
+              className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer hover:brightness-95 active:scale-95"
               style={{ background: "#FEE500" }}
             >
               <svg width="22" height="22" viewBox="0 0 18 18" fill="none">
@@ -189,10 +189,10 @@ export function LoginPage() {
               type="button"
               onClick={() => startSocialLogin("naver")}
               aria-label="네이버로 로그인"
-              className="w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer hover:brightness-95 active:scale-95"
+              className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer hover:brightness-95 active:scale-95"
               style={{ background: "#03C75A" }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"
                   fill="#ffffff"

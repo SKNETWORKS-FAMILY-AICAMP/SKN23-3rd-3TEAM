@@ -558,8 +558,7 @@ export function SettingsPage() {
                         </div>
                       </div>
                       <button
-                        className="w-full py-3 rounded-xl text-sm font-semibold text-white mt-4 transition-all cursor-pointer disabled:opacity-50"
-                        style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
+                        className="w-full py-3 rounded-xl text-sm font-semibold text-white mt-4 transition-all cursor-pointer bg-[#84C13D] disabled:opacity-50"
                         disabled={!currentPw || !newPw || !pwMatch}
                       >
                         비밀번호 변경

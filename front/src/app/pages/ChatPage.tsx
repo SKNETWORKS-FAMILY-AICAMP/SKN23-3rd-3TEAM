@@ -47,6 +47,13 @@ interface Message {
   time: string;
 }
 
+interface GuestChatRoom {
+  id         : string;
+  title      : string;
+  created_at : string;
+  messages   : { role: "user" | "bot"; content: string; time: string }[];
+}
+
 // ─── Constants ────────────────────────────────────────────────────────
 const ANALYSIS_OPTIONS = [
   { value: "default", label: "분석 선택" },
@@ -215,11 +222,12 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
 
 // ─── Main Component ────────────────────────────────────────────────────
 export function ChatPage() {
-  const { state } = useLocation();
+  const { state, key: locationKey } = useLocation();
 
   // state.chat_room_id가 있으면 기존 채팅, 없으면 새 채팅
   const chat_content: boolean = !!(state?.chat_room_id);
   const [chatRoomId, setChatRoomId] = useState<number | null>(state?.chat_room_id ?? null);
+  const [guestChatId, setGuestChatId] = useState<string | null>(state?.guest_chat_id ?? null);
 
   // 공통 state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -256,10 +264,17 @@ export function ChatPage() {
     setChatRoomId(newId);
   }, [state?.chat_room_id]);
 
+  // 게스트 채팅 ID 동기화 (모든 네비게이션 이벤트마다 갱신 — state 미반영 케이스 대응)
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setGuestChatId(state?.guest_chat_id ?? null);
+    }
+  }, [locationKey]);
+
   // chatRoomId가 있으면 메시지 내역 조회
   useEffect(() => {
     if (chatRoomId === null) {
-      setMessages([]);
+      if (isLoggedIn) setMessages([]); // 게스트는 guestChatId 효과에서 처리
       return;
     }
     // 새 채팅방 생성 직후(handleSend 중)에는 fetch 건너뜀
@@ -273,6 +288,42 @@ export function ChatPage() {
       .catch((err: Error) => console.error("채팅 내역 조회 실패:", err))
       .finally(() => setIsLoadingHistory(false));
   }, [chatRoomId]);
+
+  // 게스트 채팅 메시지 복원 (사이드바에서 기존 채팅 클릭 시)
+  useEffect(() => {
+    if (isLoggedIn) return;
+    if (guestChatId === null) {
+      setMessages([]);
+      return;
+    }
+    const stored = JSON.parse(localStorage.getItem("guest_chats") ?? "[]") as GuestChatRoom[];
+    const room = stored.find((r) => r.id === guestChatId);
+    if (room) {
+      setMessages(
+        room.messages.map((m, i) => ({
+          id     : i,
+          role   : m.role,
+          content: m.content,
+          time   : m.time,
+        }))
+      );
+    }
+  }, [guestChatId]);
+
+  // 게스트 채팅 자동 저장 (메시지 변경 시 localStorage에 반영)
+  useEffect(() => {
+    if (isLoggedIn || guestChatId === null || messages.length === 0) return;
+    const stored = JSON.parse(localStorage.getItem("guest_chats") ?? "[]") as GuestChatRoom[];
+    const firstUserMsg = messages.find((m) => m.role === "user");
+    const title = (firstUserMsg?.content ?? "새 채팅").slice(0, 30);
+    const guestMessages = messages.map((m) => ({ role: m.role, content: m.content, time: m.time }));
+    const exists = stored.some((r) => r.id === guestChatId);
+    const updated = exists
+      ? stored.map((r) => r.id === guestChatId ? { ...r, title, messages: guestMessages } : r)
+      : [{ id: guestChatId, title, created_at: new Date().toISOString(), messages: guestMessages }, ...stored];
+    localStorage.setItem("guest_chats", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("guestChatUpdated"));
+  }, [messages, guestChatId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -322,11 +373,12 @@ export function ChatPage() {
     setIsSending(true);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
-    // 비로그인 첫 메시지 전송 시 게스트 채팅 카운트 증가
+    // 비로그인 첫 메시지 전송 시 게스트 채팅 ID 생성 및 카운트 증가
     const isFirstGuestMessage = !isLoggedIn && messages.length === 0;
     if (isFirstGuestMessage) {
       const prev = parseInt(localStorage.getItem("guest_chat_count") ?? "0", 10);
       localStorage.setItem("guest_chat_count", String(prev + 1));
+      setGuestChatId(Date.now().toString());
     }
 
     try {

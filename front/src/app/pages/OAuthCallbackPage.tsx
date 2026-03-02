@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Loading } from "@/app/components/ui/loading";
 
+function clearGuestData(): void {
+  localStorage.removeItem("guest_chats");
+  localStorage.removeItem("guest_chat_count");
+}
+
 /**
  * OAuthCallbackPage
  * ─────────────────────────────────────────────────────────────
@@ -25,6 +30,7 @@ export function OAuthCallbackPage() {
 
     if (token) {
       localStorage.setItem("access_token", token);
+      clearGuestData();
       // 신규 가입 유저는 온보딩, 기존 유저는 채팅으로 이동
       navigate(isNew ? "/onboarding" : "/chat", { replace: true });
     } else {

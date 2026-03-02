@@ -177,7 +177,7 @@ export function OnboardingPage() {
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                     skinType === type ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:border-[#84C13D]"
                   }`}
-                  style={skinType === type ? { background: "linear-gradient(135deg, #84C13D, #6BA32E)" } : {}}
+                  style={skinType === type ? { background: "#84C13D" } : {}}
                 >
                   {skinType === type && <Check className="w-3.5 h-3.5" />}
                   {type}

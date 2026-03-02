@@ -171,10 +171,10 @@ export function SignupPage() {
       >
         {/* 로고 */}
         <div className="text-center mb-7">
-          <div className="flex items-center justify-center mx-auto mb-3">
-            <video src={logoIdle} autoPlay loop muted playsInline className="w-40 h-auto" />
+          <p className="text-2xl font-bold text-[#84c13d]"><span className="text-4xl mr-2">On_You</span>회원가입</p>
+          <div className="flex items-center justify-center mx-auto">
+            <video src={logoIdle} autoPlay loop muted playsInline className="w-45 h-auto" />
           </div>
-          <h1 className="text-gray-900 font-bold">SKIN AI 회원가입</h1>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-7">

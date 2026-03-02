@@ -495,3 +495,37 @@ def get_linked_social_providers(user_id: int) -> list[str]:
         (user_id,)
     )
     return [r["provider_type"] for r in rows]
+
+def reset_password(email: str, new_password: str) -> None:
+    """
+    OTP 검증 완료 후 local 비밀번호 재설정.
+    - auth_providers(provider_type='local')의 password_hash를 갱신한다.
+    - local 로그인 수단이 없는 계정은 재설정 불가(또는 정책에 따라 생성).
+    """
+    user = get_user_by_email(email)
+    if not user:
+        raise ValueError("존재하지 않는 이메일입니다.")
+    if not user.is_active:
+        raise ValueError("비활성화된 계정입니다.")
+
+    # local 로그인 수단 존재 확인
+    auth_row = execute_one(
+        """
+        SELECT auth_id FROM auth_providers
+        WHERE user_id = %s AND provider_type = 'local'
+        """,
+        (user.user_id,)
+    )
+    if not auth_row:
+        raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다. 소셜 로그인 계정은 비밀번호 재설정이 불가합니다.")
+
+    new_hash = _hash_password(new_password)
+
+    execute_write(
+        """
+        UPDATE auth_providers
+        SET password_hash = %s
+        WHERE user_id = %s AND provider_type = 'local'
+        """,
+        (new_hash, user.user_id)
+    )

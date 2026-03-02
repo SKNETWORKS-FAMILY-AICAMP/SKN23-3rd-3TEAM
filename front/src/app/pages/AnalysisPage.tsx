@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Icon } from "../components/ui/icon";
 import { Loading } from "@/app/components/ui/loading";
-import { fetchAnalysisHistory, fetchFactorials, type AnalysisResult, type KeywordResponse } from "@/app/api/analysisApi";
+import { fetchDetailAnalysis, fetchFactorials, type AnalysisResult, type KeywordResponse } from "@/app/api/analysisApi";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
 import { Calendar, ScanFace, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
@@ -96,7 +96,7 @@ export function AnalysisPage() {
   }, []);
 
   useEffect(() => {
-    fetchAnalysisHistory()
+    fetchDetailAnalysis()
       .then((data) => {
         if (data.length === 0) {
           setHasNoData(true);

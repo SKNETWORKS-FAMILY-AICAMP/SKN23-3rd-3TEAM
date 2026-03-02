@@ -254,6 +254,24 @@ def check_email(email: str):
 
 
 
+@router.get("/me/social-links")
+def get_my_social_links(user_id: int = Depends(get_current_user_id)):
+    """
+    내 계정 소셜 연동 조회.
+    - auth_providers 테이블에서 provider_type을 기준으로 local 제외 소셜 연동 목록을 반환
+
+    프론트 요청 예시:
+        GET /users/me/social-links
+        Headers: { Authorization: "Bearer <token>" }
+
+    응답 예시:
+        { "is_social": true, "providers": ["kakao", "google"] }
+        { "is_social": false, "providers": [] }
+    """
+    providers = auth_service.get_linked_social_providers(user_id)
+    return {"is_social": len(providers) > 0, "providers": providers}
+
+
 # ─────────────────────────────────────────────
 # 내부 헬퍼
 # ─────────────────────────────────────────────

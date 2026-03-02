@@ -178,7 +178,7 @@ def _select_factorial(metrics: dict, skin_type: str | None, mode: str) -> list[s
         )
         if _root not in sys.path:
             sys.path.insert(0, _root)
-        from services.analysis_service import select_factorial
+        from services.keyword_service import select_factorial
         return select_factorial(metrics, min_count=2, max_count=5)
     except Exception as e:
         print(f"[FACTORIAL] DB 조회 실패, 빈 리스트 반환: {repr(e)}", flush=True)

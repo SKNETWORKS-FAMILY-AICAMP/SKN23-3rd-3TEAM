@@ -204,9 +204,6 @@ outputs/
 ./back/vector/assets/vector_data/mfds_cosmetic_report.jsonl
 back/vector/assets/vector_data/mfds_cosmetic_report.jsonl
 
-# 이미지 x
-*.jpg
-
 # .py 파일 업로드 방지
 make_tree.py
 app.py

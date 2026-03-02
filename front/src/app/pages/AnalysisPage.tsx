@@ -1,22 +1,19 @@
 import { Link } from "react-router";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
+import { Icon } from "../components/ui/icon";
 import { Loading } from "@/app/components/ui/loading";
 import { fetchAnalysisHistory, type AnalysisResult } from "@/app/api/analysisApi";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
-import {
-  Droplets, Eye, Sun, Shield, Activity,
-  Calendar, ChevronLeft, ChevronRight, ScanFace,
-  TrendingUp, TrendingDown, Minus,
-} from "lucide-react";
+import { Calendar, ScanFace, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 // UI 전용 설정
 const SKIN_METRICS = [
-  { key: "moisture",     label: "수분",     icon: Droplets, color: "#3B82F6" },
-  { key: "elasticity",   label: "탄력",     icon: Shield,   color: "#10B981" },
-  { key: "wrinkle",      label: "주름",     icon: Activity, color: "#8B5CF6" },
-  { key: "pore",         label: "모공",     icon: Eye,      color: "#6366F1" },
-  { key: "pigmentation", label: "색소침착", icon: Sun,      color: "#EC4899" },
+  { key: "moisture",     label: "수분",     icon: "moisture" as const,      color: "#4e76ba" },
+  { key: "elasticity",   label: "탄력",     icon: "elasticity" as const,    color: "#6cb78e" },
+  { key: "wrinkle",      label: "주름",     icon: "wrinkle" as const,       color: "#f6b483" },
+  { key: "pore",         label: "모공",     icon: "pore" as const,          color: "#8959a2" },
+  { key: "pigmentation", label: "색소침착", icon: "pigmentation" as const,  color: "#cc528e" },
 ];
 
 function MetricBar({ value, color }: { value: number; color: string }) {
@@ -305,7 +302,6 @@ export function AnalysisPage() {
               <h3 className="font-semibold text-gray-800 mb-5">피부 지표 상세</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {skinMetrics.map((metric, idx) => {
-                  const Icon = metric.icon;
                   return (
                     <motion.div
                       key={metric.key}
@@ -318,7 +314,7 @@ export function AnalysisPage() {
                         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: metric.color + "20" }}
                       >
-                        <Icon className="w-5 h-5" style={{ color: metric.color }} />
+                        <Icon name={metric.icon} size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
@@ -438,7 +434,6 @@ export function AnalysisPage() {
                   {skinMetrics.map((metric, idx) => {
                     const prevVal = prevSkinMetrics.find((m) => m.key === metric.key)?.value ?? 0;
                     const delta   = metric.value - prevVal;
-                    const Icon    = metric.icon;
                     return (
                       <motion.div
                         key={metric.key}
@@ -451,7 +446,7 @@ export function AnalysisPage() {
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: metric.color + "20" }}
                         >
-                          <Icon className="w-4 h-4" style={{ color: metric.color }} />
+                          <Icon name={metric.icon} size={16} />
                         </div>
                         <span className="flex-1 text-sm font-medium text-gray-700">{metric.label}</span>
                         {/* 이전 → 현재 값 */}

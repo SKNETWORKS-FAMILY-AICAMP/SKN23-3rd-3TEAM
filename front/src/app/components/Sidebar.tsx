@@ -80,14 +80,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           lg:static lg:translate-x-0 lg:z-auto
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
-        style={{
-          boxShadow: "2px 0 12px rgba(133,193,61,0.08)",
-        }}
+        style={{ boxShadow: "2px 0 12px rgba(133,193,61,0.08)" }}
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-gray-50">
           <Link to="/chat" className="flex items-center gap-2.5 group" onClick={onClose}>
-            <img src="/src/assets/logo.svg" alt="LOGO" style={{width: '50px'}} />
+            <img src="/src/assets/logo.png" alt="LOGO" />
           </Link>
         </div>
 

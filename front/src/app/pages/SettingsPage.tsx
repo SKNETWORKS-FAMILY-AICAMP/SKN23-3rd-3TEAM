@@ -19,7 +19,6 @@ import {
 
 const SECTIONS = [
   { id: "profile", label: "프로필", icon: User },
-  { id: "security", label: "보안", icon: Lock },
   { id: "social", label: "소셜 연동", icon: Link2 },
 ];
 
@@ -97,10 +96,14 @@ export function SettingsPage() {
   }, []);
 
   // Security
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
+  const [showCurrentPw, setShowCurrentPw]   = useState(false);
+  const [showNewPw, setShowNewPw]           = useState(false);
+  const [showConfirmPw, setShowConfirmPw]   = useState(false);
+  const [currentPw, setCurrentPw]           = useState("");
+  const [newPw, setNewPw]                   = useState("");
+  const [confirmPw, setConfirmPw]           = useState("");
+
+  const pwMatch = confirmPw.length > 0 && newPw === confirmPw;
 
   // Social
   const [socials, setSocials] = useState({ google: true, kakao: false, naver: true });
@@ -198,17 +201,21 @@ export function SettingsPage() {
               {SECTIONS.map((s, i) => {
                 const Icon = s.icon;
                 const isActive = activeSection === s.id;
+                const isDisabled = s.id === "security";
                 return (
                   <button
                     key={s.id}
-                    onClick={() => setActiveSection(s.id)}
+                    onClick={() => !isDisabled && setActiveSection(s.id)}
+                    disabled={isDisabled}
                     className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                       i < SECTIONS.length - 1 ? "border-b border-gray-50" : ""
-                    } ${isActive ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-600 hover:bg-gray-50"}`}
+                    } ${isDisabled ? "opacity-35 cursor-not-allowed" : "cursor-pointer"} ${
+                      isActive ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-600 hover:bg-gray-50"
+                    }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     {s.label}
-                    {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" style={{ color: "#84C13D" }} />}
+                    {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto text-[#84C13D]" />}
                   </button>
                 );
               })}
@@ -507,11 +514,40 @@ export function SettingsPage() {
                             </button>
                           </div>
                         </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 block mb-1.5">비밀번호 확인</label>
+                          <div className="relative">
+                            <input
+                              type={showConfirmPw ? "text" : "password"}
+                              value={confirmPw}
+                              onChange={(e) => setConfirmPw(e.target.value)}
+                              placeholder="새 비밀번호를 다시 입력하세요"
+                              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm placeholder-gray-400 focus:outline-none transition-all pr-11 ${
+                                confirmPw.length === 0
+                                  ? "border-gray-200 focus:border-[#84C13D]"
+                                  : pwMatch
+                                  ? "border-green-400 focus:border-green-400"
+                                  : "border-red-400 focus:border-red-400"
+                              }`}
+                            />
+                            <button onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
+                              {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          {confirmPw.length > 0 && (
+                            <p className={`text-xs mt-1.5 flex items-center gap-1 ${pwMatch ? "text-green-500" : "text-red-500"}`}>
+                              {pwMatch
+                                ? <><Check className="w-3 h-3" />비밀번호가 일치합니다.</>
+                                : <><X className="w-3 h-3" />비밀번호가 일치하지 않습니다.</>
+                              }
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <button
-                        className="w-full py-3 rounded-xl text-sm font-semibold text-white mt-4 transition-all disabled:opacity-50"
+                        className="w-full py-3 rounded-xl text-sm font-semibold text-white mt-4 transition-all cursor-pointer disabled:opacity-50"
                         style={{ background: "linear-gradient(135deg, #84C13D, #6BA32E)" }}
-                        disabled={!currentPw || !newPw}
+                        disabled={!currentPw || !newPw || !pwMatch}
                       >
                         비밀번호 변경
                       </button>
@@ -558,7 +594,7 @@ export function SettingsPage() {
                       ].map((social) => {
                         const connected = socials[social.id as keyof typeof socials];
                         return (
-                          <div key={social.id} className="flex items-center justify-between px-5 py-4 border-b border-gray-50 last:border-0">
+                          <div key={social.id} className="flex items-center px-5 py-4 border-b border-gray-50 last:border-0">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: social.bg }}>
                                 {social.icon}
@@ -568,15 +604,6 @@ export function SettingsPage() {
                                 <p className="text-xs text-gray-400">{connected ? "연결됨" : "연결되지 않음"}</p>
                               </div>
                             </div>
-                            <button
-                              onClick={() => setSocials((prev) => ({ ...prev, [social.id]: !prev[social.id as keyof typeof socials] }))}
-                              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                connected ? "bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500" : "text-white"
-                              }`}
-                              style={!connected ? { background: "#84C13D" } : {}}
-                            >
-                              {connected ? "연결 해제" : "연결하기"}
-                            </button>
                           </div>
                         );
                       })}

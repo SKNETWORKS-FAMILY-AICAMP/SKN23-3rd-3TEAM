@@ -5,7 +5,7 @@
  *
  * 사용하는 엔드포인트:
  *   GET  /analysis/latest      → fetchLatestAnalysis()
- *   GET  /analysis             → fetchAnalysisHistory()
+ *   GET  /analysis             → fetchDetailAnalysis()
  *   GET  /analysis/{id}        → fetchAnalysisById()
  *   GET  /analysis/factorials  → fetchFactorials()
  * ─────────────────────────────────────────────────────────────
@@ -85,8 +85,8 @@ export async function fetchLatestAnalysis(): Promise<AnalysisResult> {
  * 사용자의 피부 정밀 분석 데이터 전체 조회 (최신순).
  * back: GET /analysis
  */
-export async function fetchAnalysisHistory(): Promise<AnalysisResult[]> {
-  const res = await fetch(`${API_BASE}/analysis`, {
+export async function fetchDetailAnalysis(): Promise<AnalysisResult[]> {
+  const res = await fetch(`${API_BASE}/analysis/model/detailed`, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   if (!res.ok) {
@@ -101,7 +101,7 @@ export async function fetchAnalysisHistory(): Promise<AnalysisResult[]> {
  * back: GET /analysis/factorials
  */
 export async function fetchFactorials(): Promise<KeywordResponse[]> {
-  const res = await fetch(`${API_BASE}/analysis/factorials`);
+  const res = await fetch(`${API_BASE}/keywords/factorials`);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);

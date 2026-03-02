@@ -68,11 +68,18 @@ export async function login(email: string, password: string): Promise<void> {
 
   const data = await res.json() as { access_token: string };
   localStorage.setItem("access_token", data.access_token);
+  clearGuestData();
 }
 
 /** 로그아웃 — localStorage에서 토큰 제거. */
 export function logout(): void {
   localStorage.removeItem("access_token");
+}
+
+/** 비회원 채팅 데이터 초기화 — 로그인/회원가입 성공 시 호출. */
+function clearGuestData(): void {
+  localStorage.removeItem("guest_chats");
+  localStorage.removeItem("guest_chat_count");
 }
 
 /**

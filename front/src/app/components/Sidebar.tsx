@@ -8,6 +8,13 @@ import { fetchChatRooms, deleteChatRoom, type ChatRoom } from "@/app/api/chatApi
 import { fetchCurrentUser, type UserResponse } from "@/app/api/userApi";
 import { logout } from "@/app/api/authApi";
 
+interface GuestChatRoom {
+  id         : string;
+  title      : string;
+  created_at : string;
+  messages   : { role: "user" | "bot"; content: string; time: string }[];
+}
+
 /** 생성일 → 상대적 날짜 표시 ("오늘", "어제", "N일 전") */
 function formatRelativeDate(iso: string): string {
   const now = new Date();
@@ -25,14 +32,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [guestChats, setGuestChats] = useState<GuestChatRoom[]>([]);
   const [user, setUser] = useState<UserResponse | null>(null);
-  const [showMenuToast, setShowMenuToast] = useState(false);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showMenuToast, setShowMenuToast]           = useState(false);
+  const [showChatLimitToast, setShowChatLimitToast] = useState(false);
+  const toastTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatLimitTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerMenuToast = () => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setShowMenuToast(true);
     toastTimerRef.current = setTimeout(() => setShowMenuToast(false), 3000);
+  };
+
+  const triggerChatLimitToast = () => {
+    if (chatLimitTimerRef.current) clearTimeout(chatLimitTimerRef.current);
+    setShowChatLimitToast(true);
+    chatLimitTimerRef.current = setTimeout(() => setShowChatLimitToast(false), 3000);
   };
 
   const navItems = [
@@ -55,10 +71,45 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       .catch((err: Error) => console.error("사용자 정보 조회 실패:", err));
   }, [isLoggedIn]);
 
+  // 게스트 채팅 목록 로드 + 업데이트 이벤트 구독 (비로그인 상태일 때만)
+  useEffect(() => {
+    if (isLoggedIn) return;
+
+    const load = () => {
+      const stored = JSON.parse(localStorage.getItem("guest_chats") ?? "[]") as GuestChatRoom[];
+      setGuestChats(stored);
+    };
+    load();
+    window.addEventListener("guestChatUpdated", load);
+    return () => window.removeEventListener("guestChatUpdated", load);
+  }, [isLoggedIn]);
+
+  const GUEST_CHAT_LIMIT = 5;
+
   const handleNewChat = () => {
+    if (!isLoggedIn) {
+      const count = parseInt(localStorage.getItem("guest_chat_count") ?? "0", 10);
+      if (count >= GUEST_CHAT_LIMIT) {
+        triggerChatLimitToast();
+        return;
+      }
+    }
     setActiveChatId(null);
     navigate("/chat");
     onClose();
+  };
+
+  // 게스트 채팅방 삭제
+  const handleDeleteGuestChat = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const stored = JSON.parse(localStorage.getItem("guest_chats") ?? "[]") as GuestChatRoom[];
+    const updated = stored.filter((r) => r.id !== id);
+    localStorage.setItem("guest_chats", JSON.stringify(updated));
+    localStorage.setItem("guest_chat_count", String(updated.length));
+    setGuestChats(updated);
+    if (location.state?.guest_chat_id === id) {
+      navigate("/chat");
+    }
   };
 
   // 채팅방 삭제
@@ -224,11 +275,55 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full py-8">
-              <p className="text-xs text-gray-400 text-center">
-                로그인하면 채팅 기록을<br />저장하고 불러올 수 있어요
+            <>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-2 mb-2">
+                최근 채팅
               </p>
-            </div>
+              <div className="space-y-1">
+                {guestChats.map((chat) => {
+                  const isActive = location.pathname === "/chat" && location.state?.guest_chat_id === chat.id;
+                  return (
+                    <div
+                      key={chat.id}
+                      onClick={() => {
+                        navigate("/chat", { state: { guest_chat_id: chat.id } });
+                        onClose();
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer ${
+                        isActive ? "bg-[#E8F5D0]" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon name="chat" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <p className="text-xs font-semibold truncate" style={{ color: isActive ? "#4A7A1E" : "#374151" }}>
+                              {chat.title}
+                            </p>
+                            <div className="flex-shrink-0 ml-1" style={{ height: "16px" }}>
+                              <span className="text-[10px] text-gray-400 group-hover:hidden">
+                                {formatRelativeDate(chat.created_at)}
+                              </span>
+                              <button
+                                onClick={(e) => handleDeleteGuestChat(e, chat.id)}
+                                className="hidden group-hover:flex items-center justify-center p-0.5 rounded text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {guestChats.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-4">
+                    아직 채팅 기록이 없어요
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </div>
 
@@ -316,6 +411,34 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
               style={{ background: "#84C13D", color: "white" }}
               onClick={() => setShowMenuToast(false)}
+            >
+              로그인
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 비로그인 채팅 한도 초과 토스트 */}
+      <AnimatePresence>
+        {showChatLimitToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
+            style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
+          >
+            <Lock className="w-4 h-4 flex-shrink-0" style={{ color: "#84C13D" }} />
+            <span className="flex-1 text-xs leading-relaxed">
+              채팅방은 최대 <strong>{GUEST_CHAT_LIMIT}개</strong>까지 생성할 수 있어요.<br />
+              추가 생성은 <strong>로그인</strong>이 필요합니다.
+            </span>
+            <Link
+              to="/login"
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: "#84C13D", color: "white" }}
+              onClick={() => setShowChatLimitToast(false)}
             >
               로그인
             </Link>

@@ -246,24 +246,26 @@ def _has_any(text: str, keywords: list) -> bool:
     return any(kw in text for kw in keywords)
 
 
-def _has_context(text: str, user_profile: dict | None) -> bool:
+def _has_context(text: str, user_profile: dict | None, chat_history: list | None = None) -> bool:
     """
     제품 추천에 필요한 최소 피부 맥락이 있는지 확인합니다.
 
     맥락 있다고 판단하는 경우:
     1. 로그인 유저 프로필에 피부타입이 있음
     2. 질문 자체에 피부타입/고민 키워드 있음
+    3. 이전 대화에서 피부타입/고민 언급된 적 있음
     """
-    # 로그인 유저 프로필 확인
     if user_profile and user_profile.get("skin_type_label"):
         return True
     if user_profile and user_profile.get("skin_concern"):
         return True
-
-    # 질문 자체에 맥락 키워드 있는지
     if _has_any(text, _CONTEXT_KW):
         return True
-
+    if chat_history:
+        for msg in chat_history[-6:]:
+            msg_text = (msg.get("content") or "").lower()
+            if _has_any(msg_text, _CONTEXT_KW):
+                return True
     return False
 
 
@@ -360,7 +362,7 @@ def decide(
     # ── 7-1. 루틴 판단 (제품 카테고리 없으면 루틴만) ──────────
     if has_routine:
         if has_product_intent:
-            ctx_ok = _has_context(text, user_profile) or has_history
+            ctx_ok = _has_context(text, user_profile, chat_history) or has_history
             return RouteDecision(
                 "routine_and_product", False, True, True,
                 not ctx_ok, "루틴 + 제품 복합 요청"
@@ -369,7 +371,7 @@ def decide(
 
     # ── 7-2. 제품 카테고리 명시된 경우 → 바로 검색 ────────────
     if has_product_intent:
-        ctx_ok = _has_context(text, user_profile) or has_history
+        ctx_ok = _has_context(text, user_profile, chat_history) or has_history
         return RouteDecision(
             "product_recommend", False, False, True,
             not ctx_ok, "제품 추천 요청"
@@ -382,7 +384,7 @@ def decide(
         if history_category:
             # 이전 대화 카테고리를 현재 text에 합쳐서 재판단
             print(f"[ROUTER] 이전 카테고리 이어받기: '{history_category}'", flush=True)
-            ctx_ok = _has_context(text, user_profile) or has_history
+            ctx_ok = _has_context(text, user_profile, chat_history) or has_history
             return RouteDecision(
                 "product_recommend", False, False, True,
                 not ctx_ok, f"맥락 이어받기 → {history_category} 제품 추천"

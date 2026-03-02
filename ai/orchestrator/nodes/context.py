@@ -10,7 +10,7 @@ nodes/context.py
 import time
 from ai.orchestrator.state import GraphState
 from ai.orchestrator.context_builder import build_context
-from ai.orchestrator.router import _has_context
+from ai.orchestrator.router import _has_context, _CONTEXT_KW
 
 # 역질문 없이 바로 답변해도 되는 intent
 _NO_ASK_INTENTS = {
@@ -26,14 +26,25 @@ _UPSELL_INTENTS = {
 }
 
 
-def _has_temp_skin_context(user_profile: dict | None) -> bool:
-    """임시 프로필에 피부타입 또는 고민이 수집됐는지 확인"""
-    if not user_profile:
-        return False
-    return bool(
+def _has_temp_skin_context(user_profile: dict | None, user_text: str = "") -> bool:
+    """
+    임시 프로필 또는 현재 입력 텍스트에 피부타입/고민 정보가 있는지 확인.
+
+    chat_history가 비어있어도 현재 입력("지성이야", "지성 피부요" 등)에서
+    피부타입을 감지하면 바로 답변으로 진행합니다.
+    """
+    # 임시 프로필에서 확인
+    if user_profile and (
         user_profile.get("skin_type_label") or
         user_profile.get("skin_concern")
-    )
+    ):
+        return True
+
+    # 현재 입력 텍스트에서도 확인 (chat_history 미전달 케이스 대응)
+    if user_text and any(kw in user_text for kw in _CONTEXT_KW):
+        return True
+
+    return False
 
 
 def context_node(state: GraphState) -> GraphState:
@@ -88,7 +99,7 @@ def context_node(state: GraphState) -> GraphState:
     if is_guest and route.intent not in _NO_ASK_INTENTS:
 
         # 2-1. 피부타입 미수집 시 역질문 (첫 질문 또는 히스토리에서 못 찾은 경우)
-        if not _has_temp_skin_context(user_profile):
+        if not _has_temp_skin_context(user_profile, state.get('user_text', '')):
             print("[CONTEXT] 비로그인 피부 맥락 없음 → 피부타입 역질문", flush=True)
 
             # 첫 메시지면 질문 내용도 기억해서 답변에 포함

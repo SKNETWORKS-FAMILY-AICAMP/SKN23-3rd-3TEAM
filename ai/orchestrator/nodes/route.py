@@ -49,10 +49,20 @@ _INSTANT_RESPONSES = {
         "- 로션\n\n"
         "원하시는 제품 종류를 알려주시면 올리브영에서 딱 맞는 제품을 찾아드릴게요!"
     ),
+    "ask_for_skin_info": (
+        "더 정확한 답변을 드리기 위해 피부 정보를 알려주세요 😊\n\n"
+        "**피부 타입이 어떻게 되시나요?**\n"
+        "- 건성 (당기고 건조한 편)\n"
+        "- 지성 (번들거리고 피지가 많은 편)\n"
+        "- 복합성 (T존은 지성, 볼은 건성)\n"
+        "- 중성 (크게 건조하거나 번들거리지 않음)\n"
+        "- 민감성 (자극에 쉽게 반응하는 편)\n\n"
+        "주요 피부 고민(여드름/홍조/모공/각질/주름 등)도 알려주시면 더욱 도움이 돼요!"
+    ),
 }
 
 # 즉시 응답 intent 목록
-_INSTANT_INTENTS = {"out_of_domain", "greeting", "login_required", "ask_for_context", "ask_for_category"}
+_INSTANT_INTENTS = {"out_of_domain", "greeting", "login_required", "ask_for_context", "ask_for_category", "ask_for_skin_info"}
 
 
 def _make_instant_response(intent: str, user_text: str, is_first_message: bool) -> dict:

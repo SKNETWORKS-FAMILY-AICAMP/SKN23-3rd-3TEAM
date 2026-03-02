@@ -145,6 +145,25 @@ def get_factorials():
     """
     return analysis_service.get_skin_care_routines()
 
+@router.get("/model/{model_type}", response_model=list[AnalysisResponse])
+def get_analysis_by_model_type(
+    model_type : str,
+    user_id    : int = Depends(get_current_user_id),
+):
+    """
+    모델 타입별 분석 히스토리 조회 (최신순).
+    
+model_type: simple / detailed
+
+    프론트 요청 예시:
+        GET /analysis/model/simple
+        GET /analysis/model/detailed
+    응답:
+        [ { "analysis_id": 3, "model_type": "detailed", ... }, ... ]
+    """
+    results = analysis_service.get_analysis_by_model_type(user_id, model_type)
+    return [_analysis_to_response(r) for r in results]
+    
 # ─────────────────────────────────────────────
 # 내부 헬퍼
 # ─────────────────────────────────────────────

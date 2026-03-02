@@ -479,3 +479,19 @@ def get_auth_by_user(user_id: int) -> list[AuthProvider]:
         (user_id,)
     )
     return [AuthProvider.from_dict(row) for row in rows]
+
+def get_linked_social_providers(user_id: int) -> list[str]:
+    """
+    user_id에 연결된 소셜 provider_type 목록 반환 (local 제외)
+    예: ["kakao", "google"]
+    """
+    rows = execute_query(
+        """
+        SELECT DISTINCT provider_type
+        FROM auth_providers
+        WHERE user_id = %s AND provider_type != 'local'
+        ORDER BY provider_type
+        """,
+        (user_id,)
+    )
+    return [r["provider_type"] for r in rows]

@@ -26,6 +26,7 @@ import {
   type ChatMessage,
 } from "@/app/api/chatApi";
 import { uploadImage } from "@/app/api/uploadApi";
+import { Icon } from "@/app/components/ui/icon";
 
 type AnalysisType = "default" | "simple" | "detailed" | "ingredient";
 
@@ -670,12 +671,8 @@ export function ChatPage() {
               disabled={!canSend}
               whileTap={{ scale: 0.9 }}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer"
-              style={{
-                background: canSend ? "#84C13D" : "#E5E7EB",
-              }}
             >
-              <Send className="w-4.5 h-4.5" style={{ color: canSend ? "white" : "#9CA3AF" }}
-              />
+              <Icon name={canSend ? "send_active" : "send_disable"} size={36} />
             </motion.button>
           </div>
         </div>

@@ -1,22 +1,24 @@
 import { Link } from "react-router";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
+import { Icon } from "../components/ui/icon";
 import { Loading } from "@/app/components/ui/loading";
-import { fetchAnalysisHistory, type AnalysisResult } from "@/app/api/analysisApi";
+import { fetchAnalysisHistory, fetchFactorials, type AnalysisResult, type KeywordResponse } from "@/app/api/analysisApi";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
-import {
-  Droplets, Eye, Sun, Shield, Activity,
-  Calendar, ChevronLeft, ChevronRight, ScanFace,
-  TrendingUp, TrendingDown, Minus,
-} from "lucide-react";
+import { Calendar, ScanFace, TrendingUp, TrendingDown, Minus } from "lucide-react";
+
+const factorialImages = import.meta.glob<string>(
+  '../../assets/factorial/*.svg',
+  { eager: true, query: '?url', import: 'default' },
+);
 
 // UI 전용 설정
 const SKIN_METRICS = [
-  { key: "moisture",     label: "수분",     icon: Droplets, color: "#3B82F6" },
-  { key: "elasticity",   label: "탄력",     icon: Shield,   color: "#10B981" },
-  { key: "wrinkle",      label: "주름",     icon: Activity, color: "#8B5CF6" },
-  { key: "pore",         label: "모공",     icon: Eye,      color: "#6366F1" },
-  { key: "pigmentation", label: "색소침착", icon: Sun,      color: "#EC4899" },
+  { key: "moisture",     label: "수분",     icon: "moisture" as const,      color: "#4e76ba" },
+  { key: "elasticity",   label: "탄력",     icon: "elasticity" as const,    color: "#6cb78e" },
+  { key: "wrinkle",      label: "주름",     icon: "wrinkle" as const,       color: "#f6b483" },
+  { key: "pore",         label: "모공",     icon: "pore" as const,          color: "#8959a2" },
+  { key: "pigmentation", label: "색소침착", icon: "pigmentation" as const,  color: "#cc528e" },
 ];
 
 function MetricBar({ value, color }: { value: number; color: string }) {
@@ -37,7 +39,7 @@ function ScoreGauge({ score }: { score: number }) {
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (score / 100) * circumference;
   return (
-    <div className="relative w-36 h-36">
+    <div className="relative w-52 h-52">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" strokeWidth="10" />
         <motion.circle
@@ -63,12 +65,11 @@ function ScoreGauge({ score }: { score: number }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-3xl font-bold"
-          style={{ color: "#84C13D" }}
+          className="text-2xl font-bold text-[#84C13D]"
         >
           {score}
         </motion.span>
-        <span className="text-xs text-gray-400 font-medium">전체 점수</span>
+        <span className="text-[11px] text-gray-400 font-medium">전체 점수</span>
       </div>
     </div>
   );
@@ -86,6 +87,13 @@ export function AnalysisPage() {
   const [selectedIndex, setSelectedIndex]     = useState(0);
   const [isLoading, setIsLoading]             = useState(true);
   const [hasNoData, setHasNoData]             = useState(false);
+  const [factorialList, setFactorialList]     = useState<KeywordResponse[]>([]);
+
+  useEffect(() => {
+    fetchFactorials()
+      .then(setFactorialList)
+      .catch((err: Error) => console.error("팩토리얼 키워드 목록 조회 실패:", err));
+  }, []);
 
   useEffect(() => {
     fetchAnalysisHistory()
@@ -128,6 +136,7 @@ export function AnalysisPage() {
   const overallScore  = extractNum(ad.overall_score, 0);
   const skinType      = extractStr(ad.skin_type,     "");
   const skinTypeDesc  = extractStr(ad.skin_type_detail, "");
+  const factorial     = ad?.factorial;
   const analysisImage = currentAnalysis?.image_url?.[0] ?? "";
 
   const skinMetrics = SKIN_METRICS.map((m) => {
@@ -252,23 +261,40 @@ export function AnalysisPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+                className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm aspect-square overflow-auto"
               >
                 <h3 className="font-semibold text-gray-800 mb-4">종합 피부 점수</h3>
                 <div className="flex items-center gap-6">
                   <ScoreGauge score={overallScore} />
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className="px-2.5 py-1 rounded-lg text-xs font-semibold text-white"
-                        style={{ background: "#84C13D" }}
-                      >
-                        {skinType}
-                      </span>
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-[#84C13D]">{skinType}</span>
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">{skinTypeDesc}</p>
                   </div>
                 </div>
+                <>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-[#84C13D]">추천 관리법</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    {factorial?.map((keyword) => {
+                      const item   = factorialList.find((f) => f.label === keyword);
+                      const imgSrc = factorialImages[`../../assets/factorial/${item?.keyword}.svg`];
+                      
+                      return (
+                        <div key={keyword} className="flex flex-col items-center gap-1">
+                          {imgSrc && (
+                            <img src={imgSrc} alt={item?.label ?? keyword} className="w-18 h-18 object-contain" />
+                          )}
+                          <span className="w-18 text-[13px] text-gray-500 text-center font-medium leading-tight break-keep">
+                            {item?.label ?? keyword}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               </motion.div>
 
               {/* 분석 이미지 */}
@@ -276,13 +302,13 @@ export function AnalysisPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden aspect-square"
               >
-                <div className="relative h-full min-h-[200px]">
+                <div className="relative h-full">
                   {analysisImage ? (
                     <img src={analysisImage} alt="Skin analysis" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center min-h-[200px]">
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                       <ScanFace className="w-12 h-12 text-gray-300" />
                     </div>
                   )}
@@ -305,7 +331,6 @@ export function AnalysisPage() {
               <h3 className="font-semibold text-gray-800 mb-5">피부 지표 상세</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {skinMetrics.map((metric, idx) => {
-                  const Icon = metric.icon;
                   return (
                     <motion.div
                       key={metric.key}
@@ -318,7 +343,7 @@ export function AnalysisPage() {
                         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: metric.color + "20" }}
                       >
-                        <Icon className="w-5 h-5" style={{ color: metric.color }} />
+                        <Icon name={metric.icon} size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
@@ -438,7 +463,6 @@ export function AnalysisPage() {
                   {skinMetrics.map((metric, idx) => {
                     const prevVal = prevSkinMetrics.find((m) => m.key === metric.key)?.value ?? 0;
                     const delta   = metric.value - prevVal;
-                    const Icon    = metric.icon;
                     return (
                       <motion.div
                         key={metric.key}
@@ -451,7 +475,7 @@ export function AnalysisPage() {
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: metric.color + "20" }}
                         >
-                          <Icon className="w-4 h-4" style={{ color: metric.color }} />
+                          <Icon name={metric.icon} size={16} />
                         </div>
                         <span className="flex-1 text-sm font-medium text-gray-700">{metric.label}</span>
                         {/* 이전 → 현재 값 */}

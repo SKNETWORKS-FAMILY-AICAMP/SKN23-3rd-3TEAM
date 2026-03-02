@@ -4,9 +4,10 @@
  * back/routers/analysis_router.py 의 /analysis 엔드포인트와 통신.
  *
  * 사용하는 엔드포인트:
- *   GET  /analysis/latest   → fetchLatestAnalysis()
- *   GET  /analysis          → fetchAnalysisHistory()
- *   GET  /analysis/{id}     → fetchAnalysisById()
+ *   GET  /analysis/latest      → fetchLatestAnalysis()
+ *   GET  /analysis             → fetchAnalysisHistory()
+ *   GET  /analysis/{id}        → fetchAnalysisById()
+ *   GET  /analysis/factorials  → fetchFactorials()
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -41,6 +42,14 @@ export interface SkinAnalysisData {
   skin_type?       : string;
   skin_type_detail?: string;
   metrics?         : SkinMetrics;
+  factorial?       : string[];
+}
+
+/** back/db/schemas.py KeywordResponse 대응 */
+export interface KeywordResponse {
+  keyword_id : number;
+  keyword    : string;
+  label      : string;
 }
 
 export interface AnalysisResult {
@@ -73,7 +82,7 @@ export async function fetchLatestAnalysis(): Promise<AnalysisResult> {
 }
 
 /**
- * 피부 분석 히스토리 전체 조회 (최신순).
+ * 사용자의 피부 정밀 분석 데이터 전체 조회 (최신순).
  * back: GET /analysis
  */
 export async function fetchAnalysisHistory(): Promise<AnalysisResult[]> {
@@ -85,6 +94,19 @@ export async function fetchAnalysisHistory(): Promise<AnalysisResult[]> {
     throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
   }
   return res.json() as Promise<AnalysisResult[]>;
+}
+
+/**
+ * 스킨 케어 루틴 키워드 목록 전체 조회
+ * back: GET /analysis/factorials
+ */
+export async function fetchFactorials(): Promise<KeywordResponse[]> {
+  const res = await fetch(`${API_BASE}/analysis/factorials`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+  }
+  return res.json() as Promise<KeywordResponse[]>;
 }
 
 /**

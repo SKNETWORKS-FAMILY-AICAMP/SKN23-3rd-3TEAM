@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_레이어_1" data-name=" 레이어 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 83.37 83.37">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-1, .cls-2 {
+        stroke: #84c13d;
+        stroke-linejoin: round;
+        stroke-width: 2px;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        stroke-linecap: round;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        fill: #e0ecbf;
+        stroke: #83c03d;
+        stroke-miterlimit: 10;
+        stroke-width: 4px;
+      }
+    </style>
+  </defs>
+  <rect class="cls-3" x="2" y="2" width="79.37" height="79.37"/>
+  <path class="cls-2" d="M61.1,50.83c0,10.47-8.49,18.96-18.96,18.96s-18.96-8.49-18.96-18.96,18.96-31.58,18.96-31.58c0,0,18.96,21.11,18.96,31.58Z"/>
+  <path class="cls-1" d="M49.39,60.19c0,2-1.62,3.62-3.62,3.62s-3.62-1.62-3.62-3.62,3.62-6.04,3.62-6.04c0,0,3.62,4.03,3.62,6.04Z"/>
+  <g>
+    <circle class="cls-2" cx="32.72" cy="16.99" r="3.42"/>
+    <circle class="cls-2" cx="28.14" cy="29.85" r="6.36"/>
+    <circle class="cls-1" cx="37.19" cy="39.66" r="2.73"/>
+    <circle class="cls-2" cx="15.67" cy="35.42" r="2.73"/>
+    <line class="cls-1" x1="31.43" y1="20.98" x2="30.41" y2="23.87"/>
+    <line class="cls-1" x1="34.96" y1="37.39" x2="32.52" y2="34.47"/>
+    <line class="cls-1" x1="18" y1="33.99" x2="22.07" y2="31.73"/>
+  </g>
+  <g>
+    <polyline class="cls-2" points="63.82 27.2 58.06 22.43 54.71 26.48 60.47 31.25"/>
+    <path class="cls-2" d="M70.86,19.14s2.67,1.84-.12,5.21l-4.06,4.9-5.42-4.48,4.06-4.9c2.79-3.37,5.09-1.09,5.09-1.09"/>
+    <polyline class="cls-2" points="63.82 27.2 69.57 31.96 66.22 36.01 60.47 31.25"/>
+    <path class="cls-2" d="M44.61,50.04c1.67,1.38,2.89-.57,2.89-.57l14.25-17.22-3.27-2.7-14.25,17.22s-1.68,1.57-.02,2.95"/>
+  </g>
+  <path class="cls-2" d="M31.26,28.5s1.26,3.86-2.74,4.61"/>
+</svg>

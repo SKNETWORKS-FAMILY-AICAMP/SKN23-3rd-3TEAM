@@ -105,12 +105,11 @@ def login(body: LoginRequest):
         { "email": "test@test.com", "password": "pass1234!" }
     """
     try:
-        user = auth_service.login_local(body.email, body.password)
+        result = auth_service.login_local(body.email, body.password)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-    token = create_access_token(user.user_id)
-    return TokenResponse(access_token=token)
+    return TokenResponse(access_token=result["access_token"])
 
 
 # ─────────────────────────────────────────────

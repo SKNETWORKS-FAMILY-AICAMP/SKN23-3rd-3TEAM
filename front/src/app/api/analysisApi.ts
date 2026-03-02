@@ -101,7 +101,7 @@ export async function fetchAnalysisHistory(): Promise<AnalysisResult[]> {
  * back: GET /analysis/factorials
  */
 export async function fetchFactorials(): Promise<KeywordResponse[]> {
-  const res = await fetch(`${API_BASE}/analysis/factorials`);
+  const res = await fetch(`${API_BASE}/keywords/factorials`);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);

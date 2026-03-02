@@ -17,6 +17,9 @@ import {
   ImagePlus,
   ChevronDown,
   Lock,
+  ExternalLink,
+  Heart,
+  Loader2,
 } from "lucide-react";
 import {
   createChatRoom,
@@ -25,6 +28,8 @@ import {
   sendGuestMessage,
   type ChatMessage,
 } from "@/app/api/chatApi";
+import { addToWishlist } from "@/app/api/wishlistApi";
+import { fetchCurrentUser } from "@/app/api/userApi";
 import { uploadImage } from "@/app/api/uploadApi";
 import { Icon } from "@/app/components/ui/icon";
 
@@ -84,6 +89,29 @@ const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
       return [];
   }
 };
+
+// ─── 올리브영 구매 링크 파싱 ─────────────────────────────────────────
+const OLIVEYOUNG_SEPARATOR = "**🛒 올리브영 구매 링크**";
+
+function parseOliveYoungLinks(content: string): {
+  mainText: string;
+  links: { name: string; url: string }[];
+} {
+  const idx = content.indexOf(OLIVEYOUNG_SEPARATOR);
+  if (idx === -1) return { mainText: content, links: [] };
+
+  const mainText = content.slice(0, idx).trimEnd();
+  const linkSection = content.slice(idx + OLIVEYOUNG_SEPARATOR.length);
+
+  const links: { name: string; url: string }[] = [];
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let match;
+  while ((match = linkRegex.exec(linkSection)) !== null) {
+    links.push({ name: match[1], url: match[2] });
+  }
+
+  return { mainText, links };
+}
 
 // ─── image_url 파싱 ───────────────────────────────────────────────────
 // DB에서 split(",")으로 저장된 경우 각 요소에 ["  "  "] 같은 문자가 포함됨
@@ -252,6 +280,81 @@ export function ChatPage() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setShowAnalysisToast(true);
     toastTimerRef.current = setTimeout(() => setShowAnalysisToast(false), 3000);
+  };
+
+  // 위시리스트 state
+  const [wishedUrls, setWishedUrls] = useState<Set<string>>(new Set());
+  const [wishingUrls, setWishingUrls] = useState<Set<string>>(new Set());
+  const [showWishlistToast, setShowWishlistToast] = useState(false);
+  const [showDuplicateWishToast, setShowDuplicateWishToast] = useState(false);
+  const wishToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const duplicateWishToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cachedUserIdRef = useRef<number | null>(null);
+  const [userProfileUrl, setUserProfileUrl] = useState<string | null>(null);
+
+  // 로그인 상태일 때 프로필 이미지 1회 조회
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetchCurrentUser()
+      .then((user) => {
+        cachedUserIdRef.current = user.user_id;
+        setUserProfileUrl(user.profile_image_url ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
+  const triggerWishlistToast = () => {
+    if (wishToastTimerRef.current) clearTimeout(wishToastTimerRef.current);
+    setShowWishlistToast(true);
+    wishToastTimerRef.current = setTimeout(() => setShowWishlistToast(false), 3000);
+  };
+
+  const triggerDuplicateWishToast = () => {
+    if (duplicateWishToastTimerRef.current) clearTimeout(duplicateWishToastTimerRef.current);
+    setShowDuplicateWishToast(true);
+    duplicateWishToastTimerRef.current = setTimeout(() => setShowDuplicateWishToast(false), 3000);
+  };
+
+  const handleAddToWishlist = async (
+    link: { name: string; url: string },
+    msgId: number,
+  ) => {
+    if (!isLoggedIn) { triggerWishlistToast(); return; }
+    if (wishingUrls.has(link.url)) return;
+    if (wishedUrls.has(link.url)) { triggerDuplicateWishToast(); return; }
+
+    setWishingUrls((prev) => new Set(prev).add(link.url));
+    try {
+      if (cachedUserIdRef.current === null) {
+        const user = await fetchCurrentUser();
+        cachedUserIdRef.current = user.user_id;
+        setUserProfileUrl(user.profile_image_url ?? null);
+      }
+      const goodsNo =
+        new URL(link.url).searchParams.get("goodsNo") ?? link.name.slice(0, 50);
+
+      await addToWishlist({
+        user_id             : cachedUserIdRef.current,
+        product_vector_id   : goodsNo,
+        product_name        : link.name,
+        message_id          : msgId,
+        product_description : link.url,
+      });
+      setWishedUrls((prev) => new Set(prev).add(link.url));
+    } catch (err: unknown) {
+      if ((err as { statusCode?: number }).statusCode === 400) {
+        setWishedUrls((prev) => new Set(prev).add(link.url));
+        triggerDuplicateWishToast();
+      } else {
+        console.error("위시리스트 추가 실패:", err);
+      }
+    } finally {
+      setWishingUrls((prev) => {
+        const next = new Set(prev);
+        next.delete(link.url);
+        return next;
+      });
+    }
   };
 
   // 기존 채팅 전용 state
@@ -529,7 +632,7 @@ export function ChatPage() {
                       className={`rounded-2xl text-sm leading-relaxed overflow-hidden ${
                         msg.role === "user"
                           ? "text-white rounded-br-md shadow-sm bg-[#84c13d]"
-                          : "text-gray-800 bg-white border border-gray-100 shadow-sm rounded-bl-md"
+                          : "text-gray-800 bg-white border border-gray-100 shadow-sm rounded-tl-md"
                       }`}
                     >
                       {/* 단일 이미지 */}
@@ -566,36 +669,89 @@ export function ChatPage() {
                         </div>
                       )}
                       {/* 텍스트 */}
-                      <div className="px-4 py-3">
-                        {msg.role === "bot" ? (
-                          <ReactMarkdown
-                            components={{
-                              p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                              em:     ({ children }) => <em className="italic">{children}</em>,
-                              ul:     ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                              ol:     ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                              li:     ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
-                              h1:     ({ children }) => <h1 className="text-base font-bold mb-2">{children}</h1>,
-                              h2:     ({ children }) => <h2 className="text-sm font-bold mb-1">{children}</h2>,
-                              h3:     ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
-                              code:   ({ children }) => <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>,
-                              hr:     () => <hr className="my-2 border-gray-200" />,
-                            }}
-                          >
-                            {msg.content}
-                          </ReactMarkdown>
-                        ) : (
+                      {msg.role === "bot" ? (() => {
+                        const { mainText, links } = parseOliveYoungLinks(msg.content);
+                        return (
+                          <>
+                            <div className="px-4 py-3">
+                              <ReactMarkdown
+                                components={{
+                                  p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                                  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                                  em:     ({ children }) => <em className="italic">{children}</em>,
+                                  ul:     ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                  ol:     ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                  li:     ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
+                                  h1:     ({ children }) => <h1 className="text-base font-bold mb-2">{children}</h1>,
+                                  h2:     ({ children }) => <h2 className="text-sm font-bold mb-1">{children}</h2>,
+                                  h3:     ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
+                                  code:   ({ children }) => <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>,
+                                  hr:     () => <hr className="my-2 border-gray-200" />,
+                                }}
+                              >
+                                {mainText}
+                              </ReactMarkdown>
+                            </div>
+                            {links.length > 0 && (
+                              <div className="px-4 py-3 flex flex-col gap-2">
+                                <p className="text-sm font-semibold text-gray-500">🛒 올리브영 구매 링크</p>
+                                <div className="flex flex-col gap-1.5">
+                                  {links.map((link, i) => {
+                                    const isWished  = wishedUrls.has(link.url);
+                                    const isWishing = wishingUrls.has(link.url);
+                                    return (
+                                      <div key={i} className="flex items-center gap-1.5">
+                                        <button
+                                          onClick={() => handleAddToWishlist(link, msg.id)}
+                                          disabled={isWishing}
+                                          title={isWished ? "위시리스트에 추가됨" : "위시리스트에 추가"}
+                                          className="flex-shrink-0 w-8.5 h-8.5 rounded-full flex items-center justify-center border transition-all cursor-pointer disabled:cursor-default"
+                                          style={isWished
+                                            ? { background: "#E8F5D0", borderColor: "#84C13D" }
+                                            : { background: "#F9FAFB", borderColor: "#E5E7EB" }
+                                          }
+                                        >
+                                          {isWishing ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#84C13D]" />
+                                          ) : (
+                                            <Heart
+                                              className="w-3.5 h-3.5"
+                                              style={isWished
+                                                ? { color: "#84C13D", fill: "#84C13D" }
+                                                : { color: "#9CA3AF" }
+                                              }
+                                            />
+                                          )}
+                                        </button>
+                                        <a
+                                          href={link.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex flex-row items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-[#F4FAE8] text-[#4A7A1E] border border-[#C5E89A] hover:bg-[#E8F5D0] transition-colors"
+                                        >
+                                          <span className="leading-relaxed">{link.name}</span>
+                                          <ExternalLink className="w-3.5 h-3.5  text-[#84C13D]" />
+                                        </a>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })() : (
+                        <div className="px-4 py-3">
                           <span className="whitespace-pre-wrap">{msg.content}</span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                     <span className="text-[10px] text-gray-400 px-1">{msg.time}</span>
                   </div>
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
                       <img
-                        src={defaultProfile}
+                        src={userProfileUrl ?? defaultProfile}
                         alt="User"
                         className="w-full h-full object-cover"
                       />
@@ -763,6 +919,52 @@ export function ChatPage() {
             >
               로그인
             </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 위시리스트 로그인 안내 토스트 */}
+      <AnimatePresence>
+        {showWishlistToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
+            style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
+          >
+            <Heart className="w-4 h-4 flex-shrink-0" style={{ color: "#84C13D" }} />
+            <span className="flex-1 text-xs leading-relaxed">
+              위시리스트는 <strong>회원 전용</strong> 기능입니다.
+            </span>
+            <Link
+              to="/login"
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: "#84C13D", color: "white" }}
+              onClick={() => setShowWishlistToast(false)}
+            >
+              로그인
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 위시리스트 중복 추가 토스트 */}
+      <AnimatePresence>
+        {showDuplicateWishToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
+            style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
+          >
+            <Heart className="w-4 h-4 flex-shrink-0" style={{ color: "#84C13D", fill: "#84C13D" }} />
+            <span className="flex-1 text-xs leading-relaxed">
+              이미 위시리스트에 추가된 상품입니다.
+            </span>
           </motion.div>
         )}
       </AnimatePresence>

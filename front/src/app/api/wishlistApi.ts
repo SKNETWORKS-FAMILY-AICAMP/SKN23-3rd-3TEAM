@@ -5,6 +5,8 @@
  *
  * 사용하는 엔드포인트:
  *   GET    /wishlist              → fetchWishlist()
+ *   GET    /wishlist/{wish_id}    → fetchWishlistItem()
+ *   POST   /wishlist              → addToWishlist()
  *   DELETE /wishlist/{wish_id}    → removeFromWishlist()
  * ─────────────────────────────────────────────────────────────
  */
@@ -64,6 +66,38 @@ export async function fetchWishlistItem(wishId: number): Promise<WishlistItem> {
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+  }
+
+  return res.json() as Promise<WishlistItem>;
+}
+
+export interface WishlistAddBody {
+  user_id             : number;
+  product_vector_id   : string;
+  product_name        : string;
+  message_id         ?: number | null;
+  product_description?: string | null;
+}
+
+/**
+ * 위시리스트에 제품 추가.
+ * back: POST /wishlist → analysis_service.add_to_wishlist()
+ * 동일 product_vector_id 가 이미 있으면 서버에서 400 반환.
+ */
+export async function addToWishlist(body: WishlistAddBody): Promise<WishlistItem> {
+  const res = await fetch(`${API_BASE}/wishlist`, {
+    method : "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization : `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const msg = (data as { detail?: string }).detail ?? `서버 오류 (${res.status})`;
+    throw Object.assign(new Error(msg), { statusCode: res.status });
   }
 
   return res.json() as Promise<WishlistItem>;

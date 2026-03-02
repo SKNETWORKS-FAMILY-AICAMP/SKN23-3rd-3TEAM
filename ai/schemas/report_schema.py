@@ -1,40 +1,53 @@
+"""
+report_schema.py
+LLM 응답 구조를 정의합니다.
+프론트에는 chat_answer 필드가 주로 사용됩니다.
+"""
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
+
 
 class Citation(BaseModel):
     source_id: str
     snippet: str
+
 
 class Observation(BaseModel):
     title: str
     detail: str
     confidence: float = Field(ge=0.0, le=1.0)
 
-# ✅ Products 추가
+
 RecCategory = Literal["AM", "PM", "Lifestyle", "Ingredients", "Products"]
+
 
 class Recommendation(BaseModel):
     category: RecCategory
     items: List[str]
 
-# ✅ (권장) 제품 추천을 구조화해서 담을 필드 추가
+
 class ProductItem(BaseModel):
-    brand: str
+    brand: str = ""                         # 선택값 (Tavily에서 추출 어려움)
     name: str
-    why: str
-    url: Optional[str] = None          # ✅ 추가
-    how_to_use: Optional[str] = None
-    evidence_source_id: str  # rag_passages의 source_id와 매칭(프롬프트에서 강제)
+    why: str = ""
+    oliveyoung_url: Optional[str] = None   # 올리브영 상세 링크
+    evidence_source_id: str = ""            # 선택값
+
 
 class FinalReport(BaseModel):
-    summary: str
-    observations: List[Observation]
-    recommendations: List[Recommendation]
+    # ── 프론트 메인 표시 ──────────────────────────
+    chat_answer: str = ""               # 사용자에게 보여주는 최종 답변 (Markdown)
 
-    # ✅ (권장) 제품 리스트. 없으면 빈 리스트로.
+    # ── 구조화 데이터 (추후 프론트 활용 가능) ─────
+    summary: str = ""
+    observations: List[Observation] = []
+    recommendations: List[Recommendation] = []
     products: List[ProductItem] = []
 
+    # ── 메타 ──────────────────────────────────────
+    intent: str = ""                    # 분류된 intent
     warnings: List[str] = []
-    red_flags: List[str] = []
     citations: List[Citation] = []
-    chat_answer: str = ""
+
+    # ── 채팅방 제목 (첫 메시지일 때만 채워짐) ────
+    room_title: Optional[str] = None

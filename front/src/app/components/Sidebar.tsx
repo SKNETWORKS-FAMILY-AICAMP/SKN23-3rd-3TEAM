@@ -7,6 +7,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { fetchChatRooms, deleteChatRoom, type ChatRoom } from "@/app/api/chatApi";
 import { fetchCurrentUser, type UserResponse } from "@/app/api/userApi";
 import { logout } from "@/app/api/authApi";
+import LOGO from "@/assets/logo.png";
 
 interface GuestChatRoom {
   id         : string;
@@ -151,7 +152,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-gray-50">
           <Link to="/chat" className="flex items-center gap-2.5 group" onClick={onClose}>
-            <img src="/src/assets/logo.png" alt="LOGO" />
+            <img src={LOGO} alt="LOGO" />
           </Link>
         </div>
 

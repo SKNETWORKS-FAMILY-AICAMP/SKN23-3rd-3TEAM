@@ -322,6 +322,13 @@ export function ChatPage() {
     setIsSending(true);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
+    // 비로그인 첫 메시지 전송 시 게스트 채팅 카운트 증가
+    const isFirstGuestMessage = !isLoggedIn && messages.length === 0;
+    if (isFirstGuestMessage) {
+      const prev = parseInt(localStorage.getItem("guest_chat_count") ?? "0", 10);
+      localStorage.setItem("guest_chat_count", String(prev + 1));
+    }
+
     try {
       if (!isLoggedIn) {
         // 비로그인: 게스트 엔드포인트 사용 (DB 저장 없음)

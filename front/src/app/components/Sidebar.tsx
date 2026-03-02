@@ -26,13 +26,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [user, setUser] = useState<UserResponse | null>(null);
-  const [showMenuToast, setShowMenuToast] = useState(false);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showMenuToast, setShowMenuToast]           = useState(false);
+  const [showChatLimitToast, setShowChatLimitToast] = useState(false);
+  const toastTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatLimitTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerMenuToast = () => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setShowMenuToast(true);
     toastTimerRef.current = setTimeout(() => setShowMenuToast(false), 3000);
+  };
+
+  const triggerChatLimitToast = () => {
+    if (chatLimitTimerRef.current) clearTimeout(chatLimitTimerRef.current);
+    setShowChatLimitToast(true);
+    chatLimitTimerRef.current = setTimeout(() => setShowChatLimitToast(false), 3000);
   };
 
   const navItems = [
@@ -55,7 +63,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       .catch((err: Error) => console.error("사용자 정보 조회 실패:", err));
   }, [isLoggedIn]);
 
+  const GUEST_CHAT_LIMIT = 5;
+
   const handleNewChat = () => {
+    if (!isLoggedIn) {
+      const count = parseInt(localStorage.getItem("guest_chat_count") ?? "0", 10);
+      if (count >= GUEST_CHAT_LIMIT) {
+        triggerChatLimitToast();
+        return;
+      }
+    }
     setActiveChatId(null);
     navigate("/chat");
     onClose();
@@ -316,6 +333,34 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
               style={{ background: "#84C13D", color: "white" }}
               onClick={() => setShowMenuToast(false)}
+            >
+              로그인
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 비로그인 채팅 한도 초과 토스트 */}
+      <AnimatePresence>
+        {showChatLimitToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
+            style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
+          >
+            <Lock className="w-4 h-4 flex-shrink-0" style={{ color: "#84C13D" }} />
+            <span className="flex-1 text-xs leading-relaxed">
+              채팅방은 최대 <strong>{GUEST_CHAT_LIMIT}개</strong>까지 생성할 수 있어요.<br />
+              추가 생성은 <strong>로그인</strong>이 필요합니다.
+            </span>
+            <Link
+              to="/login"
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: "#84C13D", color: "white" }}
+              onClick={() => setShowChatLimitToast(false)}
             >
               로그인
             </Link>

@@ -39,14 +39,14 @@ function ScoreGauge({ score }: { score: number }) {
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (score / 100) * circumference;
   return (
-    <div className="relative w-52 h-52">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+    <div className="relative w-100 h-auto">
+      <svg className="w-full h-full -rotate-90" viewBox="-7 -7 134 134">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" strokeWidth="13" />
         <motion.circle
           cx="60" cy="60" r="54"
           fill="none"
           stroke="url(#scoreGradient)"
-          strokeWidth="10"
+          strokeWidth="13"
           strokeLinecap="round"
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
@@ -65,11 +65,11 @@ function ScoreGauge({ score }: { score: number }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-2xl font-bold text-[#84C13D]"
+          className="text-4xl font-bold text-[#84C13D]"
         >
           {score}
         </motion.span>
-        <span className="text-[11px] text-gray-400 font-medium">전체 점수</span>
+        <span className="text-xs text-gray-400 font-medium">전체 점수</span>
       </div>
     </div>
   );
@@ -264,7 +264,7 @@ export function AnalysisPage() {
                 className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm aspect-square overflow-auto"
               >
                 <h3 className="font-semibold text-gray-800 mb-4">종합 피부 점수</h3>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-6 mb-6">
                   <ScoreGauge score={overallScore} />
                   <div>
                     <div className="flex items-center gap-2 mb-2">

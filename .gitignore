@@ -212,3 +212,5 @@ make_tree.py
 app.py
 *.txt
 app_demo.py
+checkpoint
+skin_ai/checkpoint/

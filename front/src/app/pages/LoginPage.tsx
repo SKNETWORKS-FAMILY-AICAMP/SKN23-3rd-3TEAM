@@ -46,12 +46,12 @@ export function LoginPage() {
         className="w-full max-w-[400px]"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-gray-900 font-bold text-[#84c13d]">SKIN AI</h1>
+        <div className="text-center mb-2">
+          <p className="text-4xl font-bold text-[#84c13d]">On_You</p>
           <p className="text-sm text-gray-500 mt-1">나만의 AI 피부 분석 서비스</p>
-          <div className="flex items-center justify-center mx-auto mb-3">
-            <video src={logoIdle} autoPlay loop muted playsInline className="w-40 h-auto" />
-          </div>
+          <Link to="/chat" className="flex items-center justify-center mx-auto mb-3">
+            <video src={logoIdle} autoPlay loop muted playsInline className="w-45 h-auto" />
+          </Link>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-7">

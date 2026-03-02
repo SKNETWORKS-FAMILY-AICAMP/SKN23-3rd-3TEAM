@@ -315,7 +315,7 @@ def get_skin_care_routines() -> list[dict]:
     """
     rows = execute_query(
         """
-        SELECT keyword_id, keyword, label, description
+        SELECT keyword_id, type, keyword, label, description
         FROM keywords
         WHERE type = 'skin_care_routine'
         ORDER BY keyword_id ASC
@@ -371,9 +371,11 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
     # 낮은 지표 순서대로 description과 매칭되는 루틴 선택
     for metric_key, _score in weak_metrics:
         for routine in routines:
-            kw    = routine.get("keyword", "")
-            label = routine.get("label", "")
-            desc  = routine.get("description", "")
+            kw    = routine.get("keyword") or ""
+            label = routine.get("label") or ""
+            desc  = routine.get("description") or ""   # NULL → 빈 문자열
+            if not kw or not label:
+                continue
             if kw in seen_keywords:
                 continue
             # description에 해당 지표 키워드가 포함되면 선택
@@ -389,8 +391,10 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
     # min_count 미달 시 아직 선택 안 된 루틴으로 보완 (fallback)
     if len(selected_labels) < min_count:
         for routine in routines:
-            kw    = routine.get("keyword", "")
-            label = routine.get("label", "")
+            kw    = routine.get("keyword") or ""
+            label = routine.get("label") or ""
+            if not kw or not label:
+                continue
             if kw not in seen_keywords:
                 selected_labels.append(label)
                 seen_keywords.add(kw)

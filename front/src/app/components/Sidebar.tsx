@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Icon } from "@/app/components/ui/icon"
 import defaultProfile from "@/assets/profile.png"
-import { Plus, LogOut, Settings, Lock } from "lucide-react";
+import { Plus, LogIn, LogOut, Settings, Lock, Trash2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { fetchChatRooms, type ChatRoom } from "@/app/api/chatApi";
+import { fetchChatRooms, deleteChatRoom, type ChatRoom } from "@/app/api/chatApi";
 import { fetchCurrentUser, type UserResponse } from "@/app/api/userApi";
 import { logout } from "@/app/api/authApi";
 
@@ -59,6 +59,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     setActiveChatId(null);
     navigate("/chat");
     onClose();
+  };
+
+  // 채팅방 삭제
+  const handleDeleteChat = async (e: React.MouseEvent, chatRoomId: number) => {
+    e.stopPropagation();
+    try {
+      await deleteChatRoom(chatRoomId);
+      setChatRooms(prev => prev.filter(r => r.chat_room_id !== chatRoomId));
+      if (activeChatId === chatRoomId) {
+        setActiveChatId(null);
+        navigate("/chat");
+      }
+    } catch (err) {
+      console.error("채팅방 삭제 실패:", err);
+    }
   };
 
   return (
@@ -171,7 +186,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {chatRooms.map((chat) => {
                   const isActive = location.pathname === "/chat" && activeChatId === chat.chat_room_id;
                   return (
-                    <button
+                    <div
                       key={chat.chat_room_id}
                       onClick={() => {
                         setActiveChatId(chat.chat_room_id);
@@ -189,13 +204,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <p className="text-xs font-semibold truncate" style={{ color: isActive ? "#4A7A1E" : "#374151" }}>
                               {chat.title ?? "새 채팅"}
                             </p>
-                            <span className="text-[10px] text-gray-400 flex-shrink-0 ml-1">
-                              {formatRelativeDate(chat.created_at)}
-                            </span>
+                            <div className="flex-shrink-0 ml-1" style={{height: '16px'}}>
+                              <span className="text-[10px] text-gray-400 group-hover:hidden">
+                                {formatRelativeDate(chat.created_at)}
+                              </span>
+                              <button
+                                onClick={(e) => handleDeleteChat(e, chat.chat_room_id)}
+                                className="hidden group-hover:flex items-center justify-center p-0.5 rounded text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -215,9 +238,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Link
               to="/login"
               onClick={onClose}
-              className="w-full flex items-center justify-center py-2.5 rounded-lg text-xs font-semibold text-white transition-all"
+              className="w-full flex gap-1.5 items-center justify-center py-2.5 rounded-lg text-xs font-semibold text-white transition-all"
               style={{ background: "#84C13D", boxShadow: "0 2px 8px rgba(133,193,61,0.3)" }}
             >
+              <LogIn className="w-3.5 h-3.5" />
               로그인
             </Link>
           </div>

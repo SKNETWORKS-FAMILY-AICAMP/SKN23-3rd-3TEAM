@@ -6,6 +6,7 @@
  * 사용하는 엔드포인트:
  *   GET    /chats                           → fetchChatRooms()
  *   POST   /chats                           → createChatRoom()
+ *   DELETE /chats/{chat_room_id}            → deleteChatRoom()
  *   GET    /chats/{chat_room_id}/messages   → fetchMessages()
  *   POST   /chats/{chat_room_id}/messages   → sendMessage()
  *   POST   /chats/guest/message             → sendGuestMessage()  (비로그인 전용)
@@ -79,6 +80,21 @@ export async function createChatRoom(): Promise<ChatRoom> {
     throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
   }
   return res.json() as Promise<ChatRoom>;
+}
+
+/**
+ * 채팅방 삭제 (soft delete).
+ * back: DELETE /chats/{chat_room_id} → chat_service.delete_chat_room()
+ */
+export async function deleteChatRoom(chatRoomId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/chats/${chatRoomId}`, {
+    method : "DELETE",
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+  }
 }
 
 /**

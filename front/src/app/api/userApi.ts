@@ -100,6 +100,28 @@ export async function updateCurrentUser(body: UserUpdateBody): Promise<UserRespo
   return res.json() as Promise<UserResponse>;
 }
 
+/**
+ * 내 소셜 연동 계정 조회.
+ * back: GET /users/me/social-links → auth_service.get_linked_social_providers()
+ */
+export interface SocialLinksResponse {
+  is_social : boolean;
+  providers : string[];  // e.g. ["google", "kakao"]
+}
+
+export async function fetchSocialLinks(): Promise<SocialLinksResponse> {
+  const res = await fetch(`${API_BASE}/users/me/social-links`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+  }
+
+  return res.json() as Promise<SocialLinksResponse>;
+}
+
 // ─────────────────────────────────────────────
 // 키워드 (공통 코드 테이블)
 // ─────────────────────────────────────────────

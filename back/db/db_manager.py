@@ -1,10 +1,10 @@
 """
 db_manager.py
 ─────────────────────────────────────────────────────────────
-목적  : AWS RDS(MariaDB) 연결 및 공통 쿼리 실행 담당
+목적  : MariaDB 연결 및 공통 쿼리 실행 담당
 역할  :
-    1. SSH 터널링을 통한 RDS 안전 접속 (EC2 경유)
-    2. pymysql Connection Pool 관리 (재사용 가능)
+    1. SSH_HOST 설정 시 SSH 터널링, 미설정 시 직접 접속
+    2. pymysql Connection 관리 (재사용 가능)
     3. select / insert / update / delete 공통 헬퍼 함수 제공
     4. init_db() - 서버 시작 시 001_init_tables.sql 자동 실행
 ─────────────────────────────────────────────────────────────
@@ -62,19 +62,29 @@ def _get_tunnel() -> SSHTunnelForwarder:
 # ─────────────────────────────────────────────
 def get_connection() -> pymysql.connections.Connection:
     """
-    SSH 터널을 통해 RDS에 pymysql Connection 생성 후 반환.
+    SSH_HOST가 설정된 경우 SSH 터널을 통해 RDS에 접속,
+    없으면 DB_HOST로 직접 접속.
     사용 후 반드시 conn.close() 호출 필요.
     """
-    tunnel = _get_tunnel()
+    if SSH_HOST:
+        # 로컬 개발 환경: SSH 터널 경유
+        tunnel = _get_tunnel()
+        host = "127.0.0.1"
+        port = tunnel.local_bind_port
+    else:
+        # EC2 환경: MariaDB 직접 접속
+        host = DB_HOST
+        port = DB_PORT
+
     conn = pymysql.connect(
-        host="127.0.0.1",                       # 터널 로컬 바인딩 주소
-        port=tunnel.local_bind_port,            # 터널이 열어준 로컬 포트
+        host=host,
+        port=port,
         user=DB_USER,
         password=DB_PASSWORD,
         db=DB_NAME,
         charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor, # 결과를 dict로 반환
-        autocommit=False,                       # 트랜잭션 수동 관리
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=False,
     )
     return conn
 

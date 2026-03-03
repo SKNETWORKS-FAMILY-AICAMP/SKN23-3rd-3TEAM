@@ -6,6 +6,7 @@
   <img src="front/src/assets/logo.png" width="400">
 </div>
 
+
 **On_You — AI Skin Analysis & OliveYoung Product Recommendation Chatbot**
 
 딥러닝 피부 정량 분석 · VLM 기반 전성분 OCR · LangGraph 오케스트레이션 · 올리브영 실상품 검증 추천
@@ -664,7 +665,7 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 
 | Category | Stack |
 |:---:|:---|
-| **Front-End** | ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black) ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white) |
+| **Front-End** | ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black) ![Timescript](https://img.shields.io/badge/Timescript-61DAFB?style=flat&logo=Timescript&logoColor=black) ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white) [tailwindcss](https://img.shields.io/badge/tailwindcss-1572B6?style=flat&logo=tailwindcss&logoColor=white) |
 | **Back-End** | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) |
 | **Database** | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat&logo=mysql&logoColor=white) |
 | **Vector DB** | ![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B00?style=flat&logoColor=white) |
@@ -673,8 +674,8 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 | **Orchestration** | ![LangGraph](https://img.shields.io/badge/LangGraph-111111?style=flat&logoColor=white) |
 | **Search** | ![Tavily](https://img.shields.io/badge/Tavily-0066FF?style=flat&logoColor=white) |
 | **Embedding** | ![ko-sroberta](https://img.shields.io/badge/ko--sroberta--multitask-yellow?style=flat&logoColor=white) |
-| **Infra** | ![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white) |
-| **Tools** | ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white) ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white) ![RunPod](https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white) |
+| **Infra** | ![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white) ![S3](https://img.shields.io/badge/S3-FF9900?style=flat&logo=amazonec2&logoColor=white) |
+| **Tools** | ![Figma](https://img.shields.io/badge/Figma-F05032?style=flat&logo=Figma&logoColor=white) ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white) ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white) ![RunPod](https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white) |
 
 </div>
 
@@ -700,33 +701,74 @@ uvicorn main:app --reload --port 8000
 ### 8.2. Frontend (React)
 
 ```bash
-cd front
-npm install
-npm run dev
+1. `node --version` -> 18버전 이상이어야함.
+2. `npm install -g pnpm`
+3. `cd /front` → front 폴더로 이동
+4. `pnpm install` -> 패키지 설치 (시간 좀 걸림)
+5. `pnpm dev` → react 개발 서버 실행
 ```
 
 ### 8.3. Environment (.env)
 
-```bash
-# LLM
-OPENAI_API_KEY=sk-...
+```
+openai_key 
+VECTOR_DATA_DIR
+CHROMA_DB_PATH
+CHROMA_COLLECTION
+EMBED_MODEL_NAME
+tavily_key
+HF_TOKEN
+SENDGRID_API_KEY
+SENDGRID_FROM_EMAIL
+EMAIL_OTP_SECRET
 
-# DB
-MYSQL_HOST=...
-MYSQL_USER=...
-MYSQL_PASSWORD=...
-MYSQL_DB=...
+# vector DB
+DATA_GO_CSMT_KEY
+DATA_GO_COSMETIC_KEY
+NCBI_API_KEY
+PUBMED_EMAIL
 
-# Vector DB
-CHROMA_DB_PATH=back/vector/vector_store
-CHROMA_COLLECTION=skin_knowledge_base
-EMBED_MODEL_NAME=jhgan/ko-sroberta-multitask
+# EC2 접속 정보
+SSH_HOST
+SSH_PORT
+SSH_USER
+SSH_PKEY
 
-# Web Search
-TAVILY_API_KEY=tvly-...
+# S3 정보
+AWS_REGION=ap-northeast-2
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+S3_BUCKET_NAME
+
+# mariadb 정보
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+
+VITE_API_BASE_URL=http://localhost:8000
+
+TEMP_ACCESS_TOKEN
+
+# Google OAuth
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI
+
+# Kakao OAuth
+KAKAO_CLIENT_ID
+KAKAO_CLIENT_SECRET
+KAKAO_REDIRECT_URI
+
+# JWT
+JWT_SECRET_KEY
 ```
 
 ---
+## 와이어프레임
+와이어 프레임 (Figma): https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatbot?t=YhjLgI2srgQIFRuA-1
+
 
 ## 9. 시연화면
 
@@ -737,8 +779,22 @@ TAVILY_API_KEY=tvly-...
 | <img src="assets/demo/fast.gif" width="450"> | <img src="assets/demo/deep.gif" width="450"> |
 
 | 성분 OCR 분석 | 제품 추천 + 위시리스트 |
-|:---:|:---:|
+|:---:|:---:|`
 | <img src="assets/demo/ocr.gif" width="450"> | <img src="assets/demo/wishlist.gif" width="450"> | -->
+<img src="assets/0_진입화면_비회원.png" />
+<img src="assets/1-1_채팅_비회원.png" />
+<img src="assets/1-2_채팅_회원.png" />
+<img src="assets/1-2_채팅_회원_빠른분석.png" />
+<img src="assets/1-2_채팅_회원_정밀분석.png" />
+<img src="assets/1-2_채팅_회원_성분분석.png" />
+<img src="assets/2_피부분석_현재분석.png" />
+<img src="assets/2_피부분석_비교분석.png" />
+<img src="assets/3_위시리스트.png" />
+<img src="assets/4-1_로그인.png" />
+<img src="assets/4-2_비밀번호찾기.png" />
+<img src="assets/4-3_회원가입.png" />
+<img src="assets/5-1_설정_프로필.png" />
+<img src="assets/5-2_설정_소셜연동.png" />
 
 </div>
 
@@ -792,8 +848,6 @@ TAVILY_API_KEY=tvly-...
 
 - **정유선** :이번 프로젝트에서 ReactJS와 Typescript 기반 프론트엔드와 FastAPI 구축을 처음 경험하며 많은 것을 배웠습니다. 귀여운 
 이미지 디자인과 디자이너의 도움 덕분에 프론트 개발이 더욱 즐거웠습니다.
-또한 한국어 특화 임베딩 모델(jhgan/ko-sroberta-multitask)을 활용한 데이터 수집과 벡터 임베딩 작업도 값진 경험이었습니다.
-팀원들 모두가 맡은 바 최선을 다해 주셨고, 팀장님의 훌륭한 리더십 덕분에 프로젝트를 성공적으로 마무리할 수 있었습니다. 모두에게 감사드립니다.
 
 - **송민채** :이번 프로젝트에서 저는 DB 설계, 백엔드 구조 설계, 인증 보안 구현을 맡았습니다. ERD 작성과 외래키 설정을 통해 데이터 관계를 직접 설계하고, 계층 구조로 시스템을 구성하며 이전보다 더 깊이 있게 DB 구조를 고민해볼 수 있었습니다. 또한 프론트엔드, 백엔드, LLM이 동시에 진행되는 개발 과정을 경험하며 여러 영역이 함께 맞물려 돌아간다는 점을 알게 되었습니다. 로그인 비밀번호 암호화와 해싱을 구현하기 위해 보안 내용을 찾아보면서, 이전에는 잘 알지 못했던 개념들을 새롭게 배우는 계기가 되었습니다. 이번 프로젝트를 통해 단순한 기능 구현을 넘어, 전체 흐름과 구조를 고려하며 개발하는 관점을 배우게 되었습니다.
 

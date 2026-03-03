@@ -263,6 +263,59 @@ def vision_node(state: GraphState) -> GraphState:
             n = len(vision_result.get("measurements", {}))
             print(f"[VISION] 완료: {n}개 지표", flush=True)
 
+        elif analysis_type == "ingredient":
+            if len(images) < 1:
+                raise ValueError("성분 분석에는 화장품 성분표 사진 1장이 필요해요.")
+
+            print("[VISION] 성분 분석 시작 (데모 모드)", flush=True)
+
+            # ── 데모용: 미리 추출된 전성분 JSON에서 순서대로 반환 ──
+            import json
+            import hashlib
+
+            demo_dir = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..", "..", "..", "skin_ai", "ingredient_demo"
+            )
+            demo_json_path = os.path.join(demo_dir, "demo_products.json")
+
+            if os.path.exists(demo_json_path):
+                with open(demo_json_path, "r", encoding="utf-8") as f:
+                    demo_products = json.load(f)
+
+                # 카운터 파일로 순서 추적 (1번째 호출→0, 2번째→1, 3번째→2, 다시→0)
+                counter_path = os.path.join(demo_dir, ".demo_counter")
+                try:
+                    with open(counter_path, "r") as f:
+                        idx = int(f.read().strip()) % len(demo_products)
+                except (FileNotFoundError, ValueError):
+                    idx = 0
+
+                # 다음 호출을 위해 카운터 증가
+                with open(counter_path, "w") as f:
+                    f.write(str(idx + 1))
+
+                product = demo_products[idx]
+                print(
+                    f"[VISION] 데모 제품 매칭: [{idx}] {product['product_name']} "
+                    f"({len(product['ingredients'])}개 성분)",
+                    flush=True,
+                )
+
+                vision_result = {
+                    "mode": "ingredient",
+                    "product_name": product.get("product_name", ""),
+                    "brand": product.get("brand", ""),
+                    "ingredients": product.get("ingredients", []),
+                    "ingredient_count": len(product.get("ingredients", [])),
+                    "source": "demo",
+                }
+            else:
+                print(f"[VISION] 데모 JSON 없음: {demo_json_path}", flush=True)
+                raise FileNotFoundError(
+                    "성분 분석 모델을 사용할 수 없어요. 관리자에게 문의해주세요."
+                )
+
         else:
             raise ValueError(f"알 수 없는 analysis_type: {analysis_type}")
 

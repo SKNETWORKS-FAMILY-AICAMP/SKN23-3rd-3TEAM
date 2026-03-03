@@ -44,21 +44,49 @@ def _infer_skin_type_from_metrics(vision_result: dict | None) -> str | None:
         pigmentation = metrics.get("pigmentation", {}).get("value", 0.3)
         elasticity = metrics.get("elasticity", {}).get("value", 0.5)
 
-        # 모델 출력값이 0.4~0.6 사이에 집중되므로 중앙값(0.5) 기준으로 판단
-        # 지성: 모공 높음(0.5↑) + 색소침착 높음(0.5↑)
-        if pore >= 0.5 and pigmentation >= 0.5:
-            return "지성"
-        # 건성: 수분 낮음(0.45↓) - 모공과 무관하게 건성 우선
-        if moisture <= 0.45:
+        # ── 모델 출력 범위: 0.4~0.6 중심 (Sigmoid 특성)
+        # 상대적 순위 기반으로 판단하여 5가지 타입 골고루 분류
+
+        # 1. 종합 점수 계산 (각 지표의 상대적 위치)
+        #    moisture, elasticity: 높을수록 좋음 → 그대로 사용
+        #    wrinkle, pore, pigmentation: 낮을수록 좋음 → 1에서 빼기
+        wrinkle = metrics.get("wrinkle", {}).get("value", 0.5)
+
+        good_score = (moisture + elasticity + (1 - wrinkle) + (1 - pore) + (1 - pigmentation)) / 5
+        oily_score = pore * 0.5 + pigmentation * 0.3 + (1 - moisture) * 0.2
+        dry_score = (1 - moisture) * 0.5 + (1 - elasticity) * 0.3 + (1 - pore) * 0.2
+
+        # 2. 민감성: 탄력 낮고 + 색소침착 높고 + 주름도 높음 (장벽 약화 시그널)
+        if elasticity <= 0.46 and pigmentation >= 0.50 and wrinkle >= 0.50:
+            return "민감성"
+
+        # 3. 건성: 수분이 상대적으로 가장 부족한 경우
+        if moisture <= 0.46 and pore <= 0.48:
             return "건성"
-        # 복합성: 수분 보통(0.48↓) + 모공 다소 높음(0.45↑)
-        if moisture <= 0.48 and pore >= 0.45:
+
+        # 4. 지성: 모공+색소침착이 높은 경우 (수분과 무관)
+        if pore >= 0.48 and pigmentation >= 0.50:
+            # 단, 수분도 낮으면 복합성
+            if moisture <= 0.46:
+                return "복합성"
+            return "지성"
+
+        # 5. 복합성: 수분 부족 + 모공 큼 (부위별 불균형 시그널)
+        if moisture <= 0.48 and pore >= 0.46:
             return "복합성"
-        # 중성: 수분 양호(0.5↑) + 모공 낮음(0.45↓)
-        if moisture >= 0.5 and pore <= 0.45:
+
+        # 6. 중성: 전반적으로 양호하거나 어디에도 치우치지 않음
+        if good_score >= 0.50:
             return "중성"
-        # 기본값
-        return "복합성"
+
+        # 7. 기본값: 점수 기반 판단
+        scores = {
+            "건성": dry_score,
+            "지성": oily_score,
+            "중성": good_score,
+            "복합성": 0.5,  # 기본 경쟁력
+        }
+        return max(scores, key=scores.get)
 
     elif mode == "deep":
         measurements = vision_result.get("measurements", {})
@@ -93,28 +121,53 @@ def _infer_skin_type_from_metrics(vision_result: dict | None) -> str | None:
         pigmentation = measurements.get("pigmentation_count", 100) or 100
 
         # ── 피부타입 판단 (우선순위 순) ───────────────────────
-        # 민감성: 탄력 전체 낮음 + 색소침착 있음 (피부 장벽 약화 신호)
-        if avg_elasticity <= 0.47 and min_elasticity <= 0.42 and pigmentation >= 130:
+        wrinkle_keys = [k for k in measurements if k.endswith("_Ra")]
+        wrinkle_vals = [measurements[k] for k in wrinkle_keys if measurements[k] is not None]
+        avg_wrinkle = sum(wrinkle_vals) / len(wrinkle_vals) if wrinkle_vals else 20
+
+        # 1. 민감성: 탄력 전반적 낮음 + 주름 or 색소 문제
+        if avg_elasticity <= 0.48 and (avg_wrinkle >= 22 or pigmentation >= 120):
             return "민감성"
 
-        # 건성: 어느 한 부위라도 수분이 매우 낮거나, 전체 평균 낮음
-        if min_moisture <= 45 or avg_moisture <= 52:
-            # 단, 모공이 매우 크면 복합성으로 판단
-            if max_pore < 700:
-                return "건성"
+        # 2. 건성: 수분 중심 판단 (모공과 무관하게)
+        #    이마/턱/볼 중 2곳 이상 수분 부족하면 건성
+        dry_zones = 0
+        if measurements.get("forehead_moisture", 60) <= 55:
+            dry_zones += 1
+        if measurements.get("chin_moisture", 60) <= 50:
+            dry_zones += 1
+        if min_moisture <= 55:
+            dry_zones += 1
+        if avg_moisture <= 55:
+            dry_zones += 1
 
-        # 지성: 모공이 크고 색소침착도 있음
-        if avg_pore >= 900 and pigmentation >= 130:
+        if dry_zones >= 3 and avg_elasticity <= 0.50:
+            return "건성"
+        if avg_moisture <= 53:
+            return "건성"
+
+        # 3. 지성: 모공 매우 크고 + 수분 충분 (건조하지 않은 상태에서 모공만 큼)
+        if avg_pore >= 900 and avg_moisture >= 62:
             return "지성"
 
-        # 복합성: 좌우 수분 차이가 크거나, 모공 크고 수분 낮은 부위 공존
-        if cheek_diff >= 15:
+        # 4. 복합성: 부위별 불균형이 명확한 경우
+        if cheek_diff >= 12:
             return "복합성"
-        if max_pore >= 700 and min_moisture <= 55:
+        if max_pore >= 900 and min_moisture <= 52:
             return "복합성"
 
-        # 중성: 위 조건 어디도 안 걸림
-        return "중성"
+        # 5. 중성: 수분 양호 + 탄력 양호 + 극단적 항목 없음
+        if avg_moisture >= 60 and avg_elasticity >= 0.50 and avg_pore <= 800:
+            return "중성"
+
+        # 6. 점수 기반 폴백 (모공 비중 축소, 수분/탄력 비중 확대)
+        scores = {
+            "건성": (65 - avg_moisture) / 50 * 0.5 + (0.55 - avg_elasticity) * 0.3 + dry_zones * 0.1,
+            "지성": avg_pore / 2000 * 0.4 + pigmentation / 300 * 0.3 + (avg_moisture - 50) / 50 * 0.3,
+            "복합성": cheek_diff / 30 * 0.4 + abs(avg_pore - 700) / 2000 * 0.3 + (65 - avg_moisture) / 50 * 0.3,
+            "중성": avg_moisture / 80 * 0.3 + avg_elasticity * 0.4 + (1200 - avg_pore) / 2000 * 0.3,
+        }
+        return max(scores, key=scores.get)
 
     return None
 
@@ -194,6 +247,12 @@ def search_node(state: GraphState) -> GraphState:
             print(f"[VISION METRICS] {vision_result.get('skin_metrics')}", flush=True)
         elif mode == "deep":
             print(f"[VISION METRICS] {vision_result.get('measurements')}", flush=True)
+
+        # 규칙 기반 피부타입을 vision_result에 확정값으로 주입
+        determined_type = _infer_skin_type_from_metrics(vision_result)
+        if determined_type:
+            vision_result["determined_skin_type"] = determined_type
+            print(f"[SEARCH] 확정 피부타입: {determined_type}", flush=True)
 
     rag_passages: list = []
     oliveyoung_products: list = []

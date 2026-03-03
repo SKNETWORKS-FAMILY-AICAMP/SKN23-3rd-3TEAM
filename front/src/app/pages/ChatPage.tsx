@@ -526,6 +526,8 @@ export function ChatPage() {
             const withoutOptimistic = prev.filter((m) => m.id !== userMsg.id);
             return [...withoutOptimistic, ...result.map(apiMsgToMessage)];
           });
+          // 메시지 전송 완료 후 사이드바 갱신 (이 시점에 백엔드가 제목을 설정함)
+          window.dispatchEvent(new CustomEvent("chatRoomCreated"));
         } else {
           // 기존 채팅방: 봇 메시지만 추가
           const aiMsg = result.find((m) => m.role === "assistant");

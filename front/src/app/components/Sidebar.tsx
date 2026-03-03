@@ -72,6 +72,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       .catch((err: Error) => console.error("사용자 정보 조회 실패:", err));
   }, [isLoggedIn]);
 
+  // 새 채팅방 생성 이벤트 구독 (로그인 상태일 때만)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const handleChatRoomCreated = () => {
+      fetchChatRooms()
+        .then(setChatRooms)
+        .catch((err: Error) => console.error("채팅방 목록 갱신 실패:", err));
+    };
+
+    window.addEventListener("chatRoomCreated", handleChatRoomCreated);
+    return () => window.removeEventListener("chatRoomCreated", handleChatRoomCreated);
+  }, [isLoggedIn]);
+
   // 게스트 채팅 목록 로드 + 업데이트 이벤트 구독 (비로그인 상태일 때만)
   useEffect(() => {
     if (isLoggedIn) return;

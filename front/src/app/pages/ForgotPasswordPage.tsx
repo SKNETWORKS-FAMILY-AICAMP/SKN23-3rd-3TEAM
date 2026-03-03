@@ -164,8 +164,8 @@ export function ForgotPasswordPage() {
       >
         {/* Logo */}
         <div className="text-center">
-          <Link to="/chat" className="flex items-center justify-center mx-auto">
-            <video src={logoIdle} autoPlay loop muted playsInline className="w-45 h-auto" />
+          <Link to="/chat" className="flex items-center justify-center mx-auto mb-3">
+            <video src={logoIdle} autoPlay loop muted playsInline className="w-26 h-auto" />
           </Link>
         </div>
 
@@ -174,7 +174,7 @@ export function ForgotPasswordPage() {
             {step < 2 && (
               <button
                 onClick={() => step > 0 ? setStep(step - 1) : navigate("/login")}
-                className="p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4 text-gray-500" />
               </button>
@@ -435,7 +435,7 @@ export function ForgotPasswordPage() {
                 </p>
                 <button
                   onClick={() => navigate("/login")}
-                  className="w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-[#84C13D]"
+                  className="w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-[#84C13D] cursor-pointer"
                   style={{boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
                 >
                   로그인하러 가기

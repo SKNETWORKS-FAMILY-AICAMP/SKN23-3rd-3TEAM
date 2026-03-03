@@ -49,8 +49,8 @@ export function LoginPage() {
         <div className="text-center mb-2">
           <p className="text-4xl font-bold text-[#84c13d]">On_You</p>
           <p className="text-sm text-gray-500 mt-1">나만의 AI 피부 분석 서비스</p>
-          <Link to="/chat" className="flex items-center justify-center mx-auto mb-3">
-            <video src={logoIdle} autoPlay loop muted playsInline className="w-45 h-auto" />
+          <Link to="/chat" className="flex items-center justify-center mx-auto my-3">
+            <video src={logoIdle} autoPlay loop muted playsInline className="w-30 h-auto" />
           </Link>
         </div>
 

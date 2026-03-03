@@ -141,18 +141,27 @@ _LLM_ROUTER_GUEST_PROMPT = """\
 10. "routine_and_product" — 루틴 추천과 제품 추천을 동시에 요청 ("아침 루틴이랑 세럼 추천해줘")
 11. "ingredient_question" — 화장품 성분에 대한 질문 ("레티놀이 뭐야?", "나이아신아마이드 효과")
 
-## 핵심 판단 규칙
+## 핵심 판단 규칙 (위에서부터 순서대로 적용 — 먼저 매칭되면 아래 규칙은 무시)
 
-- 피부 사진 분석/정밀 분석/전성분 분석/이전 분석 비교 → 무조건 "login_required"
-- "추천해줘" + 피부타입/고민 정보 없음 + 카테고리 없음 → "ask_for_context"
-- "추천해줘" + 피부타입/고민 있음 + 카테고리 없음 → "ask_for_category"
-- "추천해줘" + 카테고리 있음 → "product_recommend"
-- 루틴 + 제품 둘 다 요청 → "routine_and_product"
-- 성분 이름 언급 + 질문 → "ingredient_question"
-- 피부 관리/습관/음식/일반 지식 → "general_advice"
-- 루틴 순서/사용법만 → "routine_advice"
-- 피부와 전혀 무관 → "out_of_domain"
-- 판단이 애매하면 "general_advice"로 분류 (보수적 처리)
+1. 피부 사진 분석/정밀 분석/전성분 분석/이전 분석 비교 → 무조건 "login_required"
+2. "루틴", "관리법", "케어법", "관리 방법" 키워드가 포함되면:
+   - 루틴/관리법 + 구체적 제품(세럼, 크림 등) 둘 다 요청 → "routine_and_product"
+   - 루틴/관리법만 요청 → "routine_advice" (⚠️ ask_for_category가 아님!)
+3. 사용자가 피부타입/고민만 알려주는 짧은 메시지("지성이야", "복합성", "여드름이 고민이야" 등):
+   - 이전 대화 맥락에서 어떤 주제를 논의 중이었는지 파악하여 해당 intent로 이어받기
+   - 이전 맥락이 불명확하면 → "general_advice"
+4. "추천해줘" + 구체적 제품 카테고리(세럼, 크림, 토너 등) 있음 → "product_recommend"
+5. "추천해줘" + 피부 정보 있음 + 카테고리 없음 → "ask_for_category"
+6. "추천해줘" + 피부 정보 없음 + 카테고리 없음 → "ask_for_context"
+7. 성분 이름 언급 + 질문 → "ingredient_question"
+8. 피부 관리/습관/음식/일반 지식 → "general_advice"
+9. 피부와 전혀 무관 → "out_of_domain"
+10. 판단이 애매하면 "general_advice"로 분류 (보수적 처리)
+
+⚠️ 주의사항:
+- "루틴 추천", "관리법 추천", "케어법 알려줘"는 제품 추천이 아니다. 반드시 routine_advice로 분류한다.
+- "알려줘", "궁금해" 같은 표현만으로 ask_for_category로 분류하지 않는다.
+- ask_for_category는 오직 "제품 추천을 원하는데 제품 종류만 빠진 경우"에만 사용한다.
 
 ## 대화 맥락 활용
 - 이전 대화가 제공되면, 현재 메시지가 짧은 팔로우업("그것도 알려줘", "세럼도")이어도 맥락을 이어받아 판단
@@ -222,7 +231,7 @@ _LLM_ROUTER_MEMBER_PROMPT = """\
 13. "ask_for_context" — 제품 추천인데 피부 정보도 없고 카테고리도 없음 (프로필에도 없는 경우만)
 14. "ask_for_category" — 피부 정보는 있지만 제품 종류가 특정 안 됨
 
-## 핵심 판단 규칙
+## 핵심 판단 규칙 (위에서부터 순서대로 적용 — 먼저 매칭되면 아래 규칙은 무시)
 
 ### 분석 관련
 - 이미지가 첨부되어 있고 분석 관련 표현 → "skin_analysis_fast" 또는 "skin_analysis_deep"
@@ -230,19 +239,29 @@ _LLM_ROUTER_MEMBER_PROMPT = """\
 - "저번 분석", "이전 결과", "변화", "비교" → "history_compare"
 - 이미지 없이 "분석해줘"라고만 하면 → "general_advice" (이미지 업로드 안내 필요)
 
+### 루틴/관리법 관련 (제품 추천보다 우선 판단)
+- "루틴", "관리법", "케어법", "관리 방법" 키워드 + 제품(세럼, 크림 등) 둘 다 요청 → "routine_and_product"
+- "루틴", "관리법", "케어법", "관리 방법" 키워드만 → "routine_advice" (⚠️ ask_for_category 아님!)
+
+### 피부타입/고민 선언 (팔로우업)
+- 사용자가 피부타입이나 고민만 알려주는 짧은 메시지 → 이전 대화 맥락의 intent를 이어받기
+
 ### 제품 추천 관련
 - 회원 프로필에 피부타입/고민이 있으면 has_skin_context=true로 판단
-- 프로필에 피부 정보가 있으면 "추천해줘"만으로도 ask_for_context가 아닌 ask_for_category로 분류
-- 카테고리 명시 + 피부 정보(프로필 또는 메시지) → "product_recommend"
-- 루틴 + 제품 둘 다 → "routine_and_product"
+- "추천해줘" + 구체적 제품 카테고리(세럼, 크림, 토너 등) 있음 → "product_recommend"
+- "추천해줘" + 피부 정보 있음 + 카테고리 없음 → "ask_for_category"
+- "추천해줘" + 피부 정보 없음 + 카테고리 없음 → "ask_for_context"
 
 ### 일반 상담
 - 성분 이름 + 질문 → "ingredient_question"
 - 피부 관리/습관/음식/원인/이유 → "general_advice"
-- 루틴 순서/사용법만 → "routine_advice"
 - 피부과/치료/처방 → "medical_advice"
 - 피부와 전혀 무관 → "out_of_domain"
 - 판단이 애매하면 "general_advice" (보수적 처리)
+
+⚠️ 주의사항:
+- "루틴 추천", "관리법 추천", "케어법 알려줘"는 제품 추천이 아니다. 반드시 routine_advice로 분류한다.
+- ask_for_category는 오직 "제품 추천을 원하는데 제품 종류만 빠진 경우"에만 사용한다.
 
 ### 팔로우업 처리
 - 이전 대화 맥락이 있으면 짧은 발화("그것도", "세럼도", "알려줘")도 맥락 이어받기
@@ -370,8 +389,46 @@ def _llm_decide_guest(
         print(f"[LLM_ROUTER] 비로그인 허용되지 않은 intent '{intent}' → 폴백", flush=True)
         return None
 
+    # ── 피부타입/고민만 알려주는 메시지 감지 ──────────────────
+    # "나는 복합성이야", "지성이야", "여드름이 고민이야" 등
+    # 이전 대화에서 역질문(피부타입 물어봄) 후 사용자가 답하는 패턴
+    _SKIN_TYPE_DECLARE_KW = [
+        "건성", "지성", "복합성", "민감성", "중성",
+        "건조", "지성이야", "민감해", "복합이야",
+    ]
+    _CONCERN_DECLARE_KW = [
+        "여드름", "홍조", "모공", "각질", "주름", "탄력",
+        "색소", "기미", "잡티", "트러블", "뾰루지",
+    ]
+    text_lower = (user_text or "").strip().lower()
+    is_type_declaration = (
+        len(text_lower) < 20
+        and has_skin_context
+        and (_has_any(text_lower, _SKIN_TYPE_DECLARE_KW) or _has_any(text_lower, _CONCERN_DECLARE_KW))
+    )
+
+    if is_type_declaration and intent in ("product_recommend", "ask_for_category", "ask_for_context"):
+        # 이전 대화 맥락을 확인해서 적절한 intent로 리다이렉트
+        prev_intent = None
+        if chat_history:
+            for msg in reversed(chat_history[-6:]):
+                content = (msg.get("content") or "").lower()
+                if "루틴" in content:
+                    prev_intent = "routine_advice"
+                    break
+                if any(kw in content for kw in ["추천", "제품", "크림", "세럼", "토너"]):
+                    prev_intent = "product_recommend"
+                    break
+                if any(kw in content for kw in ["관리", "케어", "방법", "어떻게"]):
+                    prev_intent = "general_advice"
+                    break
+
+        intent = prev_intent or "general_advice"
+        reason = f"피부타입 선언 → 이전 맥락 기반 '{intent}'으로 전환"
+        print(f"[LLM_ROUTER] 피부타입 선언 감지 → {intent}", flush=True)
+
     # 제품 추천 맥락 부족 → 역질문 보정
-    if intent == "product_recommend":
+    elif intent == "product_recommend":
         if not has_skin_context and not has_category:
             intent = "ask_for_context"
             reason = "LLM: 제품 추천이지만 피부 맥락+카테고리 모두 부족"
@@ -448,6 +505,50 @@ def _llm_decide_member(
     reason = result.get("reason", "LLM 분류")
     has_skin_context = result.get("has_skin_context", False)
     has_category = result.get("has_category", False)
+
+    # 유효성 검증
+    if intent not in _GUEST_ALLOWED_INTENTS:
+        print(f"[LLM_ROUTER] 비로그인 허용되지 않은 intent '{intent}' → 폴백", flush=True)
+        return None
+
+    # ── 피부타입/고민만 알려주는 메시지 감지 ──────────────────
+    # "나는 복합성이야", "지성이야", "여드름이 고민이야" 등
+    # 이전 대화에서 역질문(피부타입 물어봄) 후 사용자가 답하는 패턴
+    _SKIN_TYPE_DECLARE_KW = [
+        "건성", "지성", "복합성", "민감성", "중성",
+        "건조", "지성이야", "민감해", "복합이야",
+    ]
+    _CONCERN_DECLARE_KW = [
+        "여드름", "홍조", "모공", "각질", "주름", "탄력",
+        "색소", "기미", "잡티", "트러블", "뾰루지",
+    ]
+    text_lower = (user_text or "").strip().lower()
+    is_type_declaration = (
+        len(text_lower) < 20
+        and has_skin_context
+        and (_has_any(text_lower, _SKIN_TYPE_DECLARE_KW) or _has_any(text_lower, _CONCERN_DECLARE_KW))
+    )
+
+    if is_type_declaration and intent in ("product_recommend", "ask_for_category", "ask_for_context"):
+        # 이전 대화 맥락을 확인해서 적절한 intent로 리다이렉트
+        prev_intent = None
+        if chat_history:
+            for msg in reversed(chat_history[-6:]):
+                content = (msg.get("content") or "").lower()
+                if "루틴" in content:
+                    prev_intent = "routine_advice"
+                    break
+                if any(kw in content for kw in ["추천", "제품", "크림", "세럼", "토너"]):
+                    prev_intent = "product_recommend"
+                    break
+                if any(kw in content for kw in ["관리", "케어", "방법", "어떻게"]):
+                    prev_intent = "general_advice"
+                    break
+
+        intent = prev_intent or "general_advice"
+        reason = f"피부타입 선언 → 이전 맥락 기반 '{intent}'으로 전환"
+        print(f"[LLM_ROUTER] 피부타입 선언 감지 → {intent}", flush=True)
+
 
     # 유효성 검증
     if intent not in _MEMBER_ALLOWED_INTENTS:

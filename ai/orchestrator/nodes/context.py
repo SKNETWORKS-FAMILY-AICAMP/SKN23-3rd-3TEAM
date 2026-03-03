@@ -44,17 +44,26 @@ _GENERAL_KNOWLEDGE_KW = [
 
 
 def _needs_skin_type_for_answer(user_text: str, intent: str) -> bool:
-    """
-    이 질문에 답하려면 피부타입이 반드시 필요한지 판단.
-
-    True(역질문 필요):   제품 추천, 루틴처럼 개인화 필수
-    False(역질문 불필요): 음식/원인/성분 등 일반 지식 질문
-    """
     text = (user_text or "").lower()
 
     # 제품 추천/루틴은 항상 개인화 필요
     if intent in ("product_recommend", "routine_and_product", "routine_advice"):
         return True
+
+    # general_advice지만 개인화가 필요한 키워드가 있는 경우
+    _PERSONALIZED_ADVICE_KW = [
+        "관리법", "관리", "케어", "루틴", "어떻게 해야",
+        "뭐 바르", "뭐 써", "어떤 게 좋", "맞는",
+    ]
+    if intent == "general_advice" and any(kw in text for kw in _PERSONALIZED_ADVICE_KW):
+        # 단, 일반 지식 질문("왜", "이유", "음식" 등)과 겹치면 역질문 불필요
+        _PURE_KNOWLEDGE_KW = [
+            "왜", "이유", "원인", "무엇", "뭐야", "뭔지", "설명",
+            "음식", "먹으면", "식단", "운동", "수면", "스트레스",
+            "효능", "효과", "성분이", "작용", "차이", "비교",
+        ]
+        if not any(kw in text for kw in _PURE_KNOWLEDGE_KW):
+            return True
 
     # 일반 지식성 질문이면 역질문 불필요
     if _has_any(text, _GENERAL_KNOWLEDGE_KW):

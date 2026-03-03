@@ -9,12 +9,6 @@ from ai.llm.generator import generate_report
 
 
 def llm_node(state: GraphState) -> GraphState:
-    """
-    [llm_node]
-    입력: route, user_text, user_profile, vision_result,
-          rag_passages, oliveyoung_products, chat_history, analysis_type
-    출력: llm_output
-    """
     route = state["route"]
     analysis_type = state.get("analysis_type")
 
@@ -24,6 +18,12 @@ def llm_node(state: GraphState) -> GraphState:
         else ""
     )
 
+    # 성분 분석: vision_result에서 추출된 성분 목록을 ingredients로 전달
+    ingredients = None
+    vision_result = state.get("vision_result")
+    if vision_result and vision_result.get("mode") == "ingredient":
+        ingredients = vision_result.get("ingredients", [])
+
     t0 = time.perf_counter()
     llm_output: dict
 
@@ -32,11 +32,11 @@ def llm_node(state: GraphState) -> GraphState:
             intent=route.intent,
             user_text=state["user_text"],
             user_profile=state.get("user_profile"),
-            vision_result=state.get("vision_result"),
+            vision_result=vision_result,
             rag_passages=state.get("rag_passages", []),
             web_passages=[],
             chat_history=state.get("chat_history", []),
-            ingredients=None,
+            ingredients=ingredients,
             analysis_mode=analysis_mode,
             verified_products=(
                 state.get("oliveyoung_products")

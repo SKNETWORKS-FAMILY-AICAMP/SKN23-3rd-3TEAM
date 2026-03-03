@@ -10,7 +10,7 @@ nodes/context.py
 import time
 from ai.orchestrator.state import GraphState
 from ai.orchestrator.context_builder import build_context
-from ai.orchestrator.router import _has_context, _CONTEXT_KW
+from ai.orchestrator.router import _has_context, _CONTEXT_KW, _PRODUCT_CATEGORY_KW, _normalize_category, _has_any
 
 # 역질문 없이 바로 답변해도 되는 intent
 _NO_ASK_INTENTS = {
@@ -24,6 +24,49 @@ _UPSELL_INTENTS = {
     "general_advice", "routine_advice", "ingredient_question",
     "product_recommend", "routine_and_product",
 }
+
+
+# 피부타입 없어도 답할 수 있는 일반 지식성 질문 키워드
+_GENERAL_KNOWLEDGE_KW = [
+    # 이유/원리 질문
+    "왜", "이유", "원인", "어떻게", "무엇", "뭐야", "뭔지", "설명",
+    # 음식/생활습관
+    "음식", "먹으면", "먹어야", "식단", "생활", "습관",
+    "운동", "수면", "스트레스", "호르몬",
+    # 환경/계절
+    "계절", "겨울", "여름", "환절기", "날씨", "온도", "습도",
+    "실내", "자외선", "환경", "컴퓨터", "핸드폰",
+    # 성분/효능 설명
+    "효능", "효과", "성분이", "작용", "차이", "비교",
+    # 일반 지식 요청
+    "알려줘", "궁금해", "뭐가 좋아", "좋다는데",
+]
+
+
+def _needs_skin_type_for_answer(user_text: str, intent: str) -> bool:
+    """
+    이 질문에 답하려면 피부타입이 반드시 필요한지 판단.
+
+    True(역질문 필요):   제품 추천, 루틴처럼 개인화 필수
+    False(역질문 불필요): 음식/원인/성분 등 일반 지식 질문
+    """
+    text = (user_text or "").lower()
+
+    # 제품 추천/루틴은 항상 개인화 필요
+    if intent in ("product_recommend", "routine_and_product", "routine_advice"):
+        return True
+
+    # 일반 지식성 질문이면 역질문 불필요
+    if _has_any(text, _GENERAL_KNOWLEDGE_KW):
+        return False
+
+    # 카테고리 키워드 있으면 개인화 필요 (세럼 등 제품 언급)
+    normalized = _normalize_category(text)
+    if any(kw in normalized for kw in _PRODUCT_CATEGORY_KW):
+        return True
+
+    # general_advice는 기본적으로 역질문 불필요
+    return False
 
 
 def _has_temp_skin_context(user_profile: dict | None, user_text: str = "") -> bool:
@@ -74,7 +117,7 @@ def context_node(state: GraphState) -> GraphState:
 
     # ── 1. 기존: 제품 추천 맥락 부족 역질문 ──────────────────
     if route.needs_context_check:
-        if not _has_context(state["user_text"], user_profile):
+        if not _has_context(state["user_text"], user_profile, chat_history):
             print("[CONTEXT] 피부 맥락 부족 → 역질문 반환", flush=True)
             result = {
                 "chat_answer": (
@@ -98,8 +141,10 @@ def context_node(state: GraphState) -> GraphState:
     # ── 2. 비로그인 전용 처리 ─────────────────────────────────
     if is_guest and route.intent not in _NO_ASK_INTENTS:
 
-        # 2-1. 피부타입 미수집 시 역질문 (첫 질문 또는 히스토리에서 못 찾은 경우)
-        if not _has_temp_skin_context(user_profile, state.get('user_text', '')):
+        # 2-1. 피부타입 미수집 시 역질문
+        # 단, 음식/원리/이유 같은 일반 지식 질문은 피부타입 없어도 바로 답변
+        needs_type = _needs_skin_type_for_answer(state.get('user_text', ''), route.intent)
+        if needs_type and not _has_temp_skin_context(user_profile, state.get('user_text', '')):
             print("[CONTEXT] 비로그인 피부 맥락 없음 → 피부타입 역질문", flush=True)
 
             # 첫 메시지면 질문 내용도 기억해서 답변에 포함

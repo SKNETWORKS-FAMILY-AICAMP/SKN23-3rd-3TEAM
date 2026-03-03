@@ -211,3 +211,5 @@ app.py
 app_demo.py
 checkpoint
 skin_ai/checkpoint/
+
+!README.md

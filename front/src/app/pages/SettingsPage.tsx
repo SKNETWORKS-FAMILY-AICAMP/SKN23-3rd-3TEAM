@@ -156,7 +156,9 @@ export function SettingsPage() {
     setIsUploadingPhoto(true);
     try {
       const url = await uploadProfileImage(file);
-      setProfileImageUrl(url);
+      // S3에 고정 파일명(profile.ext)으로 덮어쓰므로 URL이 동일함
+      // 타임스탬프 쿼리스트링을 붙여 브라우저 캐시를 무효화
+      setProfileImageUrl(`${url}?t=${Date.now()}`);
     } catch (err) {
       console.error("프로필 사진 업로드 실패:", err);
     } finally {
@@ -189,6 +191,8 @@ export function SettingsPage() {
         skin_concern     : selectedConcerns.length > 0 ? selectedConcerns.join(",") : null,
         profile_image_url: profileImageUrl,
       });
+      // 사이드바 프로필 이미지 갱신 알림
+      window.dispatchEvent(new CustomEvent("profileUpdated"));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {

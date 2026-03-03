@@ -86,6 +86,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return () => window.removeEventListener("chatRoomCreated", handleChatRoomCreated);
   }, [isLoggedIn]);
 
+  // 프로필 업데이트 이벤트 구독 (로그인 상태일 때만)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const handleProfileUpdated = () => {
+      fetchCurrentUser()
+        .then(setUser)
+        .catch((err: Error) => console.error("사용자 정보 갱신 실패:", err));
+    };
+
+    window.addEventListener("profileUpdated", handleProfileUpdated);
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
+  }, [isLoggedIn]);
+
   // 게스트 채팅 목록 로드 + 업데이트 이벤트 구독 (비로그인 상태일 때만)
   useEffect(() => {
     if (isLoggedIn) return;

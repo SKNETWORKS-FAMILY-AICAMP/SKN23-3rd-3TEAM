@@ -116,11 +116,14 @@ export async function fetchMessages(chatRoomId: number): Promise<ChatMessage[]> 
  * 비로그인 사용자 텍스트 채팅 (DB 저장 없음, 인증 불필요).
  * back: POST /chats/guest/message
  */
-export async function sendGuestMessage(content: string): Promise<GuestMessageResponse> {
+export async function sendGuestMessage(
+  content: string,
+  chatHistory?: { role: string; content: string }[],
+): Promise<GuestMessageResponse> {
   const res = await fetch(`${API_BASE}/chats/guest/message`, {
     method  : "POST",
     headers : { "Content-Type": "application/json" },
-    body    : JSON.stringify({ content }),
+    body    : JSON.stringify({ content, chat_history: chatHistory ?? [] }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

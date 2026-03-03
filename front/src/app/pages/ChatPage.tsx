@@ -496,7 +496,11 @@ export function ChatPage() {
     try {
       if (!isLoggedIn) {
         // 비로그인: 게스트 엔드포인트 사용 (DB 저장 없음)
-        const result = await sendGuestMessage(trimmedInput);
+        const chatHistory = messages.map((m) => ({
+          role: m.role === "bot" ? "assistant" : "user",
+          content: m.content,
+        }));
+        const result = await sendGuestMessage(trimmedInput, chatHistory);
         const aiMsg: Message = {
           id     : Date.now() + 1,
           role   : "bot",

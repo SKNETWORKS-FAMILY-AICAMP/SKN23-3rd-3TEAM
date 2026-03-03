@@ -90,6 +90,14 @@ const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
   }
 };
 
+// ─── 마크다운 정규화 ──────────────────────────────────────────────────
+// 목록 항목 사이의 빈 줄 제거: loose list → tight list
+// ReactMarkdown이 loose list를 <li><p>...</p></li>로 렌더링하면
+// <p>의 display:block 때문에 불릿 아래 줄에서 텍스트가 시작되는 문제 방지
+function normalizeMarkdown(text: string): string {
+  return text.replace(/\n\n([ \t]*[-*+][ \t])/g, '\n$1');
+}
+
 // ─── 올리브영 구매 링크 파싱 ─────────────────────────────────────────
 const OLIVEYOUNG_SEPARATOR = "**🛒 올리브영 구매 링크**";
 
@@ -745,8 +753,8 @@ export function ChatPage() {
                                   p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
                                   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                                   em:     ({ children }) => <em className="italic">{children}</em>,
-                                  ul:     ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                                  ol:     ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                  ul:     ({ children }) => <ul className="list-disc list-outside mb-2 space-y-1 pl-5">{children}</ul>,
+                                  ol:     ({ children }) => <ol className="list-decimal list-outside mb-2 space-y-1 pl-5">{children}</ol>,
                                   li:     ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
                                   h1:     ({ children }) => <h1 className="text-base font-bold mb-2">{children}</h1>,
                                   h2:     ({ children }) => <h2 className="text-sm font-bold mb-1">{children}</h2>,
@@ -755,12 +763,12 @@ export function ChatPage() {
                                   hr:     () => <hr className="my-2 border-gray-200" />,
                                 }}
                               >
-                                {mainText}
+                                {normalizeMarkdown(mainText)}
                               </ReactMarkdown>
                             </div>
                             {links.length > 0 && (
-                              <div className="px-4 py-3 flex flex-col gap-2">
-                                <p className="text-sm font-semibold text-gray-500">🛒 올리브영 구매 링크</p>
+                              <div className="px-4 pb-3 flex flex-col gap-2">
+                                <p className="text-base font-semibold text-gray-800 mb-2">🛒 올리브영 구매 링크</p>
                                 <div className="flex flex-col gap-1.5">
                                   {links.map((link, i) => {
                                     const isWished  = wishedUrls.has(link.url);

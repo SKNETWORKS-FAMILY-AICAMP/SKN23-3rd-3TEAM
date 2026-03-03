@@ -84,8 +84,8 @@ export function OnboardingPage() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-[460px]"
       >
-        <div className="flex items-center justify-center mx-auto mb-3">
-          <video src={logoIdle} autoPlay loop muted playsInline className="w-40 h-auto" />
+        <div className="flex items-center justify-center mx-auto mb-1">
+          <video src={logoIdle} autoPlay loop muted playsInline className="w-24 h-auto" />
         </div>
         {/* Logo + Welcome */}
         <div className="text-center mb-8">

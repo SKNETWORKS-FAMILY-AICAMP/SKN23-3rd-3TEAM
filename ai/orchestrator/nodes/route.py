@@ -13,14 +13,8 @@ _INSTANT_RESPONSES = {
         "저는 피부/스킨케어 전문 챗봇이에요 😊\n\n"
         "피부 고민, 화장품 성분, 스킨케어 루틴에 관한 질문을 해주세요!"
     ),
-    "greeting": (
-        "안녕하세요! 피부/스킨케어 전문 AI 챗봇이에요 😊\n\n"
-        "피부 고민이나 화장품 관련 질문을 편하게 해주세요.\n"
-        "- 피부 타입별 루틴 추천\n"
-        "- 화장품 성분 분석\n"
-        "- 피부 사진 정량 분석 (회원 전용)\n\n"
-        "어떤 도움이 필요하신가요?"
-    ),
+    "greeting": None,  # _get_greeting()에서 동적 생성
+
     "login_required": (
         "**이 기능은 회원 전용이에요** 🔒\n\n"
         "피부 사진 분석 및 전성분 분석 기능은 로그인 후 이용할 수 있어요.\n\n"
@@ -61,14 +55,49 @@ _INSTANT_RESPONSES = {
     ),
 }
 
+def _get_greeting(user_id: int | None) -> str:
+    if user_id:
+        return (
+            "안녕하세요! On.You 피부 AI 챗봇이에요 😊\n\n"
+            "무엇이든 편하게 물어보세요!\n\n"
+            "💬 **채팅으로 가능한 기능**\n"
+            "- 피부 타입별 스킨케어 루틴 추천\n"
+            "- 올리브영 제품 추천\n"
+            "- 화장품 성분 질문\n"
+            "- 피부 고민 상담\n\n"
+            "📊 **피부 분석** (입력창 옆 '분석 선택' 버튼)\n"
+            "- 빠른 분석: 얼굴 사진 1장으로 피부 상태 분석\n"
+            "- 정밀 분석: 좌·정면·우측 3장으로 정밀 분석\n"
+            "- 성분 분석: 화장품 전성분 이미지 분석\n\n"
+            "어떤 도움이 필요하신가요?"
+        )
+    else:
+        return (
+            "안녕하세요! On.You 피부 AI 챗봇이에요 😊\n\n"
+            "비회원도 다양한 피부 상담이 가능해요!\n\n"
+            "💬 **지금 바로 이용 가능한 기능**\n"
+            "- 피부 타입별 스킨케어 루틴 추천\n"
+            "- 올리브영 제품 추천\n"
+            "- 화장품 성분 질문\n"
+            "- 피부 고민 상담\n\n"
+            "🔒 **로그인 후 이용 가능**\n"
+            "- 얼굴 사진으로 피부 정량 분석\n"
+            "- 이전 분석 결과 비교\n\n"
+            "어떤 도움이 필요하신가요?"
+        )
+
 # 즉시 응답 intent 목록
 _INSTANT_INTENTS = {"out_of_domain", "greeting", "login_required", "ask_for_context", "ask_for_category", "ask_for_skin_info"}
 
 
-def _make_instant_response(intent: str, user_text: str, is_first_message: bool) -> dict:
+def _make_instant_response(intent: str, user_text: str, is_first_message: bool, user_id: int | None = None) -> dict:
     """즉시 반환용 응답 dict 생성"""
+    if intent == "greeting":
+        chat_answer = _get_greeting(user_id)
+    else:
+        chat_answer = _INSTANT_RESPONSES.get(intent, "잠시 후 다시 시도해주세요.")
     result = {
-        "chat_answer": _INSTANT_RESPONSES.get(intent, "잠시 후 다시 시도해주세요."),
+        "chat_answer": chat_answer,
         "summary": "", "observations": [], "recommendations": [],
         "products": [], "warnings": [], "citations": [],
         "intent": intent, "room_title": None,
@@ -112,6 +141,7 @@ def route_node(state: GraphState) -> GraphState:
             intent=route.intent,
             user_text=state["user_text"],
             is_first_message=state.get("is_first_message", False),
+            user_id=state.get("user_id"),
         )
 
     return updates

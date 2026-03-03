@@ -9,7 +9,7 @@ load_dotenv()
 
 # ── OpenAI ────────────────────────────────────────────
 OPENAI_API_KEY: str = os.getenv("openai_key", "")
-OPENAI_MODEL: str = "gpt-4.1-mini"
+OPENAI_MODEL: str = "gpt-4o-mini"
 OPENAI_TEMPERATURE: float = 0.3
 
 # ── ChromaDB (Vector DB) ──────────────────────────────

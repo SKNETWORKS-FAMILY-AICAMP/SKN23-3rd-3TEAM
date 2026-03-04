@@ -659,6 +659,7 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 
 ---
 
+
 ## 7. Tech Stack
 
 <div align="center">
@@ -827,7 +828,7 @@ JWT_SECRET_KEY
 - **증상**: 챗봇 답변에 `{"title": "수분 상태", "detail": "..."}` 형태 그대로 노출
 - **해결**: 프롬프트에 `chat_answer에는 JSON 형식을 절대 포함하지 않는다` 규칙 및 구체적 예시 추가
 
----
+--- 
 
 ## 11. 한줄 회고
 

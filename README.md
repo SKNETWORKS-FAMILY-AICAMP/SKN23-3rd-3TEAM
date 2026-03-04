@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🧴 온유(On_You) :<br />AI 피부 분석 · 성분 OCR · 올리브영 제품 추천 챗봇</h1>
+  <h1>💧 온유(On_You) :<br />AI 피부 분석 · 성분 OCR · 올리브영 제품 추천 챗봇</h1>
   <div align="center" style="margin: 16px 0 20px 0">
     <img src="front/src/assets/logo.png" width="400">
   </div>
@@ -7,14 +7,12 @@
   <p>딥러닝 피부 정량 분석 · VLM 기반 전성분 OCR · LangGraph 오케스트레이션 · 올리브영 실상품 검증 추천</p>
 </div>
 
----
+<br />
 
-## 👥 Team. **King Ghidorah** v1.0
+<h2><img src="assets/팀로고.png" width="70" style="margin-right: 8px"> Team. <b>King Ghidorah</b> v1.0 </h2>
 
-<div style="display: flex; align-items: center;">
-  <img src="assets/팀로고.png" width="80" style="margin-right: 8px">
-  <b style="font-size: 20px">팀원 소개</b>
-</div>
+### 팀원 소개
+
 <div align="center">
   <table>
     <colgroup>
@@ -26,33 +24,33 @@
     </colgroup>
     <tbody>
       <tr>
-        <td style="text-align: center;"><img src="assets/왼쪽.png" alt="왼쪽날개-송민채"></td>
-        <td style="text-align: center;"><img src="assets/왼쪽 얼굴.png" alt="왼쪽얼굴-정석원"></td>
-        <td style="text-align: center;"><img src="assets/중앙.png" alt="중앙얼굴-강승원"></td>
-        <td style="text-align: center;"><img src="assets/오른쪽 얼굴.png" alt="오른쪽얼굴-정유선"></td>
-        <td style="text-align: center;"><img src="assets/오른쪽 날개.png" alt="오른쪽날개-이승연"></td>
+        <td align="center"><img src="assets/왼쪽.png" alt="왼쪽날개-송민채"></td>
+        <td align="center"><img src="assets/왼쪽 얼굴.png" alt="왼쪽얼굴-정석원"></td>
+        <td align="center"><img src="assets/중앙.png" alt="중앙얼굴-강승원"></td>
+        <td align="center"><img src="assets/오른쪽 얼굴.png" alt="오른쪽얼굴-정유선"></td>
+        <td align="center"><img src="assets/오른쪽 날개.png" alt="오른쪽날개-이승연"></td>
       </tr>
       <tr style="font-weight: bold;">
-        <td style="text-align: center;">송민채</td>
-        <td style="text-align: center;">정석원</td>
-        <td style="text-align: center;">강승원 (팀장)</td>
-        <td style="text-align: center;">정유선</td>
-        <td style="text-align: center;">이승연</td>
+        <td align="center">송민채</td>
+        <td align="center">정석원</td>
+        <td align="center">강승원 (팀장)</td>
+        <td align="center">정유선</td>
+        <td align="center">이승연</td>
       </tr>
       <tr>
-        <td style="text-align: center;">
+        <td align="center">
           <a href="https://github.com/minchaesong"><img src="https://img.shields.io/badge/minchaesong-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub - 송민채"></a>
         </td>
-        <td style="text-align: center;">
+        <td align="center">
           <a href="https://github.com/jsrop07"><img src="https://img.shields.io/badge/jsrop07-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub - 정석원"></a>
         </td>
-        <td style="text-align: center;">
+        <td align="center">
           <a href="https://github.com/chopa4452"><img src="https://img.shields.io/badge/chopa4452-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub - 강승원"></a>
         </td>
-        <td style="text-align: center;">
+        <td align="center">
           <a href="https://github.com/jys96"><img src="https://img.shields.io/badge/jys96-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub - 정유선"></a>
         </td>
-        <td style="text-align: center;">
+        <td align="center">
           <a href="https://github.com/oooonbbo-wq"><img src="https://img.shields.io/badge/oooonbbo wq-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub - 이승연"></a>
         </td>
       </tr>
@@ -66,7 +64,7 @@
 | 정석원<br />(LLM/BACK) | LLM 응답 생성기 구현 및 LLM 라우터, 올리브영 제품 검증 파이프라인, RAG 기반 답변 보강, FastAPI 백엔드 개발 |
 | 정유선<br />(FRONT/BACK) | React 프론트엔드 개발, ChromaDB 벡터 DB 구축 및 관리, RAG 파이프라인 구현, 임베딩 모델(ko-sroberta) 연동, FastAPI 구축 및 백엔드 API 개발 |
 | 송민채<br />(BACK/DB) | MySQL 데이터베이스 설계(ERD), 사용자/분석/위시리스트 테이블 구조, FastAPI 백엔드 API 설계 및 개발, 분석 이력 저장 로직 |
-| 이승연<br />(AWS/UI) | AWS EC2 서버 배포 및 DB 서버 구축, 서비스 인프라 운영, 로고 및 UI 이미지 디자인 제작 |
+| 이승연<br />(AWS/UI) | AWS 인프라(EC2 배포·S3·MariaDB) 구축 및 운영, 로고·UI·인포그래픽 제작, 브랜드 아이덴티티 기획 |
 
 ---
 
@@ -100,7 +98,7 @@ On-you(온유)는 화장품에 관심이 많은 20~30대를 대상으로 한 AI 
 
 올리브영은 국내 온라인 뷰티 플랫폼 3사(올리브영·화해·글로우픽) 중에서도 사용자 관심도와 영향력이 가장 높은 플랫폼으로, 화장품 구매와 제품 정보 탐색이 활발하게 이루어지는 대표적인 뷰티 커머스 채널입니다. 이러한 시장 영향력과 사용자 접근성을 고려했을 때, **올리브영 기반의 제품 데이터는 실제 상품 상세 페이지와 연결된 구매 가능 정보를 포함하고 있어, 추천 결과를 실제 구매로 이어지게 할 수 있는 실사용 가치가 높은 데이터**라고 판단했습니다.
 
-현재 CJ올리브영은 매장에서 기기를 통해 피부 상태를 측정하는 체험형 AI 서비스 [스킨스캔(Skin Scan)]을 운영하고 있으며, 진단 결과를 앱에서 조회·관리할 수 있도록 서비스를 고도화하고 있습니다. 그러나 해당 서비스는 매장 방문을 전제로 한 오프라인 중심 서비스로, **시간과 장소의 제약이 있어 사용자가 집에서 즉시 피부 상태를 확인하거나 성분 정보를 분석하고 제품을 추천받기에는 한계**가 있습니다.
+현재 올리브영은 매장에서 기기를 통해 피부 상태를 측정하는 체험형 AI 서비스 [스킨스캔(Skin Scan)]을 운영하고 있으며, 진단 결과를 앱에서 조회·관리할 수 있도록 서비스를 고도화하고 있습니다. 그러나 해당 서비스는 매장 방문을 전제로 한 오프라인 중심 서비스로, **시간과 장소의 제약이 있어 사용자가 집에서 즉시 피부 상태를 확인하거나 성분 정보를 분석하고 제품을 추천받기에는 한계**가 있습니다.
 
 이러한 서비스 환경을 바탕으로, **사용자가 스마트폰 앱만으로 언제 어디서나 피부 상태 분석, 성분 분석, 맞춤 제품 추천을 받을 수 있는 홈 기반 스킨케어 챗봇 서비스의 필요성**을 확인하였으며, 이를 기반으로 본 프로젝트를 기획·개발하게 되었습니다.
 
@@ -759,7 +757,7 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 | **Infra** | ![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white) ![S3](https://img.shields.io/badge/S3-FF9900?style=flat&logo=amazonec2&logoColor=white) |
 | **Tools** | ![Figma](https://img.shields.io/badge/Figma-F05032?style=flat&logo=Figma&logoColor=white) ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white) ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white) ![RunPod](https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white) |
 
----
+## </div>
 
 ## 9. 실행 방법
 
@@ -953,9 +951,28 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
 
 ---
 
-## 13. 한줄 회고
+## 13. 비즈니스 전략
 
-- **강승원** :이번 프로젝트에서 나는 ResNet50 기반 Fast/Deep 피부 정량분석 파트를 중심으로 모델 학습·개선과 추론 코드 정리, 그리고 MAE/±1 정확도 같은 평가 지표 정리를 맡았습니다. 특히 멀티뷰 정밀 분석 흐름을 다듬고, 눈가·턱처럼 까다로운 부위는 재학습으로 성능을 안정화하는 데 집중했습니다. 각자 맡은 영역을 끝까지 책임져 준 훌륭한 팀원들 덕분에 전체 프로젝트도 무리 없이 잘 마무리할 수 있었습니다.
+1. **프리미엄 구독 서비스**  
+   서비스를 빠른 검사(무료) / 정밀 검사(유료)로 구분합니다.  
+   구독 결제를 통해 유료 회원에게는 정밀 검사 기능, 개인 정보·피부 기록 저장 확대, 개인화 추천 고도화 등 더 높은 수준의 서비스를 제공합니다.
+
+2. **모바일 애플리케이션 확장**  
+   향후 웹 서비스에서 나아가 모바일 애플리케이션으로 확장하여, 스마트폰을 통한 피부 촬영 기반 분석과 전성분 촬영(OCR) 분석을 더 편리하게 제공할 계획입니다.
+
+3. **커뮤니티 기능 추가 및 구독 회원 혜택 확대**  
+   사용자 사용 빈도와 접속률(리텐션)을 높이기 위해 커뮤니티 기능을 향후 추가합니다.  
+   구독 회원에게는 전용 네임 배지, 유용한 게시글 저장, 피부 성향 테스트(피부 MBTI) 등 심화 기능을 제공하여 구독 가치를 높이고자 합니다.
+
+4. **광고 및 제휴 기반 수익**  
+   웹/앱 내 배너 광고를 도입해 광고 수익을 확보합니다.  
+   또한 화장품 업체와의 제휴를 통해 쿠폰·체험단·이벤트를 제공하고, 이를 기반으로 마케팅 효과, 사용자 확장, 수익화를 함께 강화합니다.
+
+---
+
+## 14. 한줄 회고
+
+- **강승원** :이번 프로젝트에서 저는 ResNet50 기반 Fast/Deep 피부 정량분석 파트를 중심으로 모델 학습·개선과 추론 코드 정리, 그리고 MAE/±1 정확도 같은 평가 지표 정리를 맡았습니다. 특히 멀티뷰 정밀 분석 흐름을 다듬고, 눈가·턱처럼 까다로운 부위는 재학습으로 성능을 안정화하는 데 집중했습니다. 각자 맡은 영역을 끝까지 책임져 준 훌륭한 팀원들 덕분에 전체 프로젝트도 무리 없이 잘 마무리할 수 있었습니다.
 
 - **정석원** :이번 프로젝트에서 LLM 단계와 벡터DB(RAG)를 맡으면서, LLM이 의도 분류 → 근거 검색 → 답변 생성 → 검증 흐름으로 동작한다는 걸 확실히 이해하게 됐습니다. 짧은 기간인데도 각자 역할을 끝까지 책임져준 팀원들 덕분에 완성할 수 있었고, 모두 정말 고맙습니다.
 

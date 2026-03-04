@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── OpenAI ────────────────────────────────────────────
-OPENAI_API_KEY: str = os.getenv("openai_key", "")
+OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL: str = "gpt-4.1-mini"
 OPENAI_TEMPERATURE: float = 0.3
 
@@ -24,7 +24,7 @@ EMBED_MODEL_NAME: str = os.getenv("EMBED_MODEL_NAME", "jhgan/ko-sroberta-multita
 
 # ── Tavily (Web Search) ───────────────────────────────
 # .env에 따옴표/공백이 있을 수 있으므로 strip 처리
-TAVILY_API_KEY: str = os.getenv("tavily_key", "").strip().strip("'\"")
+TAVILY_API_KEY: str = os.getenv("TAVILY_KEY", "").strip().strip("'\"")
 if not TAVILY_API_KEY:
     print("[settings] TAVILY_API_KEY 없음 → 올리브영 검색 비활성화", flush=True)
 
@@ -47,4 +47,4 @@ RAG_TOP_K_PRODUCT: int = 10  # 제품 추천은 후보 더 많이
 # ── Run Output ────────────────────────────────────────
 RUNS_DIR: str = "outputs/runs"
 
-assert OPENAI_API_KEY, "OPENAI_API_KEY가 비어있음 (.env의 openai_key 확인)"
+assert OPENAI_API_KEY, "OPENAI_API_KEY가 비어있음 (.env의 OPENAI_API_KEY 확인)"

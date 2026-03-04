@@ -154,7 +154,7 @@ graph LR
 
 - 문서 내 청킹 처리: 대용량 문서는 최대 1,000자 단위로 분할하여 RAG(검색 기반 질의응답) 최적화
 - 태깅 자동화: 키워드 매칭 방식으로 피부 고민, 성분명, 피부 타입 등 자동 태깅 적용
-- 영문 원문은 태깅 후 GPT-4o-mini 모델을 통해 한국어 요약·번역 적용
+- 영문 원문은 태깅 후 GPT-4.1-mini 모델을 통해 한국어 요약·번역 적용
 - 저장 및 검색 최적화:
   - 통일 JSONL 스키마로 정형화 후 ChromaDB에 저장
   - 한국어 특화 임베딩(jhgan/ko-sroberta-multitask) 사용
@@ -274,94 +274,268 @@ graph LR
 | 🔬 빠른 분석 | 정면 사진 1장 → 수분/탄력/주름/모공/색소 5개 항목 정량 분석 | ResNet50 (Fast Model) |
 | 🔬 정밀 분석 | 정면+좌+우 3장 → 부위별(이마/볼/턱/눈가) 13개 지표 정밀 분석 | ResNet50 + AttentionFusion (Deep Model) |
 | 🏷️ 성분 분석 | 화장품 전성분 라벨 사진 → OCR 추출 → 피부타입 맞춤 성분 해석 | Qwen2.5-VL 7B |
-| 💬 피부 상담 | 자연어 질문 → RAG 기반 근거 답변 (루틴/성분/고민) | GPT-4o + ChromaDB |
-| 🛒 제품 추천 | RAG 후보 → 올리브영 실상품 URL 검증 → 검증된 제품만 추천 | GPT-4o + Tavily |
-| 📸 얼굴 검증 | 업로드 이미지가 사람 얼굴인지 + 3장 순서 검증 | GPT-4o-mini (Vision) |
-| 🤖 intent 라우팅 | 사용자 입력을 11개 intent로 분류 (비로그인/회원 분기) | GPT-4o-mini |
+| 💬 피부 상담 | 자연어 질문 → RAG 기반 근거 답변 (루틴/성분/고민) | GPT-4.1-mini + ChromaDB |
+| 🛒 제품 추천 | RAG 후보 → 올리브영 실상품 URL 검증 → 검증된 제품만 추천 | GPT-4.1-mini + Tavily |
+| 📸 얼굴 검증 | 업로드 이미지가 사람 얼굴인지 + 3장 순서 검증 | GPT-4.1-mini (Vision) |
+| 🤖 intent 라우팅 | 사용자 입력을 11개 intent로 분류 (비로그인/회원 분기) | GPT-4.1-mini |
 | 💾 위시리스트 | 추천 제품 저장/조회/삭제 | MySQL/MariaDB |
 
-### 4.2. 피부 분석 모드
+## 4.2. 피부 분석 딥러닝 모델
 
-#### 4.2.1. Fast Model (빠른 분석)
+### 데이터셋
 
-<ul>
-  <li><b>입력</b>: 정면 이미지 1장</li>
-  <li><b>모델</b>: 얼굴 영역(area 0~8)별 ResNet50, Sigmoid 출력 (0~1)</li>
-  <li><b>출력</b>: moisture(수분), elasticity(탄력), wrinkle(주름), pore(모공), pigmentation(색소) + 각 항목 1~5등급</li>
-  <li><b>피부타입 판정</b>: 규칙 기반 알고리즘으로 5가지(건성/지성/복합성/중성/민감성) 확정</li>
-  <li><b>속도</b>: ~0.5초</li>
-</ul>
+| 항목 | 내용 |
+|:---:|:---|
+| 출처 | [AI Hub — 한국인 피부상태 측정 데이터](https://www.aihub.or.kr/aihubdata/data/view.do?dataSetSn=71645) |
+| 라벨 구조 | 얼굴 9개 Area(0~8)별 JSON — 전문 장비 측정값(수분/탄력/주름Ra/모공/색소) + 전문가 등급(0~6) |
+| 정규화 | 고정 분모 방식 (moisture /100, R2 그대로, Ra /50, pore /2500~2600, count /350) |
 
-**평가 지표**: Validation MAE (0~1 정규화 기준, 낮을수록 정확)
+### 학습 환경
 
-> MAE 0.07 = 예측값이 실제값에서 평균 ±7% 오차 범위 내 (예: 수분 60 → 53~67 예측)
+| 항목 | Fast Model | Deep Model |
+|:---:|:---:|:---:|
+| GPU | RunPod RTX 5090 × 5 | RunPod RTX 5090 × 5 |
+| 병렬화 | DataParallel + GPU별 Area 분산 | GPU별 Area 분산 (spawn) |
+| 이미지 크기 | 128 × 128 | 256 × 256 |
+| Batch Size | 32 × GPU수 (자동 스케일) | 32 |
+| Epochs | 100 (Early Stop 30) | 100 (Early Stop 30) |
+| Precision | FP16 (Mixed Precision) | FP16 (Mixed Precision) |
 
-|  Area  |   부위   | Best val_MAE |
-| :----: | :------: | :----------: |
-| Area 0 | 색소침착 |    0.0615    |
-| Area 1 |   이마   |    0.0744    |
-| Area 3 |  왼눈가  |    0.0361    |
-| Area 4 | 오른눈가 |    0.0343    |
-| Area 5 |   왼볼   |    0.0734    |
-| Area 6 |  오른볼  |    0.0730    |
-| Area 8 |    턱    |    0.0857    |
+---
 
-- **전체 평균 val_MAE**: **0.0626**
+### 4.2.1. Fast Model (빠른 분석)
 
-<details>
-  <summary>반환값 예시 (JSON)</summary>
+#### 개요
+
+정면 이미지 **1장**으로 수분·탄력·주름·모공·색소 5가지 피부 지표를 0.5초 내에 측정합니다. 각 얼굴 영역(Area)별로 독립된 ResNet50 모델이 회귀(수치)와 분류(등급)를 동시에 예측하고, 영역별 결과를 평균하여 최종 5개 항목 수치와 1~5등급을 산출합니다.
+
+#### 모델 아키텍처
+
+```
+정면 이미지 1장
+    ↓
+Area별 Bbox Crop (JSON 메타데이터 기반)
+    ↓
+┌─────────────────────────────────────────────┐
+│  Area별 SkinAreaModel (총 8개 독립 모델)     │
+│                                             │
+│  ResNet50 Backbone (ImageNet Pretrained)    │
+│      ↓ Feature (2048-d)                    │
+│      ├→ Regression Head                    │
+│      │   Linear(2048,256) → ReLU           │
+│      │   → Dropout(0.3)                    │
+│      │   → Linear(256, reg_out) → Sigmoid  │
+│      │   출력: 0~1 정규화 수치              │
+│      │                                     │
+│      └→ Classification Head                │
+│          Linear(2048,256) → ReLU           │
+│          → Dropout(0.3)                    │
+│          → Linear(256, cls_out)            │
+│          출력: 0~6 등급 logits             │
+└─────────────────────────────────────────────┘
+    ↓
+Area별 수치 → 항목별 평균 집계
+    ↓
+5개 항목 수치(0~1) + 등급(1~5) 반환
+```
+
+#### Area별 출력 매핑
+
+| Area | 부위 | Regression 출력 | Classification 출력 |
+|:---:|:---|:---|:---|
+| 0 | 색소침착 | pigmentation_count (1개) | — |
+| 1 | 이마 | moisture, elasticity_R2 (2개) | forehead_wrinkle(7), forehead_pigmentation(6) |
+| 2 | 미간 | — | glabellus_wrinkle (7) |
+| 3 | 왼눈가 | l_perocular_wrinkle_Ra (1개) | l_perocular_wrinkle (7) |
+| 4 | 오른눈가 | r_perocular_wrinkle_Ra (1개) | r_perocular_wrinkle (7) |
+| 5 | 왼볼 | moisture, elasticity_R2, pore (3개) | l_cheek_pore(6), l_cheek_pigmentation(6) |
+| 6 | 오른볼 | moisture, elasticity_R2, pore (3개) | r_cheek_pore(6), r_cheek_pigmentation(6) |
+| 8 | 턱 | moisture, elasticity_R2 (2개) | chin_wrinkle (7) |
+
+#### 최종 5개 항목 집계 방식
+
+| 항목 | 사용 Area | 집계 |
+|:---:|:---|:---:|
+| moisture (수분) | Area 1(이마) + 5(왼볼) + 6(오른볼) + 8(턱) | 평균 |
+| elasticity (탄력) | Area 1(이마) + 5(왼볼) + 6(오른볼) + 8(턱) | 평균 |
+| wrinkle (주름) | Area 3(왼눈가) + 4(오른눈가) | 평균 |
+| pore (모공) | Area 5(왼볼) + 6(오른볼) | 평균 |
+| pigmentation (색소) | Area 0 | 단일값 |
+
+#### 학습 설정
+
+| 항목 | 설정 |
+|:---:|:---|
+| Optimizer | Adam (lr=1e-4 × GPU수, Linear Scaling Rule) |
+| Weight Decay | 1e-4 |
+| Loss (Regression) | L1Loss (NaN 마스킹) |
+| Loss (Classification) | CrossEntropyLoss × 0.5 가중치 |
+| Augmentation | RandomHorizontalFlip(0.3), ColorJitter(brightness=0.3, contrast=0.3), RandomRotation(10°) |
+| Early Stopping | 30 epochs patience |
+
+#### 평가 지표
+
+**Regression — Validation MAE** (0~1 정규화 기준, 낮을수록 정확)
+
+> MAE 0.07 = 예측값이 실제값에서 평균 ±7% 오차 (예: 수분 60 → 53~67 예측)
+
+| Area | 부위 | Best val_MAE |
+|:---:|:---|:---:|
+| 0 | 색소침착 | **0.0615** |
+| 1 | 이마 | **0.0744** |
+| 3 | 왼눈가 | **0.0361** |
+| 4 | 오른눈가 | **0.0343** |
+| 5 | 왼볼 | **0.0734** |
+| 6 | 오른볼 | **0.0730** |
+| 8 | 턱 | **0.0857** |
+| | **전체 평균** | **0.0626** |
+
+#### 등급 매핑 (Sigmoid → Grade)
+
+```python
+def value_to_grade(value, n_grades=5):
+    return min(int(value * n_grades) + 1, n_grades)
+ 0.0~0.2 → 1등급 | 0.2~0.4 → 2등급 | 0.4~0.6 → 3등급 | 0.6~0.8 → 4등급 | 0.8~1.0 → 5등급
+```
+
+#### 반환값 예시
 
 ```json
 {
   "mode": "fast",
   "skin_metrics": {
-    "moisture": { "value": 0.652, "grade": 4 },
-    "elasticity": { "value": 0.621, "grade": 4 },
-    "wrinkle": { "value": 0.382, "grade": 2 },
-    "pore": { "value": 0.21, "grade": 2 },
-    "pigmentation": { "value": 0.272, "grade": 2 }
+    "moisture":      { "value": 0.652, "grade": 4 },
+    "elasticity":    { "value": 0.621, "grade": 4 },
+    "wrinkle":       { "value": 0.382, "grade": 2 },
+    "pore":          { "value": 0.210, "grade": 2 },
+    "pigmentation":  { "value": 0.272, "grade": 2 }
   }
 }
 ```
 
-- `value`: 0~1 정규화 수치
+- `value`: 0~1 Sigmoid 정규화 수치 (각 부위 Area 평균)
 - `grade`: 1~5등급 (5가 최고)
-- 각 항목은 해당 부위 평균값 (수분은 이마+왼볼+오른볼+턱 평균 등)
-</details>
 
-#### 4.2.2. Deep Model (정밀 분석)
+---
 
-- **입력**: 정면(F) + 좌측(L) + 우측(R) 3장
-- **모델**: area별 ResNet50 + AttentionFusion (3장 가중 융합)
-- **출력**: 부위별 13개 측정값 (수분 0~100, 탄력 R2 0~1, 주름 Ra 0~50, 모공 0~2600, 색소 0~350) + 등급 + 신뢰도
-- **속도**: ~2초
+### 4.2.2. Deep Model (정밀 분석)
 
-> Deep Model은 수치(수분, 탄력, 주름Ra 등)와 등급(주름, 모공, 색소 등)을 동시에 예측하므로, 수치 항목은 MAE, 등급 항목은 ±1 정확도로 각각 평가
+#### 개요
 
-**Regression 평가 지표**: Validation MAE (0~1 정규화 기준, 낮을수록 정확)
+정면(F) + 좌측(L) + 우측(R) **3장**의 이미지를 입력받아 부위별 13개 정밀 측정값, 10개 등급, 항목별 신뢰도를 산출합니다. 핵심 설계 결정은 **Regression과 Classification의 인코더를 분리**한 것입니다. 수치 측정값은 전문 장비가 정면(F) bbox 기반으로 측정하므로 F 이미지만 사용하고, 등급 판정은 다각도 정보가 유리하므로 F+L+R을 Attention Fusion으로 융합합니다.
 
-> MAE 0.05 = 예측값이 실제값에서 평균 ±5% 오차 범위 내 (예: 수분 65 → 60~70 예측)
+#### 모델 아키텍처 (v4: Triple-Encoder Attention Fusion)
 
-|  Area  |   부위   | Best val_MAE |
-| :----: | :------: | :----------: |
-| Area 0 | 색소침착 |    0.0904    |
-| Area 1 |   이마   |    0.0799    |
-| Area 3 |  왼눈가  |    0.1055    |
-| Area 4 | 오른눈가 |    0.0826    |
+```
+정면(F) + 좌측(L) + 우측(R) 이미지 3장
+    ↓
+Area별 Bbox Crop
+    ↓
+┌──────────────────────────────────────────────────────────────┐
+│  Area별 DeepAreaModel                                        │
+│                                                              │
+│  ┌─ Regression Branch (F만) ──────────────────────────────┐  │
+│  │  ResNet50 Encoder (F)                                  │  │
+│  │      ↓ Feature (2048-d)                               │  │
+│  │  Linear(2048,512) → BN → ReLU → Dropout(0.4)         │  │
+│  │  → Linear(512,256) → ReLU → Dropout(0.4)             │  │
+│  │  → Linear(256, reg_out)                               │  │
+│  │  출력: 0~1 정규화 수치                                 │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌─ Classification Branch (F+L+R Attention Fusion) ───────┐  │
+│  │  ResNet50 Shared Encoder                               │  │
+│  │      F → feat_F (2048-d)                              │  │
+│  │      L → feat_L (2048-d)                              │  │
+│  │      R → feat_R (2048-d)                              │  │
+│  │          ↓                                            │  │
+│  │  ┌─ AttentionFusion ─────────────────────────────┐    │  │
+│  │  │  concat(F,L,R) → Linear(6144,3) → Softmax    │    │  │
+│  │  │  = 가중치 w_F, w_L, w_R                       │    │  │
+│  │  │  fused = w_F·F + w_L·L + w_R·R               │    │  │
+│  │  │  → Linear(2048,512) → BN → ReLU → Drop(0.4)  │    │  │
+│  │  └───────────────────────────────────────────────┘    │  │
+│  │          ↓ (512-d)                                    │  │
+│  │  Linear(512,256) → ReLU → Dropout(0.4)               │  │
+│  │  → Linear(256, cls_out)                               │  │
+│  │  출력: 0~6 등급 logits                                │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+```
 
-**Classification 평가 지표**: ±1 정확도 (예측 등급이 실제 등급과 1단계 이내일 확률, 높을수록 정확)
+**v4 핵심 설계 의도:**
 
-> ±1 정확도 90% = 100명 중 90명은 실제 등급 ±1 이내로 예측 (예: 실제 3등급 → 2~4등급으로 예측)
+| 설계 결정 | 이유 |
+|:---|:---|
+| Regression은 F(정면)만 사용 | 전문 장비 측정값(수분, 탄력 등)이 정면 bbox 기반이므로 동일 앵글이 최적 |
+| Classification은 F+L+R Fusion | 등급 판정은 여러 각도에서 본 종합 정보가 더 정확 |
+| Attention 방식 가중 합산 | 단순 concat/평균 대비 각 각도의 기여도를 학습, 품질 낮은 사진 자동 감쇠 |
+| 인코더 가중치 공유 (Classification) | F/L/R에 동일 ResNet50을 적용하여 파라미터 효율 + 일관된 피처 공간 |
 
-|  Area  |   부위   | ±1 정확도 |
-| :----: | :------: | :-------: |
-| Area 1 |   이마   |   93.5%   |
-| Area 2 |   미간   |   79.4%   |
-| Area 3 |  왼눈가  |   90.0%   |
-| Area 4 | 오른눈가 |   69.2%   |
+#### 학습 설정
 
-<details>
-<summary>반환값 예시 (JSON)</summary>
+| 항목 | 설정 |
+|:---:|:---|
+| Optimizer | Adam (lr=1e-4, betas=(0.9, 0.999), weight_decay=0) |
+| LR Schedule | Warmup 5 epochs → Cosine Annealing (min_factor=0.01) |
+| Loss (Regression) | **CharbonnierLoss** (ε=1e-6) — L1보다 이상치에 강건하고 L2보다 스파이크에 둔감 |
+| Loss (Classification) | **FocalLoss** (α=1, γ=3) × 0.5 가중치 — 클래스 불균형(등급 0~6) 대응 |
+| Gradient Clipping | max_norm=1.0 |
+| Sampler | **WeightedRandomSampler** — 소수 등급 과소대표 방지 |
+| Augmentation | RandomHorizontalFlip(0.3), ColorJitter(0.15/0.15/0.1/0.05), RandomAffine(5°, translate=2%) |
+| Early Stopping | 30 epochs patience |
+
+#### Loss 함수 상세
+
+**CharbonnierLoss (Regression)**
+```
+L(pred, target) = mean( sqrt( (pred - target)² + ε² ) )
+```
+L1Loss의 smooth 버전으로, 원점 근처에서 미분 가능하여 학습이 안정적이고, L2Loss 대비 이상치에 덜 민감합니다.
+
+**FocalLoss (Classification)**
+```
+FL(p_t) = -α × (1 - p_t)^γ × log(p_t)
+```
+γ=3으로 설정하여 쉬운 샘플(높은 확신)의 loss를 크게 줄이고, 어려운 샘플(소수 등급)에 집중합니다. 피부 등급 데이터는 중앙값 등급에 편중되는 경향이 있어 이를 보완합니다.
+
+#### 평가 지표
+
+Deep Model은 수치(수분, 탄력, 주름Ra 등)와 등급(주름, 모공, 색소 등)을 동시에 예측하므로, **수치 항목은 MAE**, **등급 항목은 ±1 정확도**로 각각 평가합니다.
+
+**Regression — Validation MAE** (0~1 정규화 기준)
+
+> MAE 0.05 = 예측값이 실제값에서 평균 ±5% 오차 (예: 수분 65 → 60~70 예측)
+
+| Area | 부위 | Best val_MAE |
+|:---:|:---|:---:|
+| 0 | 색소침착 | **0.0904** |
+| 1 | 이마 | **0.0799** |
+| 3 | 왼눈가 | **0.1055** |
+| 4 | 오른눈가 | **0.0826** |
+
+**Classification — ±1 정확도** (예측 등급이 실제 등급과 1단계 이내일 확률)
+
+> ±1 정확도 90% = 100명 중 90명은 실제 등급 ±1 이내로 예측
+
+| Area | 부위 | ±1 정확도 |
+|:---:|:---|:---:|
+| 1 | 이마 | **93.5%** |
+| 2 | 미간 | **79.4%** |
+| 3 | 왼눈가 | **90.0%** |
+| 4 | 오른눈가 | **69.2%** |
+
+#### 출력 구조
+
+Deep Model은 3가지 정보를 반환합니다:
+
+| 필드 | 설명 | 예시 |
+|:---|:---|:---|
+| `measurements` | 실제 단위로 역정규화된 수치 13개 | 수분 0~100, 탄력 0~1, 주름Ra 0~50, 모공 0~2600, 색소 0~350 |
+| `grades` | 전문가 등급 기준 분류 10개 | 0~6등급 (0=최저) |
+| `reliability` | 항목별 예측 신뢰도 | high / medium / low / very_low |
+
+#### 반환값 예시
 
 ```json
 {
@@ -395,15 +569,53 @@ graph LR
   },
   "reliability": {
     "forehead_moisture": "medium",
-    "forehead_elasticity_R2": "high"
+    "forehead_elasticity_R2": "high",
+    "l_perocular_wrinkle_Ra": "low"
   }
 }
 ```
 
-- `measurements`: 실제 단위로 역정규화된 수치 (수분 0~100, 탄력 0~1, 주름Ra 0~50 등)
-- `grades`: 0~6등급 분류 (0=최저)
-- `reliability`: 항목별 신뢰도 (high / medium / low / very_low)
-</details>
+---
+
+### 4.2.3. Fast vs Deep 비교 요약
+
+| | Fast Model | Deep Model |
+|:---:|:---:|:---:|
+| **입력** | 정면 1장 | 정면 + 좌측 + 우측 3장 |
+| **이미지 크기** | 128 × 128 | 256 × 256 |
+| **아키텍처** | Area별 ResNet50 (Single Encoder) | Area별 ResNet50 + AttentionFusion (Triple Encoder) |
+| **Regression** | L1Loss + Sigmoid 출력 | CharbonnierLoss + Linear 출력 |
+| **Classification** | CrossEntropyLoss | FocalLoss + WeightedSampler |
+| **출력 수치** | 5개 항목 (영역 평균) | 13개 부위별 측정값 |
+| **출력 등급** | 1~5등급 (5개 항목) | 0~6등급 (10개 부위) |
+| **신뢰도** | 없음 | 항목별 high/medium/low/very_low |
+| **추론 속도** | ~0.5초 | ~2초 |
+| **평균 MAE** | 0.0626 | 0.0896 |
+| **용도** | 빠른 피부 상태 스크리닝 | 부위별 정밀 분석 + 좌우 비교 |
+
+### 4.2.4. 피부타입 판정
+
+두 모델 모두 수치 예측 후, **규칙 기반 알고리즘**으로 5가지 피부타입(건성/지성/복합성/중성/민감성)을 확정합니다. LLM이 아닌 수치 기반으로 판정하여 일관성을 보장합니다.
+
+**Fast Model 판정 기준 (0~1 Sigmoid 수치 기반):**
+
+| 피부타입 | 판정 조건 |
+|:---:|:---|
+| 민감성 | elasticity ≤ 0.46 AND pigmentation ≥ 0.50 AND wrinkle ≥ 0.50 |
+| 건성 | moisture ≤ 0.46 AND pore ≤ 0.48 |
+| 지성 | pore ≥ 0.48 AND pigmentation ≥ 0.50 AND moisture > 0.46 |
+| 복합성 | moisture ≤ 0.48 AND pore ≥ 0.46 (건조+지성 공존) |
+| 중성 | 전반적 양호, 극단 항목 없음 |
+
+**Deep Model 판정 기준 (실제 측정값 기반):**
+
+| 피부타입 | 판정 조건 |
+|:---:|:---|
+| 민감성 | 평균 탄력 ≤ 0.48 AND (평균 주름Ra ≥ 22 OR 색소 ≥ 120) |
+| 건성 | 건조 부위 3곳 이상 AND 평균 탄력 ≤ 0.50, 또는 평균 수분 ≤ 53 |
+| 지성 | 평균 모공 ≥ 900 AND 평균 수분 ≥ 62 |
+| 복합성 | 좌우 볼 수분 차이 ≥ 12, 또는 최대 모공 ≥ 900 AND 최소 수분 ≤ 52 |
+| 중성 | 평균 수분 ≥ 60 AND 평균 탄력 ≥ 0.50 AND 평균 모공 ≤ 800 |
 
 ### 4.3. 성분 OCR & 성분 분석
 
@@ -495,28 +707,253 @@ graph LR
 
 > 이 2단계 전략을 통해 “기획전 링크만 잔뜩 걸리는 문제”를 구조적으로 완화합니다.
 
-### 4.5. LangGraph 파이프라인
+## 4.5. LangGraph 파이프라인
 
-```mermaid
-graph TD
-    START["사용자 입력"] --> ROUTE["route_node\n(LLM 라우터)"]
-    ROUTE -->|즉시응답| END_INSTANT["greeting/out_of_domain\n즉시 반환"]
-    ROUTE -->|분석/상담| CONTEXT["context_node\n(프로필 로드)"]
-    CONTEXT --> VISION["vision_node\n(피부/성분 분석)"]
-    VISION --> SEARCH["search_node\n(RAG + Tavily)"]
-    SEARCH --> LLM["llm_node\n(GPT-4o 답변 생성)"]
-    LLM --> VALIDATE["validate_node\n(JSON 검증/복구)"]
-    VALIDATE --> END_RESULT["최종 응답 반환"]
+### 4.5.1. 개요
+
+사용자 메시지가 입력되면 LangGraph 기반의 **6-노드 DAG(방향 비순환 그래프)** 가 순차·병렬로 실행되어 최종 응답을 생성합니다. 기존 단일 `pipeline.py`의 절차적 흐름을 **선언적 그래프**로 전환하여, 각 노드의 역할을 분리하고 조건부 엣지로 불필요한 처리를 건너뛸 수 있도록 설계했습니다.
+
+### 4.5.2. 그래프 흐름
+
+```
+                        START
+                          │
+                   ┌──────┴──────┐
+                   │  route_node │  GPT-4.1-mini로 intent 분류
+                   └──────┬──────┘
+                          │
+                  route_condition 분기
+                   ╱                ╲
+          "instant"                  "continue"
+              │                          │
+             END                 ┌───────┴───────┐
+     (greeting,                  │ context_node  │  프로필 로드 + 맥락 판단
+      out_of_domain,             └───────┬───────┘
+      login_required,                    │
+      ask_for_context)          context_condition 분기
+                                 ╱                ╲
+                        "instant"                  "continue"
+                            │                          │
+                           END                 ┌───────┴───────┐
+                    (맥락 부족 역질문)           │  vision_node  │  Fast/Deep 모델 추론
+                                               └───────┬───────┘
+                                                       │
+                                               ┌───────┴───────┐
+                                               │  search_node  │  RAG + Tavily 병렬
+                                               └───────┬───────┘
+                                                       │
+                                               ┌───────┴───────┐
+                                               │   llm_node    │  GPT-4.1-mini 답변 생성
+                                               └───────┬───────┘
+                                                       │
+                                               ┌───────┴───────┐
+                                               │ validate_node │  스키마 검증 + DB 저장
+                                               └───────┬───────┘
+                                                       │
+                                                      END
 ```
 
-|     노드      | 역할                                                            |
-| :-----------: | :-------------------------------------------------------------- |
-|  route_node   | GPT-4o-mini로 intent 분류 (11개), 비로그인/회원 분기            |
-| context_node  | DB에서 사용자 프로필 로드, 비회원 역질문/회원가입 유도          |
-|  vision_node  | Fast/Deep 모델 추론 또는 성분 OCR 실행                          |
-|  search_node  | 수치 기반 피부타입 확정 → RAG 쿼리 생성 + Tavily 병렬 실행      |
-|   llm_node    | 확정된 피부타입 + 수치 + RAG 결과를 GPT-4o에 전달하여 답변 생성 |
-| validate_node | LLM 출력 JSON 스키마 검증 및 자동 복구                          |
+### 4.5.3. 노드 상세
+
+#### route_node — Intent 분류 (1~3초)
+
+| 항목 | 내용 |
+|:---|:---|
+| **역할** | 사용자 메시지를 14개 intent 중 하나로 분류 |
+| **모델** | GPT-4.1-mini (temperature=0.0, JSON mode) |
+| **분기** | 비로그인(`_llm_decide_guest`) / 회원(`_llm_decide_member`) 별도 프롬프트 |
+| **폴백** | LLM 실패 시 키워드 기반 규칙 라우터로 자동 전환 |
+| **출력** | `RouteDecision(intent, needs_vision, needs_rag, needs_product, needs_context_check)` |
+
+**Intent 분류 체계 (14개)**
+
+| 분류 | Intent | 설명 | 실행 노드 |
+|:---|:---|:---|:---|
+| 즉시 응답 | `greeting` | 인사/잡담 | route_node에서 END |
+| | `out_of_domain` | 피부 무관 질문 | route_node에서 END |
+| | `login_required` | 비회원 분석 요청 | route_node에서 END |
+| | `ask_for_context` | 피부 정보 부족 → 역질문 | route_node에서 END |
+| | `ask_for_category` | 제품 종류 미특정 → 역질문 | route_node에서 END |
+| | `ask_for_skin_info` | 피부타입 미수집 → 역질문 | route_node에서 END |
+| 일반 상담 | `general_advice` | 피부 관리법/일반 지식 | context → search(RAG) → llm |
+| | `routine_advice` | 스킨케어 루틴 추천 | context → search(RAG) → llm |
+| | `medical_advice` | 피부과 상담 권고 | context → search(RAG) → llm |
+| | `ingredient_question` | 화장품 성분 질문 | context → search(RAG) → llm |
+| 제품 추천 | `product_recommend` | 올리브영 제품 추천 | context → search(Tavily) → llm |
+| | `routine_and_product` | 루틴 + 제품 동시 | context → search(RAG+Tavily 병렬) → llm |
+| 피부 분석 | `skin_analysis_fast` | 빠른 분석 (1장) | context → vision → search(RAG) → llm |
+| | `skin_analysis_deep` | 정밀 분석 (3장) | context → vision → search(RAG) → llm |
+
+**LLM 라우터 후처리 (오분류 보정)**
+
+LLM이 intent를 반환한 후, 규칙 기반 후처리로 일관성을 보장합니다:
+
+- **피부타입 선언 감지**: "지성이야", "복합성 피부" 같은 짧은 메시지는 이전 대화 맥락의 intent를 이어받기 (루틴 → `routine_advice`, 제품 → `product_recommend`)
+- **루틴 우선 판단**: "루틴", "관리법" 키워드가 포함되면 `ask_for_category`가 아닌 `routine_advice`로 강제
+- **맥락 부족 보정**: `product_recommend`인데 피부 정보 없으면 `ask_for_context`로, 카테고리 없으면 `ask_for_category`로 전환
+- **회원 프로필 반영**: DB에 피부타입/고민이 저장되어 있으면 LLM 판단과 별개로 맥락 있음으로 처리
+
+---
+
+#### context_node — 프로필 로드 + 맥락 판단 (~0초)
+
+| 항목 | 내용 |
+|:---|:---|
+| **역할** | DB에서 사용자 프로필 로드, 맥락 부족 시 역질문 반환 |
+| **회원** | DB에서 skin_type, concern, age, gender, 최근 분석 이력 조회 |
+| **비회원** | chat_history에서 임시 프로필 구성 (피부타입/고민 추출) |
+| **출력** | `user_profile`, `instant_response`(역질문 시), `guest_upsell`(회원가입 유도 플래그) |
+
+**비회원 2단계 역질문 로직**
+
+```
+1단계: needs_context_check=True이고 피부 맥락 없음
+  → "어떤 피부 타입이나 고민에 맞는 제품을 찾고 계신가요?" (즉시 END)
+
+2단계: 개인화가 필요한 질문(관리법, 루틴, 제품)인데 피부타입 미수집
+  → "답변드리기 전에 먼저 피부 타입을 알려주시면 더 정확한 정보를 드릴 수 있어요" (즉시 END)
+
+통과: 일반 지식 질문(성분 효능, 원인 설명 등)은 피부타입 없이 바로 답변 진행
+```
+
+비로그인 사용자가 개인화가 필요한 질문을 하면 역질문 후 END로 분기하고, 답변이 제공된 경우에는 `guest_upsell=True` 플래그를 설정하여 validate_node에서 회원가입 유도 문구를 자동 추가합니다.
+
+---
+
+#### vision_node — 피부 분석 모델 추론
+
+| 항목 | 내용 |
+|:---|:---|
+| **역할** | Fast/Deep 모델 추론 또는 성분 OCR(VLM) 실행 |
+| **실행 조건** | `needs_vision=True`인 intent만 (skin_analysis_fast, skin_analysis_deep, ingredient_analysis) |
+| **Fast** | 정면 1장 → Area별 ResNet50 → 5개 항목 수치 + 등급 (~0.5초) |
+| **Deep** | 정면+좌+우 3장 → Area별 ResNet50 + AttentionFusion → 13개 수치 + 10개 등급 + 신뢰도 (~2초) |
+| **성분 OCR** | Qwen2.5-VL-7B로 전성분 이미지에서 성분명 추출 |
+| **출력** | `vision_result` (skin_metrics / measurements+grades+reliability / ingredients) |
+
+`needs_vision=False`인 일반 상담/제품 추천 intent에서는 이 노드를 통과(pass-through)합니다.
+
+---
+
+#### search_node — RAG + Tavily 검색 (0.3~5초)
+
+| 항목 | 내용 |
+|:---|:---|
+| **역할** | intent별 필요한 검색을 실행하여 LLM에 전달할 근거 자료 수집 |
+| **RAG** | ChromaDB 벡터 검색 — 피부 가이드, 성분 DB, 질환 정보, 화장품 데이터 |
+| **Tavily** | 올리브영 실시간 제품 검색 (이름, 가격, URL, 성분) |
+| **병렬** | `needs_rag + needs_product` 동시 True → ThreadPoolExecutor로 병렬 실행 |
+| **출력** | `rag_passages`, `oliveyoung_products` |
+
+**intent별 검색 조합**
+
+| Intent | RAG | Tavily | 비고 |
+|:---|:---:|:---:|:---|
+| general_advice, routine_advice | ✔️ | — | 가이드/질환 문서 검색 |
+| medical_advice | ✔️ | — | 질환 문서 중심 |
+| ingredient_question | ✔️ | — | 성분/화장품 문서 검색 |
+| product_recommend | — | ✔️ | 올리브영 실시간 검색 |
+| routine_and_product | ✔️ | ✔️ | **병렬 실행** |
+| skin_analysis_fast/deep | ✔️ | — | 수치 기반 피부타입 → RAG 쿼리 자동 생성 |
+
+**분석 intent 특별 처리**
+
+피부 분석 시 search_node는 vision_result의 수치로 **규칙 기반 피부타입을 확정**한 뒤, 이를 RAG 쿼리에 반영합니다. DB 프로필의 피부타입은 의도적으로 무시하여, 현재 분석 수치에 기반한 객관적인 정보를 검색합니다.
+
+```python
+# 예: Fast Model 수치 → 피부타입 확정 → RAG 쿼리
+vision_result["determined_skin_type"] = "복합성"
+→ RAG 쿼리: "복합성 피부 관리 루틴 스킨케어"
+```
+
+---
+
+#### llm_node — LLM 답변 생성 (5~15초)
+
+| 항목 | 내용 |
+|:---|:---|
+| **역할** | 확정된 피부타입 + 수치 + RAG/Tavily 결과를 종합하여 최종 답변 생성 |
+| **모델** | GPT-4.1-mini |
+| **입력** | intent, user_text, user_profile, vision_result, rag_passages, oliveyoung_products, chat_history |
+| **프롬프트** | intent별 전문 프롬프트 (general_chat.py, product_recommend.py, skin_analysis.py 등) |
+| **출력** | `llm_output` (chat_answer, summary, observations, recommendations, products, skin_type 등) |
+
+intent에 따라 다른 시스템 프롬프트가 적용되며, 피부 분석 시에는 vision_result의 수치와 등급이 프롬프트에 직접 주입되어 LLM이 수치를 해석하고 조언을 생성합니다.
+
+---
+
+#### validate_node — 검증 + 후처리 + DB 저장 (~0초)
+
+| 항목 | 내용 |
+|:---|:---|
+| **역할** | LLM 출력 검증, 올리브영 링크 반영, 분석 결과 DB 저장 |
+| **스키마 검증** | Pydantic `validate_report()`로 JSON 구조 검증 + 자동 복구 |
+| **올리브영 링크** | Tavily 검색 결과와 LLM 추천 제품을 fuzzy 매칭하여 구매 URL 반영 |
+| **수치 정규화** | Fast/Deep 원시 수치 → 0~100 통합 스코어 + 5단계 라벨(매우 양호~개선 필요) |
+| **DB 저장** | 분석 intent이고 vision_result 있을 때 → analysis 테이블에 정규화된 결과 저장 |
+| **회원가입 유도** | `guest_upsell=True`이면 답변 끝에 회원가입 유도 문구 자동 추가 |
+| **출력** | `report` (최종 응답 JSON) |
+
+**올리브영 링크 반영 로직**
+
+```
+1. Tavily 검색 결과에서 URL이 있는 제품만 유효 제품(valid_oy)으로 선별
+2. LLM이 추천한 제품명과 valid_oy를 fuzzy 매칭 (정확 → 부분 포함 순)
+3. 매칭 성공 → LLM 제품에 oliveyoung_url 보완
+4. 매칭 실패와 무관하게 valid_oy 기준으로 구매 링크 섹션 추가
+```
+
+---
+
+### 4.5.4. 상태 관리 (GraphState)
+
+LangGraph의 `TypedDict` 기반 상태 객체가 노드 간 데이터를 전달합니다:
+
+```python
+class GraphState(TypedDict):
+    # 입력 (불변)
+    user_text: str                    # 사용자 메시지
+    images: list                      # 업로드 이미지
+    analysis_type: str | None         # "quick" | "detailed" | "ingredient" | None
+    user_id: int | None               # 회원 ID (비로그인 시 None)
+    chat_history: list                # 이전 대화 이력
+    is_first_message: bool            # 채팅방 첫 메시지 여부
+    image_urls: list[str]             # S3 업로드 URL
+
+    # 중간 상태 (노드가 채움)
+    route: RouteDecision | None       # route_node 출력
+    instant_response: dict | None     # 즉시 응답 (있으면 END로 분기)
+    user_profile: dict | None         # context_node 출력
+    guest_upsell: bool                # 회원가입 유도 플래그
+    vision_result: dict | None        # vision_node 출력
+    rag_passages: list                # search_node RAG 결과
+    oliveyoung_products: list         # search_node Tavily 결과
+    llm_output: dict                  # llm_node 출력
+    report: dict                      # validate_node 최종 출력
+```
+
+### 4.5.5. 조건부 엣지 (Conditional Edges)
+
+그래프에는 2개의 조건부 분기점이 있어, 불필요한 노드 실행을 최소화합니다:
+
+| 분기점 | 조건 | "instant" (→ END) | "continue" (→ 다음 노드) |
+|:---|:---|:---|:---|
+| **route_condition** | `intent ∈ {greeting, out_of_domain, login_required, ask_for_context}` | 즉시 응답 반환 | context_node로 이동 |
+| **context_condition** | `instant_response ≠ None` | 역질문 반환 | vision_node로 이동 |
+
+이를 통해 인사/도메인 외 질문은 **1개 노드만 실행**(route_node)하고, 맥락 부족 시 **2개 노드**(route + context)만 실행하여 응답 속도를 최적화합니다.
+
+### 4.5.6. 전체 응답 시간 (예시)
+
+| 시나리오 | 실행 노드 | 총 소요 시간 |
+|:---|:---|:---:|
+| "안녕" (인사) | route_node | ~1.5초 |
+| "추천해줘" (맥락 부족) | route → context | ~1.5초 |
+| "건성 피부 관리법" (일반 상담) | route → context → search(RAG) → llm → validate | ~12초 |
+| "지성 세럼 추천" (제품 추천) | route → context → search(Tavily) → llm → validate | ~15초 |
+| "루틴이랑 세럼 추천" (복합) | route → context → search(RAG+Tavily 병렬) → llm → validate | ~15초 |
+| 빠른 분석 (사진 1장) | route → context → vision(0.5s) → search(RAG) → llm → validate | ~13초 |
+| 정밀 분석 (사진 3장) | route → context → vision(2s) → search(RAG) → llm → validate | ~15초 |                         |
 
 ---
 
@@ -650,7 +1087,7 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 │   │   ├── analysis_router.py              # 피부 분석 API
 │   │   ├── auth_router.py                  # 인증/토큰 API
 │   │   ├── chat_router.py                  # 채팅 API
-│   │   ├── deps.py                         # Depends(인증/현재 유저 등)  ※ 파일명 오타 주의
+│   │   ├── deps.py                         # Depends(인증/현재 유저 등)
 │   │   ├── keyword_router.py               # 키워드 API
 │   │   ├── upload_router.py                # S3 업로드 API
 │   │   ├── user_router.py                  # 사용자 API
@@ -690,41 +1127,45 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 │   │   ├── check_collection.py             # Chroma 컬렉션 확인/생성
 │   │   └── vectordb_insert.py              # 임베딩 생성 후 Chroma 업로드
 │   │
-│   ├── ai/                                 # AI 오케스트레이션(LangGraph)
-│   │   ├── orchestrator/
-│   │   │   ├── graph.py
-│   │   │   ├── state.py
-│   │   │   ├── router.py
-│   │   │   ├── context_builder.py
-│   │   │   └── nodes/
-│   │   │       ├── route.py
-│   │   │       ├── context.py
-│   │   │       ├── vision.py
-│   │   │       ├── search.py
-│   │   │       ├── llm.py
-│   │   │       └── validate.py
-│   │   ├── llm/
-│   │   │   ├── generator.py
-│   │   │   └── prompts/
-│   │   │       ├── system_base.py
-│   │   │       ├── skin_analysis.py
-│   │   │       ├── ingredient_chat.py
-│   │   │       ├── product_recommend.py
-│   │   │       └── general_chat.py
-│   │   ├── tools/
-│   │   │   ├── rag_retriever.py
-│   │   │   └── oliveyoung.py
+│   ├── ai/                                 # AI 오케스트레이션 (LangGraph 파이프라인)
+│   │   ├── orchestrator/                   # 그래프 실행 엔진
+│   │   │   ├── graph.py                    # LangGraph DAG 정의 및 컴파일 (6-노드 그래프)
+│   │   │   ├── state.py                    # GraphState TypedDict (노드 간 공유 상태)
+│   │   │   ├── router.py                   # Intent 분류기 (LLM 라우팅 + 키워드 폴백)
+│   │   │   ├── context_builder.py          # 사용자 프로필 빌드 (DB 조회 + chat_history 파싱)
+│   │   │   └── nodes/                      # 그래프 노드 구현체
+│   │   │       ├── route.py                # [route_node] GPT-4.1-mini intent 분류 + 즉시 응답
+│   │   │       ├── context.py              # [context_node] 프로필 로드 + 맥락 부족 역질문
+│   │   │       ├── vision.py               # [vision_node] Fast/Deep 모델 추론 · 성분 OCR
+│   │   │       ├── search.py               # [search_node] RAG + Tavily 병렬 검색 · 피부타입 확정
+│   │   │       ├── llm.py                  # [llm_node] GPT 답변 생성 (intent별 프롬프트)
+│   │   │       └── validate.py             # [validate_node] 스키마 검증 · 올리브영 링크 · DB 저장
+│   │   │
+│   │   ├── llm/                            # LLM 호출 및 프롬프트 관리
+│   │   │   ├── generator.py                # generate_report() — intent별 프롬프트 조합 → GPT 호출
+│   │   │   ├── validators.py               # Pydantic 기반 LLM 출력 JSON 스키마 검증
+│   │   │   └── prompts/                    # intent별 시스템 프롬프트
+│   │   │       ├── system_base.py          # 공통 시스템 프롬프트 (역할 정의, 응답 형식)
+│   │   │       ├── skin_analysis.py        # 빠른/정밀 분석 프롬프트 (수치 해석 + 피부타입 판정)
+│   │   │       ├── ingredient_chat.py      # 성분 분석 프롬프트 (전성분 OCR 결과 해석)
+│   │   │       ├── product_recommend.py    # 제품 추천 프롬프트 (올리브영 제품 기반 답변)
+│   │   │       └── general_chat.py         # 일반 상담 프롬프트 (관리법, 루틴, 성분 질문)
+│   │   │
+│   │   ├── tools/                          # 외부 도구 연동
+│   │   │   ├── rag_retriever.py            # ChromaDB 벡터 검색 (가이드/성분/질환/화장품)
+│   │   │   └── oliveyoung.py               # Tavily API로 올리브영 실시간 제품 검색
+│   │   │
 │   │   └── config/
-│   │       └── settings.py
+│   │       └── settings.py                 # API 키, 모델명, 경로 등 환경 설정
 │   │
-│   ├── skin_ai/                            # 딥러닝 모델 추론(fast/deep)
-│   │   ├── fast_inference.py
-│   │   ├── deep_inference.py
-│   │   ├── checkpoint/
-│   │   │   ├── fast/
-│   │   │   └── deep/
+│   ├── skin_ai/                            # 딥러닝 모델 추론 (Fast/Deep)
+│   │   ├── fast_inference.py               # Fast Model — 정면 1장 → 5개 항목 수치+등급 (~0.5초)
+│   │   ├── deep_inference.py               # Deep Model — F+L+R 3장 → 13개 수치+10개 등급+신뢰도 (~2초)
+│   │   ├── checkpoint/                     # 학습 완료 모델 가중치
+│   │   │   ├── fast/                       # Area별 Fast Model state_dict.bin (7개)
+│   │   │   └── deep/                       # Area별 Deep Model state_dict.bin (8개)
 │   │   └── ingredient_demo/
-│   │       └── demo_products.json
+│   │       └── demo_products.json          # 성분 분석 데모용 샘플 데이터
 │   │
 │   ├── assets/                             # 백엔드 리소스(팀 사진, 데모)
 │   │   ├── images/

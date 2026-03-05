@@ -86,6 +86,8 @@ On-you(온유)는 화장품에 관심이 많은 20~30대를 대상으로 한 AI 
 
 사용자는 대화를 통해 피부 타입·고민·성분·취향을 입력하여 자신에게 적합한 제품을 추천받을 수 있으며 제품의 전성분(성분표) 사진을 촬영/업로드 시, 성분을 추출·분석해 나에게 적합한 성분/주의가 필요한 성분을 안내합니다. 또한 피부 정밀 분석 결과를 통해 현재 피부 상태, 피부 타입, 민감 요인에 맞는 개인 피부관리법을 제공하는 맞춤 스킨케어 서비스입니다.
 
+<br />
+
 ### 2.1. 프로젝트 배경 및 목적
 
 <div align="center">
@@ -101,6 +103,8 @@ On-you(온유)는 화장품에 관심이 많은 20~30대를 대상으로 한 AI 
 현재 올리브영은 매장에서 기기를 통해 피부 상태를 측정하는 체험형 AI 서비스 [스킨스캔(Skin Scan)]을 운영하고 있으며, 진단 결과를 앱에서 조회·관리할 수 있도록 서비스를 고도화하고 있습니다. 그러나 해당 서비스는 매장 방문을 전제로 한 오프라인 중심 서비스로, **시간과 장소의 제약이 있어 사용자가 집에서 즉시 피부 상태를 확인하거나 성분 정보를 분석하고 제품을 추천받기에는 한계**가 있습니다.
 
 이러한 서비스 환경을 바탕으로, **사용자가 스마트폰 앱만으로 언제 어디서나 피부 상태 분석, 성분 분석, 맞춤 제품 추천을 받을 수 있는 홈 기반 스킨케어 챗봇 서비스의 필요성**을 확인하였으며, 이를 기반으로 본 프로젝트를 기획·개발하게 되었습니다.
+
+<br />
 
 ### 2.2. 프로젝트 목표
 
@@ -140,7 +144,7 @@ graph LR
 
 ※ 수집 제외 항목: 학회 회원 전용 콘텐츠, 라이선스 문제 있는 외부 사이트, 과도한 수집 부담 항목
 
----
+<br />
 
 ### 3.2. 데이터 전처리 파이프라인
 
@@ -161,6 +165,8 @@ graph LR
   - 중복 제거 및 메타데이터 기반 다중 필터링 적용
   - 기능성화장품 보고품목: 염모, 제모, 탈모, 샴푸 등 피부 분석 목적에 맞지 않는 헤어·두피 제품을 키워드 필터링으로 제거
   - 기능성화장품 보고품목: CANCEL_APPROVAL_YN 값이 'Y'인 제품을 제외하여 최신 유효 데이터만
+
+<br />
 
 #### 3.2.2. 주요 전처리 시스템 및 스키마
 
@@ -184,80 +190,64 @@ graph LR
 
 ### 3.3. 수집 데이터 현황
 
-<div align="center">
-  <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-    <div>
-      <h4 align="center">피부 가이드 (guide)</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>카테고리</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>피부 타입별 관리</td><td>완료</td></tr>
-          <tr><td>피부 장벽 관리</td><td>완료</td></tr>
-          <tr><td>여드름/트러블 관리</td><td>완료</td></tr>
-          <tr><td>미백·색소 관리</td><td>완료</td></tr>
-          <tr><td>안티에이징 관리</td><td>완료</td></tr>
-          <tr><td>민감 피부 진정 관리</td><td>완료</td></tr>
-          <tr><td>모공 관리</td><td>완료</td></tr>
-          <tr><td>단계별 관리 (mild→severe)</td><td>완료</td></tr>
-          <tr><td>아침/저녁 데일리 루틴</td><td>완료</td></tr>
-          <tr><td>주기적 관리 루틴</td><td>완료</td></tr>
-          <tr><td>피해야 할 습관</td><td>완료</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <h4 align="center">성분 정보 (ingredient)</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>항목</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>성분명·기능 설명</td><td>완료</td></tr>
-          <tr><td>피부 타입별 적합성 설명</td><td>완료</td></tr>
-          <tr><td>성분 간 시너지/충돌 관계</td><td>완료</td></tr>
-          <tr><td>농도별 효과 차이 설명</td><td>완료</td></tr>
-          <tr><td>주의/제한 성분 여부 및 이유</td><td>완료</td></tr>
-          <tr><td>부작용 가능성</td><td>완료</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <h4 align="center">피부 질병 정보 (disease)</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>항목</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>피부 질병별 상세 설명</td><td>완료</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <h4 align="center">화장품(제품) 목록 (cosmetic_product)</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>항목</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>기능성 화장품 보고 품목</td><td>완료</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div>
+  <table>
+    <tr>
+      <td valign="top">
+        <h4 align="center">피부 가이드 (guide)</h4>
+        <table>
+          <thead><tr><th>카테고리</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td>피부 타입별 관리</td><td>완료</td></tr>
+            <tr><td>피부 장벽 관리</td><td>완료</td></tr>
+            <tr><td>여드름/트러블 관리</td><td>완료</td></tr>
+            <tr><td>미백·색소 관리</td><td>완료</td></tr>
+            <tr><td>안티에이징 관리</td><td>완료</td></tr>
+            <tr><td>민감 피부 진정 관리</td><td>완료</td></tr>
+            <tr><td>모공 관리</td><td>완료</td></tr>
+            <tr><td>단계별 관리 (mild→severe)</td><td>완료</td></tr>
+            <tr><td>아침/저녁 데일리 루틴</td><td>완료</td></tr>
+            <tr><td>주기적 관리 루틴</td><td>완료</td></tr>
+            <tr><td>피해야 할 습관</td><td>완료</td></tr>
+          </tbody>
+        </table>
+      </td>
+      <td valign="top">
+        <h4 align="center">성분 정보 (ingredient)</h4>
+        <table>
+          <thead><tr><th>항목</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td>성분명·기능 설명</td><td>완료</td></tr>
+            <tr><td>피부 타입별 적합성 설명</td><td>완료</td></tr>
+            <tr><td>성분 간 시너지/충돌 관계</td><td>완료</td></tr>
+            <tr><td>농도별 효과 차이 설명</td><td>완료</td></tr>
+            <tr><td>주의/제한 성분 여부 및 이유</td><td>완료</td></tr>
+            <tr><td>부작용 가능성</td><td>완료</td></tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">
+        <h4 align="center">피부 질병 정보 (disease)</h4>
+        <table>
+          <thead><tr><th>항목</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td>피부 질병별 상세 설명</td><td>완료</td></tr>
+          </tbody>
+        </table>
+      </td>
+      <td valign="top">
+        <h4 align="center">화장품(제품) 목록 (cosmetic_product)</h4>
+        <table>
+          <thead><tr><th>항목</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr><td>기능성 화장품 보고 품목</td><td>완료</td></tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
 
   <h3>태그별 수집 개수</h3>
   <img src="assets/vector_data.png"  />

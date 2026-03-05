@@ -1474,11 +1474,11 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
     <img src="assets/0_진입화면_비회원.png" />
     <img src="assets/1-1_채팅_비회원.png" />
     <img src="assets/1-2_채팅_회원.png" />
-    <img src="assets/1-2_채팅_회원_빠른분석.png" />
-    <img src="assets/1-2_채팅_회원_정밀분석.png" />
-    <img src="assets/1-2_채팅_회원_성분분석.png" />
-    <img src="assets/2_피부분석_현재분석.png" />
-    <img src="assets/2_피부분석_비교분석.png" />
+    <img src="assets/1-3_채팅_회원_빠른분석.png" />
+    <img src="assets/1-4_채팅_회원_정밀분석.png" />
+    <img src="assets/1-5_채팅_회원_성분분석.png" />
+    <img src="assets/2-1_피부분석_현재분석.png" />
+    <img src="assets/2-2_피부분석_비교분석.png" />
     <img src="assets/3_위시리스트.png" />
     <img src="assets/4-1_로그인.png" />
     <img src="assets/4-2_비밀번호찾기.png" />

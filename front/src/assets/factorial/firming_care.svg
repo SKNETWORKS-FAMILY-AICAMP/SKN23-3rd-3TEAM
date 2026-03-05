@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_레이어_1" data-name=" 레이어 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 83.37 83.37">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-1, .cls-3 {
+        stroke: #84c13d;
+        stroke-width: 2px;
+      }
+
+      .cls-4 {
+        fill: #84c13d;
+      }
+
+      .cls-2 {
+        fill: #e0ecbf;
+        stroke: #83c03d;
+        stroke-width: 4px;
+      }
+
+      .cls-3 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <rect class="cls-2" x="2" y="2" width="79.37" height="79.37"/>
+  <g>
+    <path class="cls-1" d="M72.63,39.35v22.7c0,5.57-4.3,10.09-9.6,10.09H19.83c-5.3,0-9.6-4.52-9.6-10.09v-22.7"/>
+    <g>
+      <g>
+        <path class="cls-3" d="M10.74,39.35h61.89"/>
+        <path class="cls-3" d="M10.74,46.06h61.89"/>
+        <g>
+          <g>
+            <g>
+              <path class="cls-3" d="M10.74,56.45s.88,2.08,5.63,2.08"/>
+              <path class="cls-3" d="M21.99,56.45s-.88,2.08-5.63,2.08"/>
+            </g>
+            <g>
+              <path class="cls-3" d="M33.24,56.45s-.88-2.08-5.63-2.08"/>
+              <path class="cls-3" d="M21.99,56.45s.88-2.08,5.63-2.08"/>
+            </g>
+          </g>
+          <g>
+            <g>
+              <path class="cls-3" d="M55.75,56.45s-.88-2.08-5.63-2.08"/>
+              <path class="cls-3" d="M44.5,56.45s.88-2.08,5.63-2.08"/>
+            </g>
+            <g>
+              <path class="cls-3" d="M33.24,56.45s.88,2.08,5.63,2.08"/>
+              <path class="cls-3" d="M44.5,56.45s-.88,2.08-5.63,2.08"/>
+            </g>
+          </g>
+          <g>
+            <path class="cls-3" d="M67,56.45s.88-2.08,5.63-2.08"/>
+            <g>
+              <path class="cls-3" d="M55.75,56.45s.88,2.08,5.63,2.08"/>
+              <path class="cls-3" d="M67,56.45s-.88,2.08-5.63,2.08"/>
+            </g>
+          </g>
+        </g>
+        <circle class="cls-4" cx="28.74" cy="62.77" r="1.69"/>
+        <circle class="cls-4" cx="16.43" cy="65.34" r="1.69"/>
+        <circle class="cls-4" cx="54.63" cy="62.77" r="1.69"/>
+        <circle class="cls-4" cx="66.94" cy="65.34" r="1.69"/>
+        <circle class="cls-4" cx="41.68" cy="65.34" r="1.69"/>
+        <g>
+          <g>
+            <path class="cls-1" d="M29.7,12.34s-6.66,3.09-16.1,4.82v14.99s.08,13.41,16.1,17.32"/>
+            <path class="cls-1" d="M29.7,12.34s6.66,3.09,16.1,4.82v14.99s-.08,13.41-16.1,17.32"/>
+          </g>
+          <g>
+            <path class="cls-3" d="M29.7,19.77s-4,1.85-9.66,2.89v8.99s.05,8.04,9.66,10.39"/>
+            <path class="cls-3" d="M29.7,19.77s4,1.85,9.66,2.89v8.99s-.05,8.04-9.66,10.39"/>
+          </g>
+        </g>
+      </g>
+      <g>
+        <line class="cls-3" x1="68.21" y1="20.62" x2="68.21" y2="32.54"/>
+        <line class="cls-3" x1="63.8" y1="28.13" x2="68.21" y2="32.54"/>
+        <line class="cls-3" x1="72.63" y1="28.13" x2="68.21" y2="32.54"/>
+      </g>
+      <g>
+        <line class="cls-3" x1="54.65" y1="20.62" x2="54.65" y2="32.54"/>
+        <line class="cls-3" x1="50.24" y1="28.13" x2="54.65" y2="32.54"/>
+        <line class="cls-3" x1="59.07" y1="28.13" x2="54.65" y2="32.54"/>
+      </g>
+    </g>
+  </g>
+</svg>

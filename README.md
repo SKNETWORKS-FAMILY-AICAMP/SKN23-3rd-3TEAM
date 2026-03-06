@@ -1345,15 +1345,18 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
 ### 10.4. 인포그래픽
 
 <div align="center">
-  <figure style="display: inline-block; margin: 10px;">
-    <img src="assets/인포그래픽_분석.png">
-    <figcaption><b>분석 가이드라인</b></figcaption>
-  </figure>
+  <img src="assets/인포그래픽_분석.png">
+  <p>
+    <b>🔍 분석 가이드라인</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  </p>
+  <img src="assets/인포그래픽_전성분.png">
+  <p>
+    <b>🧪 전성분 추출 가이드라인</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  </p>
 
-  <figure style="display: inline-block; margin: 10px;">
-    <img src="assets/인포그래픽_전성분.png">
-    <figcaption><b>전성분 추출 가이드라인</b></figcaption>
-  </figure>
+  <br><br>
+
+  
 </div>
 
 ## 11. 시연화면

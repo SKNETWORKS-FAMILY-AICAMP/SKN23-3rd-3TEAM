@@ -1466,12 +1466,31 @@ On-you(온유)
 
 https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatbot?t=YhjLgI2srgQIFRuA-1
 
----
+### 10.4. 인포그래픽
+
+<div align="center">
+  <img src="assets/인포그래픽_분석.png">
+  <p>
+    <b>🔍 분석 가이드라인</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  </p>
+  <img src="assets/인포그래픽_전성분.png">
+  <p>
+    <b>🧪 전성분 추출 가이드라인</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  </p>
+
+  <br><br>
+
+  
+</div>
 
 ## 11. 시연화면
 
-  <div align="center">
-    <img src="assets/0_진입화면_비회원.png" />
+<div align="center">
+  <img src="assets/0_진입화면_비회원.png" />
+
+  <details>
+    <summary><b>전체 시연화면 보기</b></summary>
+    <br/>
     <img src="assets/1-1_채팅_비회원.png" />
     <img src="assets/1-2_채팅_회원.png" />
     <img src="assets/1-3_채팅_회원_빠른분석.png" />
@@ -1485,8 +1504,19 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
     <img src="assets/4-3_회원가입.png" />
     <img src="assets/5-1_설정_프로필.png" />
     <img src="assets/5-2_설정_소셜연동.png" />
-  </div>
+  </details>
+</div>
 
+## 11.1 시연영상
+
+<div align="center">
+  <img src="assets/gif/Adobe Express - 비로그인 편집.gif">
+  <img src="assets/gif/Adobe Express - 회원관리법.gif">
+  <img src="assets/gif/Adobe Express - 레이저시술.gif">
+  <img src="assets/gif/Adobe Express - 빠른분석.gif">
+  <img src="assets/gif/Adobe Express - 정밀분석.gif">
+  <img src="assets/gif/Adobe Express - 전성분추출.gif">
+</div>
 ---
 
 ## 12. 트러블 슈팅

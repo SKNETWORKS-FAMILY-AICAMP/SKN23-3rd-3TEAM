@@ -1073,7 +1073,7 @@ class GraphState(TypedDict):
 ### 5.1. 전체 아키텍처
 
 <div align="center">
-  <img src="assets\EC2_RunPodGPU_.jpg" width="1000">
+  <img src="assets\EC2_RunPodGPU_.jpg" width="80%">
 </div>
 
 <br />
@@ -1469,53 +1469,53 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
 ### 10.4. 인포그래픽
 
 <div align="center">
-  <img src="assets/인포그래픽_분석.png">
-  <p>
-    <b>🔍 분석 가이드라인</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-  </p>
-  <img src="assets/인포그래픽_전성분.png">
-  <p>
-    <b>🧪 전성분 추출 가이드라인</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-  </p>
-
-  <br><br>
-
-  
+  <div>
+    <h4>🔍 분석 가이드라인</h4>
+    <img src="assets/인포그래픽_분석.png">
+  </div>
+  <br />
+  <div>
+    <h4>🧪 전성분 추출 가이드라인</h4>
+    <img src="assets/인포그래픽_전성분.png">
+  </div>  
 </div>
+<br />
+
+---
 
 ## 11. 시연화면
 
 <div align="center">
-  <img src="assets/0_진입화면_비회원.png" />
+  <div><img src="assets/0_진입화면_비회원.png" width="90%" /></div>
 
   <details>
     <summary><b>전체 시연화면 보기</b></summary>
     <br/>
-    <img src="assets/1-1_채팅_비회원.png" />
-    <img src="assets/1-2_채팅_회원.png" />
-    <img src="assets/1-3_채팅_회원_빠른분석.png" />
-    <img src="assets/1-4_채팅_회원_정밀분석.png" />
-    <img src="assets/1-5_채팅_회원_성분분석.png" />
-    <img src="assets/2-1_피부분석_현재분석.png" />
-    <img src="assets/2-2_피부분석_비교분석.png" />
-    <img src="assets/3_위시리스트.png" />
-    <img src="assets/4-1_로그인.png" />
-    <img src="assets/4-2_비밀번호찾기.png" />
-    <img src="assets/4-3_회원가입.png" />
-    <img src="assets/5-1_설정_프로필.png" />
-    <img src="assets/5-2_설정_소셜연동.png" />
+    <div><img src="assets/1-1_채팅_비회원.png" width="90%" /></div>
+    <div><img src="assets/1-2_채팅_회원.png" width="90%" /></div>
+    <div><img src="assets/1-3_채팅_회원_빠른분석.png" width="90%" /></div>
+    <div><img src="assets/1-4_채팅_회원_정밀분석.png" width="90%" /></div>
+    <div><img src="assets/1-5_채팅_회원_성분분석.png" width="90%" /></div>
+    <div><img src="assets/2-1_피부분석_현재분석.png" width="90%" /></div>
+    <div><img src="assets/2-2_피부분석_비교분석.png" width="90%" /></div>
+    <div><img src="assets/3_위시리스트.png" width="90%" /></div>
+    <div><img src="assets/4-1_로그인.png" width="90%" /></div>
+    <div><img src="assets/4-2_비밀번호찾기.png" width="90%" /></div>
+    <div><img src="assets/4-3_회원가입.png" width="90%" /></div>
+    <div><img src="assets/5-1_설정_프로필.png" width="90%" /></div>
+    <div><img src="assets/5-2_설정_소셜연동.png" width="90%" /></div>
   </details>
 </div>
 
 ## 11.1 시연영상
 
 <div align="center">
-  <img src="assets/gif/Adobe Express - 비로그인 편집.gif">
-  <img src="assets/gif/Adobe Express - 회원관리법.gif">
-  <img src="assets/gif/Adobe Express - 레이저시술.gif">
-  <img src="assets/gif/Adobe Express - 빠른분석.gif">
-  <img src="assets/gif/Adobe Express - 정밀분석.gif">
-  <img src="assets/gif/Adobe Express - 전성분추출.gif">
+  <div><img src="assets/gif/Adobe Express - 비로그인 편집.gif" width="90%"></div>
+  <div><img src="assets/gif/Adobe Express - 회원관리법.gif" width="90%"></div>
+  <div><img src="assets/gif/Adobe Express - 레이저시술.gif" width="90%"></div>
+  <div><img src="assets/gif/Adobe Express - 빠른분석.gif" width="90%"></div>
+  <div><img src="assets/gif/Adobe Express - 정밀분석.gif" width="90%"></div>
+  <div><img src="assets/gif/Adobe Express - 전성분추출.gif" width="90%"></div>
 </div>
 ---
 

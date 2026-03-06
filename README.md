@@ -1342,10 +1342,28 @@ On-you(온유)
 
 https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatbot?t=YhjLgI2srgQIFRuA-1
 
+### 10.4. 인포그래픽
+
+<div align="center">
+  <figure style="display: inline-block; margin: 10px;">
+    <img src="assets/인포그래픽_분석.png">
+    <figcaption><b>분석 가이드라인</b></figcaption>
+  </figure>
+
+  <figure style="display: inline-block; margin: 10px;">
+    <img src="assets/인포그래픽_전성분.png">
+    <figcaption><b>전성분 추출 가이드라인</b></figcaption>
+  </figure>
+</div>
+
 ## 11. 시연화면
 
-  <div align="center">
-    <img src="assets/0_진입화면_비회원.png" />
+<div align="center">
+  <img src="assets/0_진입화면_비회원.png" />
+
+  <details>
+    <summary><b>전체 시연화면 보기</b></summary>
+    <br/>
     <img src="assets/1-1_채팅_비회원.png" />
     <img src="assets/1-2_채팅_회원.png" />
     <img src="assets/1-2_채팅_회원_빠른분석.png" />
@@ -1359,8 +1377,19 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
     <img src="assets/4-3_회원가입.png" />
     <img src="assets/5-1_설정_프로필.png" />
     <img src="assets/5-2_설정_소셜연동.png" />
-  </div>
+  </details>
+</div>
 
+## 11.1 시연영상
+
+<div align="center">
+  <img src="assets/gif/Adobe Express - 비로그인 편집.gif">
+  <img src="assets/gif/Adobe Express - 회원관리법.gif">
+  <img src="assets/gif/Adobe Express - 레이저시술.gif">
+  <img src="assets/gif/Adobe Express - 빠른분석.gif">
+  <img src="assets/gif/Adobe Express - 정밀분석.gif">
+  <img src="assets/gif/Adobe Express - 전성분추출.gif">
+</div>
 ---
 
 ## 12. 트러블 슈팅
@@ -1413,7 +1442,7 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
 
 ## 14. 한줄 회고
 
-- **강승원** :이번 프로젝트에서 저는 ResNet50 기반 Fast/Deep 피부 정량분석 파트를 중심으로 모델 학습·개선과 추론 코드 정리, 그리고 MAE/±1 정확도 같은 평가 지표 정리를 맡았습니다. 특히 멀티뷰 정밀 분석 흐름을 다듬고, 눈가·턱처럼 까다로운 부위는 재학습으로 성능을 안정화하는 데 집중했습니다. 각자 맡은 영역을 끝까지 책임져 준 훌륭한 팀원들 덕분에 전체 프로젝트도 무리 없이 잘 마무리할 수 있었습니다.
+- **강승원** :이번 프로젝트에서 ResNet50 기반 Fast/Deep 피부 정량분석 모델의 학습·추론·평가와 LangGraph 기반 6-노드 챗봇 파이프라인(라우팅, RAG 검색, 비로그인/회원 분기 등) 설계·구현을 담당했습니다. 멀티뷰 AttentionFusion 구조와 까다로운 부위 재학습으로 분석 성능을 안정화하는 데 집중했고, 각자의 영역을 끝까지 책임져 준 팀원들 덕분에 프로젝트를 잘 마무리할 수 있었습니다.
 
 - **정석원** :이번 프로젝트에서 LLM 단계와 벡터DB(RAG)를 맡으면서, LLM이 의도 분류 → 근거 검색 → 답변 생성 → 검증 흐름으로 동작한다는 걸 확실히 이해하게 됐습니다. 짧은 기간인데도 각자 역할을 끝까지 책임져준 팀원들 덕분에 완성할 수 있었고, 모두 정말 고맙습니다.
 

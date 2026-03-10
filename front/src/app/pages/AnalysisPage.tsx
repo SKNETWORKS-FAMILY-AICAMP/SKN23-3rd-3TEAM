@@ -1,7 +1,7 @@
-import { Link } from "react-router";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Icon } from "../components/ui/icon";
+import { Button } from "@/app/components/ui/button";
 import { Loading } from "@/app/components/ui/loading";
 import { Calendar, ScanFace, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
@@ -186,18 +186,14 @@ export function AnalysisPage() {
     if (hasNoData) {
         return (
             <div className="flex flex-col items-center justify-center h-full bg-[#F8FBF3] px-6 text-center">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-[#E8F5D0]">
-                    <ScanFace className="w-8 h-8 text-onyou" />
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-[#E8F5D0]">
+                    <ScanFace className="w-10 h-10 text-onyou" />
                 </div>
-                <h2 className="text-base font-bold text-gray-800 mb-2">아직 피부 분석 결과가 없어요</h2>
+                <h1 className="font-bold text-gray-800 mb-2">아직 피부 분석 결과가 없어요</h1>
                 <p className="text-sm text-gray-500 leading-relaxed mb-6">채팅에서 피부 이미지를 업로드하면<br />AI가 분석 결과를 저장해 드려요.</p>
-                <Link
-                    to="/chat"
-                    className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-onyou transition-all"
-                    style={{ boxShadow: "0 2px 8px rgba(133,193,61,0.35)" }}
-                >
+                <Button to="/chat" fullWidth={false} className="px-6 py-2.5">
                     채팅으로 분석 시작하기
-                </Link>
+                </Button>
             </div>
         );
     }

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import * as authApi from "../api/authApi";
 import { Link, useNavigate } from "react-router";
+import { Alert } from "@/app/components/ui/alert";
+import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
 import { Eye, EyeOff, Check, X, AlertCircle, Mail, Loader2 } from "lucide-react";
@@ -55,7 +58,6 @@ export function SignupPage() {
     const [verifyCode, setVerifyCode]     = useState("");
     const [password, setPassword]         = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm]   = useState(false);
     const [name, setName]                 = useState("");
     const [nickname, setNickname]         = useState("");
@@ -200,29 +202,31 @@ export function SignupPage() {
 
                             {/* ── 이메일 ── */}
                             <div>
-                                <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                                    이메일 <span className="text-red-400">*</span>
-                                </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => {
-                                            setEmail(e.target.value);
-                                            setEmailError("");
-                                            if (emailVerified) {
-                                                setEmailVerified(false);
-                                                setEmailSent(false);
-                                            }
-                                        }}
-                                        placeholder="이메일 주소"
-                                        disabled={emailVerified}
-                                        className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou focus:bg-white transition-all disabled:opacity-60"
-                                    />
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <Input
+                                            label="이메일"
+                                            required
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => {
+                                                setEmail(e.target.value);
+                                                setEmailError("");
+
+                                                if (emailVerified) {
+                                                    setEmailVerified(false);
+                                                    setEmailSent(false);
+                                                }
+                                            }}
+                                            placeholder="이메일 주소"
+                                            disabled={emailVerified}
+                                            error={emailError}
+                                        />
+                                    </div>
                                     <button
                                         onClick={handleSendEmail}
                                         disabled={!email || emailVerified || isSending}
-                                        className={`px-3 py-3 rounded-xl text-xs font-semibold text-white whitespace-nowrap cursor-pointer disabled:opacity-50 transition-all ${emailVerified ? "bg-[#10B981]" : "bg-onyou"}`}
+                                        className={`w-[80px] h-[45px] px-3 py-3 rounded-xl text-sm font-semibold text-white whitespace-nowrap cursor-pointer disabled:opacity-50 transition-all mb-[1px] ${emailVerified ? "bg-[#10B981]" : "bg-onyou"}`}
                                         style={{ minWidth: "80px" }}
                                     >
                                         {emailVerified ? (
@@ -232,12 +236,6 @@ export function SignupPage() {
                                         ) : emailSent ? "재발송" : "인증발송"}
                                     </button>
                                 </div>
-
-                                {emailError && (
-                                    <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1.5">
-                                        <AlertCircle className="w-3 h-3 flex-shrink-0" />{emailError}
-                                    </p>
-                                )}
 
                                 {/* 코드 입력 영역 */}
                                 {emailSent && !emailVerified && (
@@ -261,7 +259,7 @@ export function SignupPage() {
                                                 placeholder="6자리 인증 코드 입력"
                                                 maxLength={6}
                                                 inputMode="numeric"
-                                                className={`flex-1 px-4 py-3 bg-gray-50 border rounded-xl text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal focus:outline-none transition-all ${
+                                                className={`flex-1 px-4 py-3 border rounded-lg text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal focus:outline-none transition-all ${
                                                     verifyError
                                                         ? "border-red-300 focus:border-red-400"
                                                         : "border-gray-200 focus:border-onyou"
@@ -270,7 +268,7 @@ export function SignupPage() {
                                             <button
                                                 onClick={handleVerify}
                                                 disabled={!verifyCode || isVerifying}
-                                                className="px-4 py-3 rounded-xl text-xs font-semibold text-white disabled:opacity-50 transition-all min-w-[52px] bg-onyou"
+                                                className="w-[80px] h-[45px] px-4 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all min-w-[52px] bg-onyou"
                                             >
                                                 {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "확인"}
                                             </button>
@@ -299,21 +297,14 @@ export function SignupPage() {
 
                             {/* ── 비밀번호 ── */}
                             <div>
-                                <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                                    비밀번호 <span className="text-red-400">*</span>
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="비밀번호"
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou focus:bg-white transition-all pr-11"
-                                    />
-                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
+                                <Input
+                                    label="비밀번호"
+                                    required
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="비밀번호"
+                                />
                                 {password && <PasswordStrength password={password} />}
                             </div>
 
@@ -328,7 +319,7 @@ export function SignupPage() {
                                         value={passwordConfirm}
                                         onChange={(e) => setPasswordConfirm(e.target.value)}
                                         placeholder="비밀번호 재입력"
-                                        className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all pr-11 ${
+                                        className={`w-full px-4 py-3 border rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all pr-11 ${
                                             passwordConfirm
                                                 ? passwordMatch
                                                     ? "border-onyou focus:border-onyou"
@@ -336,7 +327,7 @@ export function SignupPage() {
                                                 : "border-gray-200 focus:border-onyou"
                                         }`}
                                     />
-                                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
+                                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1 cursor-pointer">
                                         {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                     {passwordConfirm && (
@@ -353,52 +344,32 @@ export function SignupPage() {
                             </div>
 
                             {/* ── 이름 ── */}
-                            <div>
-                                <label className="text-xs font-medium text-gray-500 block mb-1.5">이름 <span className="text-red-400">*</span></label>
-                                <input
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="실명 입력"
-                                    maxLength={20}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou transition-all"
-                                />
-                            </div>
+                            <Input
+                                label="이름"
+                                required
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="실명 입력"
+                                maxLength={20}
+                            />
 
                             {/* ── 닉네임 ── */}
-                            <div>
-                                <label className="text-xs font-medium text-gray-500 block mb-1.5">닉네임</label>
-                                <input
-                                    value={nickname}
-                                    onChange={(e) => setNickname(e.target.value)}
-                                    placeholder="닉네임 (선택, 미입력 시 이름으로 설정)"
-                                    maxLength={12}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou transition-all"
-                                />
-                            </div>
+                            <Input
+                                label="닉네임"
+                                value={nickname}
+                                onChange={(e) => setNickname(e.target.value)}
+                                placeholder="닉네임 (선택, 미입력 시 이름으로 설정)"
+                                maxLength={12}
+                            />
 
 
                             {/* 가입 에러 */}
-                            {signupError && (
-                                <div className="flex items-center gap-2 text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
-                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                    {signupError}
-                                </div>
-                            )}
+                            {signupError && <Alert message={signupError} />}
 
                             {/* 가입 버튼 */}
-                            <button
-                                onClick={handleSignup}
-                                disabled={!isValid || isLoading}
-                                className={`w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2 ${isValid && !isLoading ? "bg-onyou" : "bg-[#D1D5DB]"}`}
-                                style={isValid && !isLoading ? { boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : {}}
-                            >
-                                {isLoading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        가입 중...
-                                    </span>
-                                ) : "가입하기"}
-                            </button>
+                            <Button onClick={handleSignup} disabled={!isValid} isLoading={isLoading} loadingText="가입 중..." className="mt-2">
+                                가입하기
+                            </Button>
                         </motion.div>
                     </AnimatePresence>
                 </div>

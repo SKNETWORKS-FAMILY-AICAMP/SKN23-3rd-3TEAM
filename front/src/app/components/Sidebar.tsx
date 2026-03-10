@@ -3,10 +3,11 @@ import { logout } from "@/app/api/authApi";
 import { Icon } from "@/app/components/ui/icon"
 import DefaultProfile from "@/assets/profile.png"
 import { useState, useEffect, useRef } from "react";
+import { useToast } from "@/app/components/ui/toast";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { fetchCurrentUser, type UserResponse } from "@/app/api/userApi";
-import { Plus, LogIn, LogOut, Settings, Lock, Trash2 } from "lucide-react";
+import { Plus, LogIn, LogOut, Settings, Trash2 } from "lucide-react";
 import { fetchChatRooms, deleteChatRoom, type ChatRoom } from "@/app/api/chatApi";
 
 interface GuestChatRoom {
@@ -37,26 +38,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
     const [guestChats, setGuestChats] = useState<GuestChatRoom[]>([]);
     const [user, setUser] = useState<UserResponse | null>(null);
-    const [showMenuToast, setShowMenuToast]           = useState(false);
-    const [showChatLimitToast, setShowChatLimitToast] = useState(false);
-    const toastTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const chatLimitTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const triggerMenuToast = () => {
-        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-
-        setShowMenuToast(true);
-
-        toastTimerRef.current = setTimeout(() => setShowMenuToast(false), 3000);
-    };
-
-    const triggerChatLimitToast = () => {
-        if (chatLimitTimerRef.current) clearTimeout(chatLimitTimerRef.current);
-
-        setShowChatLimitToast(true);
-
-        chatLimitTimerRef.current = setTimeout(() => setShowChatLimitToast(false), 3000);
-    };
+    const { toast, ToastContainer } = useToast();
 
     const navItems = [
         { path: "/analysis", label: "피부 분석", icon: 'beauty' as const },
@@ -131,7 +113,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             const count = parseInt(localStorage.getItem("guest_chat_count") ?? "0", 10);
 
             if (count >= GUEST_CHAT_LIMIT) {
-                triggerChatLimitToast();
+                toast({ message: `채팅방은 최대 ${GUEST_CHAT_LIMIT}개까지 생성할 수 있어요. 추가 생성은 로그인이 필요합니다.`, action: { label: "로그인", onClick: () => navigate("/login") } });
                 
                 return;
             }
@@ -206,7 +188,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="px-4 pt-4 pb-2">
                     <button
                         onClick={handleNewChat}
-                        className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group cursor-pointer bg-onyou text-white"
+                        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group cursor-pointer bg-onyou text-white"
                         style={{
                             boxShadow: "0 2px 8px rgba(133,193,61,0.3)",
                         }}
@@ -231,7 +213,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </p>
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
-                        const commonClass = `w-full flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        const commonClass = `w-full flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                             isActive ? "text-white" : "text-gray-600"
                         }`;
                         const activeStyle = isActive ? { boxShadow: "0 2px 8px rgba(133,193,61,0.25)" } : {};
@@ -241,7 +223,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             return (
                                 <button
                                     key={item.path}
-                                    onClick={triggerMenuToast}
+                                    onClick={() => toast({ message: "이 메뉴는 회원 전용 기능입니다.", action: { label: "로그인", onClick: () => navigate("/login") } })}
                                     className={`${commonClass} ${activeClass} cursor-pointer ${!isActive ? "hover:bg-[#F0FAE3]" : ""}`}
                                     style={activeStyle}
                                 >
@@ -285,7 +267,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 navigate("/chat", { state: { chat_room_id: chat.chat_room_id } });
                                                 onClose();
                                             }}
-                                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer ${
+                                            className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer ${
                                                 isActive ? "bg-[#E8F5D0]" : "hover:bg-gray-50"
                                             }`}
                                         >
@@ -331,7 +313,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 navigate("/chat", { state: { guest_chat_id: chat.id } });
                                                 onClose();
                                             }}
-                                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer ${
+                                            className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-200 group cursor-pointer ${
                                                 isActive ? "bg-[#E8F5D0]" : "hover:bg-gray-50"
                                             }`}
                                         >
@@ -375,10 +357,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <Link
                             to="/login"
                             onClick={onClose}
-                            className="w-full flex gap-1.5 items-center justify-center py-2.5 rounded-lg text-xs font-semibold text-white transition-all bg-onyou"
+                            className="w-full flex gap-1.5 items-center justify-center py-3 rounded-xl text-sm font-semibold text-white transition-all bg-onyou"
                             style={{ boxShadow: "0 2px 8px rgba(133,193,61,0.3)" }}
                         >
-                            <LogIn className="w-3.5 h-3.5" />
+                            <LogIn className="w-4 h-4 -ml-2" />
                             로그인
                         </Link>
                     </div>
@@ -410,7 +392,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <Link
                                 to="/settings"
                                 onClick={onClose}
-                                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-colors ${
                                     location.pathname === "/settings"
                                         ? "text-white bg-onyou"
                                         : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -421,7 +403,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             </Link>
                             <button
                                 onClick={() => { logout(); navigate("/login", { replace: true }); onClose(); }}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                             >
                                 <LogOut className="w-3.5 h-3.5" />
                                 로그아웃
@@ -431,58 +413,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 )}
             </aside>
 
-            {/* 회원 전용 메뉴 토스트 */}
-            <AnimatePresence>
-                {showMenuToast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 16 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
-                        style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
-                    >
-                        <Lock className="w-4 h-4 flex-shrink-0 text-onyou" />
-                        <span className="flex-1 text-xs leading-relaxed">
-                            이 메뉴는 <strong>회원 전용</strong> 기능입니다.
-                        </span>
-                        <Link
-                            to="/login"
-                            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-onyou text-white"
-                            onClick={() => setShowMenuToast(false)}
-                        >
-                            로그인
-                        </Link>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* 비로그인 채팅 한도 초과 토스트 */}
-            <AnimatePresence>
-                {showChatLimitToast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 16 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm"
-                        style={{ background: "#1F2937", color: "white", minWidth: "260px", maxWidth: "340px" }}
-                    >
-                        <Lock className="w-4 h-4 flex-shrink-0 text-onyou" />
-                        <span className="flex-1 text-xs leading-relaxed">
-                            채팅방은 최대 <strong>{GUEST_CHAT_LIMIT}개</strong>까지 생성할 수 있어요.<br />
-                            추가 생성은 <strong>로그인</strong>이 필요합니다.
-                        </span>
-                        <Link
-                            to="/login"
-                            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-onyou text-white"
-                            onClick={() => setShowChatLimitToast(false)}
-                        >
-                            로그인
-                        </Link>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <ToastContainer />
         </>
     );
 }

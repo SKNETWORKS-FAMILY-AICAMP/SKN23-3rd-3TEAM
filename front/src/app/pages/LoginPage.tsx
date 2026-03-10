@@ -1,7 +1,9 @@
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Alert } from "@/app/components/ui/alert";
+import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
 import { login, startSocialLogin } from "@/app/api/authApi";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
 
@@ -9,7 +11,6 @@ export function LoginPage() {
     const navigate = useNavigate();
     const [email, setEmail]                 = useState("");
     const [password, setPassword]           = useState("");
-    const [showPassword, setShowPassword]   = useState(false);
     const [isLoading, setIsLoading]         = useState(false);
     const [error, setError]                 = useState("");
 
@@ -63,53 +64,31 @@ export function LoginPage() {
                     <h2 className="text-gray-900 font-semibold mb-6 text-center">로그인</h2>
 
                     {/* 에러 메시지 */}
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 mb-4"
-                        >
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            {error}
-                        </motion.div>
-                    )}
+                    {error && <Alert message={error} className="mb-4" />}
 
                     <form onSubmit={handleLogin} className="space-y-4">
                         {/* 이메일 */}
-                        <div>
-                            <label className="text-xs font-medium text-gray-500 block mb-1.5">이메일</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                                placeholder="이메일을 입력하세요"
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou focus:bg-white transition-all"
-                                autoComplete="email"
-                                disabled={isLoading}
-                            />
-                        </div>
+                        <Input
+                            label="이메일"
+                            type="email"
+                            value={email}
+                            onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                            placeholder="이메일을 입력하세요"
+                            autoComplete="email"
+                            disabled={isLoading}
+                        />
 
                         {/* 비밀번호 */}
                         <div>
-                            <label className="text-xs font-medium text-gray-500 block mb-1.5">비밀번호</label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                                    placeholder="비밀번호를 입력하세요"
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou focus:bg-white transition-all pr-11"
-                                    autoComplete="current-password"
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                                >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                            </div>
+                            <Input
+                                label="비밀번호"
+                                type="password"
+                                value={password}
+                                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                                placeholder="비밀번호를 입력하세요"
+                                autoComplete="current-password"
+                                disabled={isLoading}
+                            />
                             <div className="flex justify-end mt-1.5">
                                 <Link to="/forgot-password"className="text-xs text-gray-400 hover:text-onyou transition-colors">
                                     비밀번호 찾기
@@ -118,19 +97,9 @@ export function LoginPage() {
                         </div>
 
                         {/* 로그인 버튼 */}
-                        <motion.button
-                            type="submit"
-                            disabled={!isValid || isLoading}
-                            whileTap={{ scale: 0.98 }}
-                            className={`w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 mt-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${isValid && !isLoading ? "bg-onyou" : "bg-gray-400"}`}
-                        >
-                            {isLoading ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    로그인 중...
-                                </span>
-                            ) : "로그인"}
-                        </motion.button>
+                        <Button type="submit" disabled={!isValid} isLoading={isLoading} loadingText="로그인 중..." className="mt-2">
+                            로그인
+                        </Button>
                     </form>
 
                     <p className="text-xs text-center text-gray-400 mt-5">

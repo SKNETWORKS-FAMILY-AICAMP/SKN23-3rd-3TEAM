@@ -1,9 +1,11 @@
 import DefaultProfile from "@/assets/profile.png"
 import { uploadImage } from "@/app/api/uploadApi";
+import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Link2, Check, ChevronRight, Eye, EyeOff, Loader2, Plus, X } from "lucide-react";
+import { User, Link2, Check, ChevronRight, Loader2, Plus, X } from "lucide-react";
 import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem } from "@/app/api/userApi";
 
 const SECTIONS = [
@@ -101,9 +103,6 @@ export function SettingsPage() {
     }, [activeSection]);
 
     // Security
-    const [showCurrentPw, setShowCurrentPw]   = useState(false);
-    const [showNewPw, setShowNewPw]           = useState(false);
-    const [showConfirmPw, setShowConfirmPw]   = useState(false);
     const [currentPw, setCurrentPw]           = useState("");
     const [newPw, setNewPw]                   = useState("");
     const [confirmPw, setConfirmPw]           = useState("");
@@ -308,16 +307,13 @@ export function SettingsPage() {
                                                 </div>
 
                                                 {/* nickname */}
-                                                <div>
-                                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">닉네임</label>
-                                                    <input
-                                                        value={nickname}
-                                                        onChange={(e) => setNickname(e.target.value)}
-                                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:border-onyou transition-all"
-                                                        maxLength={12}
-                                                        placeholder="닉네임 입력"
-                                                    />
-                                                </div>
+                                                <Input
+                                                    label="닉네임"
+                                                    value={nickname}
+                                                    onChange={(e) => setNickname(e.target.value)}
+                                                    maxLength={12}
+                                                    placeholder="닉네임 입력"
+                                                />
 
                                                 {/* Gender + Age */}
                                                 <div className="grid grid-cols-2 gap-4">
@@ -334,23 +330,21 @@ export function SettingsPage() {
                                                         </select>
                                                         {fieldErrors.gender && <p className="text-xs text-red-500 mt-1">{fieldErrors.gender}</p>}
                                                     </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-gray-500 block mb-1.5">나이 <span className="text-red-400">*</span></label>
-                                                        <input
-                                                            type="number"
-                                                            value={age}
-                                                            onChange={(e) => {
-                                                                const v = e.target.value;
-                                                                if (v === "" || (Number(v) >= 1 && Number(v) <= 120)) setAge(v);
-                                                                setFieldErrors((p) => ({ ...p, age: undefined }));
-                                                            }}
-                                                            min={1}
-                                                            max={120}
-                                                            placeholder="나이 입력"
-                                                            className={`w-full px-4 py-3 bg-white border rounded-xl text-sm text-gray-800 focus:outline-none transition-all ${fieldErrors.age ? "border-red-400 focus:border-red-400" : "border-gray-200 focus:border-onyou"}`}
-                                                        />
-                                                        {fieldErrors.age && <p className="text-xs text-red-500 mt-1">{fieldErrors.age}</p>}
-                                                    </div>
+                                                    <Input
+                                                        label="나이"
+                                                        required
+                                                        type="number"
+                                                        value={age}
+                                                        onChange={(e) => {
+                                                            const v = e.target.value;
+                                                            if (v === "" || (Number(v) >= 1 && Number(v) <= 120)) setAge(v);
+                                                            setFieldErrors((p) => ({ ...p, age: undefined }));
+                                                        }}
+                                                        min={1}
+                                                        max={120}
+                                                        placeholder="나이 입력"
+                                                        error={fieldErrors.age}
+                                                    />
                                                 </div>
 
                                                 {/* Divider */}
@@ -476,16 +470,15 @@ export function SettingsPage() {
                                                 {saveError && (
                                                     <p className="text-xs text-red-500 text-center">{saveError}</p>
                                                 )}
-                                                <button
+                                                <Button
                                                     onClick={handleSave}
-                                                    disabled={isSaving || isUploadingPhoto}
-                                                    className={`w-full py-3.5 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-70 ${saved ? "bg-[#10B981]" : "bg-onyou"}`}
-                                                    style={{ boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
+                                                    disabled={isUploadingPhoto}
+                                                    isLoading={isSaving}
+                                                    loadingText="저장 중..."
+                                                    className="rounded-2xl"
                                                 >
-                                                    {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" />저장 중...</> :
-                                                    saved ? <><Check className="w-4 h-4" />저장되었습니다!</> :
-                                                    "변경사항 저장"}
-                                                </button>
+                                                    {saved ? <><Check className="w-4 h-4" />저장되었습니다!</> : "변경사항 저장"}
+                                                </Button>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -502,72 +495,32 @@ export function SettingsPage() {
                                         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
                                             <h3 className="font-semibold text-gray-800 mb-4 text-sm">비밀번호 변경</h3>
                                             <div className="space-y-3">
-                                                <div>
-                                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">현재 비밀번호</label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type={showCurrentPw ? "text" : "password"}
-                                                            value={currentPw}
-                                                            onChange={(e) => setCurrentPw(e.target.value)}
-                                                            placeholder="현재 비밀번호"
-                                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-onyou transition-all pr-11"
-                                                        />
-                                                        <button onClick={() => setShowCurrentPw(!showCurrentPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                                                            {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">새 비밀번호</label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type={showNewPw ? "text" : "password"}
-                                                            value={newPw}
-                                                            onChange={(e) => setNewPw(e.target.value)}
-                                                            placeholder="새 비밀번호 (8자 이상, 영문+숫자)"
-                                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:border-onyou transition-all pr-11"
-                                                        />
-                                                        <button onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                                                            {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">비밀번호 확인</label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type={showConfirmPw ? "text" : "password"}
-                                                            value={confirmPw}
-                                                            onChange={(e) => setConfirmPw(e.target.value)}
-                                                            placeholder="새 비밀번호를 다시 입력하세요"
-                                                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm placeholder-gray-400 focus:outline-none transition-all pr-11 ${
-                                                                confirmPw.length === 0
-                                                                    ? "border-gray-200 focus:border-onyou"
-                                                                    : pwMatch
-                                                                    ? "border-green-400 focus:border-green-400"
-                                                                    : "border-red-400 focus:border-red-400"
-                                                            }`}
-                                                        />
-                                                        <button onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                                                            {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                        </button>
-                                                    </div>
-                                                    {confirmPw.length > 0 && (
-                                                        <p className={`text-xs mt-1.5 flex items-center gap-1 ${pwMatch ? "text-green-500" : "text-red-500"}`}>
-                                                            {pwMatch
-                                                                ? <><Check className="w-3 h-3" />비밀번호가 일치합니다.</>
-                                                                : <><X className="w-3 h-3" />비밀번호가 일치하지 않습니다.</>
-                                                            }
-                                                        </p>
-                                                    )}
-                                                </div>
+                                                <Input
+                                                    label="현재 비밀번호"
+                                                    type="password"
+                                                    value={currentPw}
+                                                    onChange={(e) => setCurrentPw(e.target.value)}
+                                                    placeholder="현재 비밀번호"
+                                                />
+                                                <Input
+                                                    label="새 비밀번호"
+                                                    type="password"
+                                                    value={newPw}
+                                                    onChange={(e) => setNewPw(e.target.value)}
+                                                    placeholder="새 비밀번호 (8자 이상, 영문+숫자)"
+                                                />
+                                                <Input
+                                                    label="비밀번호 확인"
+                                                    type="password"
+                                                    value={confirmPw}
+                                                    onChange={(e) => setConfirmPw(e.target.value)}
+                                                    placeholder="새 비밀번호를 다시 입력하세요"
+                                                    error={confirmPw.length > 0 && !pwMatch ? "비밀번호가 일치하지 않습니다" : undefined}
+                                                />
                                             </div>
-                                            <button
-                                                className="w-full py-3 rounded-xl text-sm font-semibold text-white mt-4 transition-all cursor-pointer bg-onyou disabled:opacity-50"
-                                                disabled={!currentPw || !newPw || !pwMatch}
-                                            >
+                                            <Button disabled={!currentPw || !newPw || !pwMatch} className="mt-4">
                                                 비밀번호 변경
-                                            </button>
+                                            </Button>
                                         </div>
                                     </motion.div>
                                 )}

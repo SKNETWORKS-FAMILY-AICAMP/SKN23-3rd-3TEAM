@@ -205,7 +205,7 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onRemove(slot.id); }}
-                                className="opacity-0 group-hover:opacity-100 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md transition-all"
+                                className="opacity-0 group-hover:opacity-100 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md transition-all cursor-pointer"
                             >
                                 <X className="w-3.5 h-3.5 text-gray-600" />
                             </button>
@@ -868,7 +868,7 @@ export function ChatPage() {
 
             {/* Input Area */}
             <div className="bg-white border-t border-gray-100 px-4 py-3 flex-shrink-0">
-                <div className="flex items-end gap-2 bg-gray-50 rounded-2xl px-3 py-2 border-1 border-transparent focus-within:border-onyou transition-colors">
+                <div className="flex items-end gap-2 bg-gray-50 rounded-lg px-3 py-2 border-1 border-transparent focus-within:border-onyou transition-colors">
                     <textarea
                         ref={textareaRef}
                         value={input}
@@ -886,7 +886,7 @@ export function ChatPage() {
                             <>
                                 <button
                                     onClick={() => setAnalysisDropdownOpen(!analysisDropdownOpen)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                                         analysisType !== "default"
                                             ? "border-onyou text-[#4A7A1E] bg-[#E8F5D0]"
                                             : "border-gray-200 text-gray-500 bg-white hover:border-onyou"

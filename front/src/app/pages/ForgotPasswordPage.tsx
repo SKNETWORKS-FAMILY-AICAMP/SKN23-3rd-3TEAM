@@ -1,9 +1,12 @@
 import * as authApi from "../api/authApi";
+import { Alert } from "@/app/components/ui/alert";
+import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
 import { Link, useNavigate } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
-import { Mail, Eye, EyeOff, Check, ChevronLeft, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Check, ChevronLeft, AlertCircle, Loader2 } from "lucide-react";
 
 const TIMER_SECONDS = 600; // 10분
 
@@ -60,8 +63,6 @@ export function ForgotPasswordPage() {
     // 새 비밀번호
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [showNew, setShowNew] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
 
     // 로딩 / 에러
     const [isSending, setIsSending] = useState(false);  // 발송 버튼
@@ -192,9 +193,9 @@ export function ForgotPasswordPage() {
                         {step < 2 && (
                             <button
                                 onClick={() => step > 0 ? setStep(step - 1) : navigate("/login")}
-                                className="p-1.5 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
                             >
-                                <ChevronLeft className="w-4 h-4 text-gray-500" />
+                                <ChevronLeft className="w-4.5 h-4 -ml-0.5 text-gray-500" />
                             </button>
                         )}
                         <h2 className="font-semibold text-gray-800">
@@ -217,10 +218,10 @@ export function ForgotPasswordPage() {
                                 </p>
 
                                 {/* 이메일 입력 + 발송 버튼 */}
-                                <div>
-                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">이메일</label>
-                                    <div className="flex gap-2">
-                                        <input
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <Input
+                                            label="이메일"
                                             type="email"
                                             value={email}
                                             onChange={(e) => {
@@ -230,25 +231,18 @@ export function ForgotPasswordPage() {
                                             onKeyDown={(e) => e.key === "Enter" && !codeSent && handleSendCode()}
                                             placeholder="가입한 이메일 주소"
                                             disabled={codeVerified}
-                                            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou transition-all disabled:opacity-60"
+                                            error={sendError}
                                         />
-                                        <button
-                                            onClick={handleSendCode}
-                                            disabled={!email || isSending || codeVerified}
-                                            className="px-3 py-3 rounded-xl text-xs font-semibold text-white bg-onyou whitespace-nowrap disabled:opacity-50 min-w-[72px] transition-all cursor-pointer"
-                                        >
-                                            {isSending ? (
-                                                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                                            ) : codeSent ? "재발송" : "발송"}
-                                        </button>
                                     </div>
-
-                                    {/* 발송 에러 */}
-                                    {sendError && (
-                                        <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1.5">
-                                            <AlertCircle className="w-3 h-3 flex-shrink-0" />{sendError}
-                                        </p>
-                                    )}
+                                    <button
+                                        onClick={handleSendCode}
+                                        disabled={!email || isSending || codeVerified}
+                                        className="h-[45px] px-3 py-3 rounded-xl text-sm font-semibold text-white bg-onyou whitespace-nowrap disabled:opacity-50 min-w-[72px] transition-all cursor-pointer mb-[1px]"
+                                    >
+                                        {isSending ? (
+                                            <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                                        ) : codeSent ? "재발송" : "발송"}
+                                    </button>
                                 </div>
 
                                 {/* ── 코드 입력 영역 (발송 후 표시) ── */}
@@ -279,7 +273,7 @@ export function ForgotPasswordPage() {
                                                     placeholder="6자리 인증 코드 입력"
                                                     maxLength={6}
                                                     inputMode="numeric"
-                                                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal ${
+                                                    className={`w-full px-4 py-3 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal ${
                                                         codeError
                                                             ? "border-red-300 focus:border-red-400"
                                                             : "border-gray-200 focus:border-onyou"
@@ -305,7 +299,7 @@ export function ForgotPasswordPage() {
                                                         <button
                                                             onClick={handleSendCode}
                                                             disabled={isSending}
-                                                            className="text-[11px] text-onyou font-medium hover:underline disabled:opacity-50"
+                                                            className="text-[11px] text-onyou font-medium hover:underline disabled:opacity-50 cursor-pointer"
                                                         >
                                                             재발송
                                                         </button>
@@ -314,19 +308,9 @@ export function ForgotPasswordPage() {
                                             </div>
 
                                             {/* 코드 확인 버튼 */}
-                                            <button
-                                                onClick={handleVerifyCode}
-                                                disabled={!code || isLoading || timeLeft === 0}
-                                                className="w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-onyou transition-all cursor-pointer disabled:opacity-50"
-                                                style={{ boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
-                                            >
-                                                {isLoading ? (
-                                                    <span className="flex items-center justify-center gap-2">
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        확인 중...
-                                                    </span>
-                                                ) : "인증 코드 확인"}
-                                            </button>
+                                            <Button onClick={handleVerifyCode} disabled={!code || timeLeft === 0} isLoading={isLoading} loadingText="확인 중...">
+                                                인증 코드 확인
+                                            </Button>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -363,66 +347,31 @@ export function ForgotPasswordPage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">새 비밀번호</label>
-                                    <div className="relative">
-                                        <input
-                                            type={showNew ? "text" : "password"}
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            placeholder="새 비밀번호"
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-onyou transition-all pr-11"
-                                        />
-                                        <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                                            {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
+                                    <Input
+                                        label="새 비밀번호"
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        placeholder="새 비밀번호"
+                                    />
                                     {newPassword && <PasswordStrengthBar password={newPassword} />}
                                 </div>
 
-                                <div>
-                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">새 비밀번호 확인</label>
-                                    <div className="relative">
-                                        <input
-                                            type={showConfirm ? "text" : "password"}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="새 비밀번호 재입력"
-                                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all pr-11 ${
-                                                confirmPassword
-                                                    ? passwordsMatch ? "border-onyou" : "border-red-300"
-                                                    : "border-gray-200 focus:border-onyou"
-                                            }`}
-                                        />
-                                        <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                                            {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                    {confirmPassword && !passwordsMatch && (
-                                        <p className="text-[11px] text-red-400 mt-1">비밀번호가 일치하지 않습니다</p>
-                                    )}
-                                </div>
+                                <Input
+                                    label="새 비밀번호 확인"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="새 비밀번호 재입력"
+                                    error={confirmPassword && !passwordsMatch ? "비밀번호가 일치하지 않습니다" : undefined}
+                                />
 
                                 {/* 재설정 에러 */}
-                                {resetError && (
-                                    <div className="flex items-center gap-2 text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
-                                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                        {resetError}
-                                    </div>
-                                )}
+                                {resetError && <Alert message={resetError} />}
 
-                                <button
-                                    onClick={handleResetPassword}
-                                    disabled={!canReset || isLoading}
-                                    className={`w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 mt-2 cursor-pointer ${canReset ? "bg-onyou" : "bg-[#D1D5DB]"}`}
-                                    style={canReset ? { boxShadow: "0 4px 14px rgba(133,193,61,0.35)" } : {}}
-                                >
-                                    {isLoading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            저장 중...
-                                        </span>
-                                    ) : "비밀번호 재설정"}
-                                </button>
+                                <Button onClick={handleResetPassword} disabled={!canReset} isLoading={isLoading} loadingText="저장 중..." className="mt-2">
+                                    비밀번호 재설정
+                                </Button>
                             </motion.div>
                         )}
 
@@ -445,13 +394,7 @@ export function ForgotPasswordPage() {
                                 </motion.div>
                                 <h2 className="text-gray-900 font-bold mb-2">재설정 완료!</h2>
                                 <p className="text-sm text-gray-500 mb-6">비밀번호가 성공적으로 재설정되었습니다.<br />새 비밀번호로 로그인해 주세요.</p>
-                                <button
-                                    onClick={() => navigate("/login")}
-                                    className="w-full py-3.5 rounded-xl text-sm font-semibold text-white bg-onyou cursor-pointer"
-                                    style={{boxShadow: "0 4px 14px rgba(133,193,61,0.35)" }}
-                                >
-                                    로그인하러 가기
-                                </button>
+                                <Button to="/login">로그인하러 가기</Button>
                             </motion.div>
                         )}
                     </AnimatePresence>

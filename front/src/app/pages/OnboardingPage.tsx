@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { Button } from "@/app/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Plus, X, ArrowRight } from "lucide-react";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
@@ -275,32 +276,13 @@ export function OnboardingPage() {
                     transition={{ delay: 0.4 }}
                     className="mt-5 space-y-3"
                 >
-                    <motion.button
-                        onClick={handleComplete}
-                        disabled={!isValid || isLoading}
-                        whileTap={{ scale: 0.98 }}
-                        className={`w-full py-4 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isValid ? "bg-onyou" : "bg-[#D1D5DB]"}`}
-                        style={isValid ? { boxShadow: "0 4px 20px rgba(133,193,61,0.4)" } : {}}
-                    >
-                        {isLoading ? (
-                            <>
-                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                설정 중...
-                            </>
-                        ) : (
-                            <>
-                                시작하기
-                                <ArrowRight className="w-4 h-4" />
-                            </>
-                        )}
-                    </motion.button>
+                    <Button onClick={handleComplete} disabled={!isValid} isLoading={isLoading} loadingText="설정 중..." className="rounded-2xl py-4">
+                        시작하기 <ArrowRight className="w-4 h-4" />
+                    </Button>
 
-                    <button
-                        onClick={() => navigate("/chat")}
-                        className="w-full py-3 rounded-2xl text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                    >
+                    <Button variant="ghost" onClick={() => navigate("/chat")} className="rounded-2xl py-3">
                         나중에 설정할게요
-                    </button>
+                    </Button>
                 </motion.div>
             </motion.div>
         </div>

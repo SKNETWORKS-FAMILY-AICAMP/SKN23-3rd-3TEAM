@@ -5,7 +5,6 @@
  *
  * 사용하는 엔드포인트:
  *   GET    /wishlist              → fetchWishlist()
- *   GET    /wishlist/{wish_id}    → fetchWishlistItem()
  *   POST   /wishlist              → addToWishlist()
  *   DELETE /wishlist/{wish_id}    → removeFromWishlist()
  * ─────────────────────────────────────────────────────────────
@@ -63,25 +62,6 @@ export async function fetchWishlist(): Promise<WishlistItem[]> {
     }
 
     return res.json() as Promise<WishlistItem[]>;
-}
-
-/**
- * 위시리스트 단건 조회.
- * 
- * GET /wishlist/{wish_id}
- */
-export async function fetchWishlistItem(wishId: number): Promise<WishlistItem> {
-    const res = await fetch(`${API_BASE}/wishlist/${wishId}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-    });
-
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-
-        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-    }
-
-    return res.json() as Promise<WishlistItem>;
 }
 
 

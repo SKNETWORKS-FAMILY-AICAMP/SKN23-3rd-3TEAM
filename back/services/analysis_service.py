@@ -238,7 +238,7 @@ def get_wishlist_by_user(user_id: int) -> list[Wishlist]:
         """
         SELECT * FROM wishlist
         WHERE user_id = %s
-        ORDER BY added_at DESC
+        ORDER BY wish_id DESC
         """,
         (user_id,)
     )

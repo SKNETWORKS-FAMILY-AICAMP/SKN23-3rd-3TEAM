@@ -30,26 +30,6 @@ def get_wishlist(user_id: int = Depends(get_current_user_id)):
     items = analysis_service.get_wishlist_by_user(user_id)
     return [_wish_to_response(w) for w in items]
 
-@router.get("/{wish_id}", response_model=WishlistResponse)
-def get_wishlist_item(
-    wish_id : int,
-    user_id : int = Depends(get_current_user_id),
-):
-    """
-    위시리스트 단건 조회
-
-    프론트 요청 예시:
-        GET /wishlist/3
-    응답:
-        { "wish_id": 3, "product_name": "...", ... }
-    """
-    item = analysis_service.get_wishlist_item_by_id(wish_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="위시리스트 항목을 찾을 수 없습니다.")
-    if item.user_id != user_id:
-        raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
-    return _wish_to_response(item)
-
 @router.post("", response_model=WishlistResponse, status_code=201)
 def add_to_wishlist(
     body    : WishlistAdd,

@@ -5,7 +5,6 @@
  *
  * 사용하는 엔드포인트:
  *   GET    /wishlist              → fetchWishlist()
- *   GET    /wishlist/{wish_id}    → fetchWishlistItem()
  *   POST   /wishlist              → addToWishlist()
  *   DELETE /wishlist/{wish_id}    → removeFromWishlist()
  * ─────────────────────────────────────────────────────────────
@@ -14,108 +13,97 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 function getToken(): string {
-  const token = localStorage.getItem("access_token");
-  if (!token) throw new Error("로그인이 필요합니다.");
-  return token;
+    const token = localStorage.getItem("access_token");
+
+    if (!token) throw new Error("로그인이 필요합니다.");
+
+    return token;
 }
 
 // ─────────────────────────────────────────────
-// 타입 정의 (back/db/schemas.py WishlistResponse 대응)
+// 타입 정의
 // ─────────────────────────────────────────────
 
 export interface WishlistItem {
-  wish_id             : number;
-  user_id             : number;
-  product_vector_id   : string;
-  product_name        : string;
-  product_description : string | null;
-  message_id          : number | null;
-  added_at            : string;
+    wish_id             : number;
+    user_id             : number;
+    product_vector_id   : string;
+    product_name        : string;
+    product_description : string | null;
+    message_id          : number | null;
+    added_at            : string;
+}
+export interface WishlistAddBody {
+    user_id             : number;
+    product_vector_id   : string;
+    product_name        : string;
+    message_id         ?: number | null;
+    product_description?: string | null;
 }
 
 // ─────────────────────────────────────────────
-// API 함수
+// API 호출 함수
 // ─────────────────────────────────────────────
 
 /**
- * 내 위시리스트 전체 조회 (최신순).
- * back: GET /wishlist → analysis_service.get_wishlist_by_user()
+ * 내 위시리스트 전체 조회. (최신순)
+ * 
+ * GET /wishlist
  */
 export async function fetchWishlist(): Promise<WishlistItem[]> {
-  const res = await fetch(`${API_BASE}/wishlist`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
+    const res = await fetch(`${API_BASE}/wishlist`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-  }
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
 
-  return res.json() as Promise<WishlistItem[]>;
+        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+    }
+
+    return res.json() as Promise<WishlistItem[]>;
 }
 
-/**
- * 위시리스트 단건 조회.
- * back: GET /wishlist/{wish_id} → analysis_service.get_wishlist_item_by_id()
- */
-export async function fetchWishlistItem(wishId: number): Promise<WishlistItem> {
-  const res = await fetch(`${API_BASE}/wishlist/${wishId}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-  }
-
-  return res.json() as Promise<WishlistItem>;
-}
-
-export interface WishlistAddBody {
-  user_id             : number;
-  product_vector_id   : string;
-  product_name        : string;
-  message_id         ?: number | null;
-  product_description?: string | null;
-}
 
 /**
  * 위시리스트에 제품 추가.
- * back: POST /wishlist → analysis_service.add_to_wishlist()
- * 동일 product_vector_id 가 이미 있으면 서버에서 400 반환.
+ * 
+ * POST /wishlist
  */
 export async function addToWishlist(body: WishlistAddBody): Promise<WishlistItem> {
-  const res = await fetch(`${API_BASE}/wishlist`, {
-    method : "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization : `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify(body),
-  });
+    const res = await fetch(`${API_BASE}/wishlist`, {
+        method : "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization : `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    const msg = (data as { detail?: string }).detail ?? `서버 오류 (${res.status})`;
-    throw Object.assign(new Error(msg), { statusCode: res.status });
-  }
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = (data as { detail?: string }).detail ?? `서버 오류 (${res.status})`;
 
-  return res.json() as Promise<WishlistItem>;
+        throw Object.assign(new Error(msg), { statusCode: res.status });
+    }
+
+    return res.json() as Promise<WishlistItem>;
 }
 
 /**
  * 위시리스트 항목 삭제.
- * back: DELETE /wishlist/{wish_id} → analysis_service.remove_from_wishlist()
+ * 
+ * DELETE /wishlist/{wish_id}
  */
 export async function removeFromWishlist(wishId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/wishlist/${wishId}`, {
-    method  : "DELETE",
-    headers : { Authorization: `Bearer ${getToken()}` },
-  });
+    const res = await fetch(`${API_BASE}/wishlist/${wishId}`, {
+        method  : "DELETE",
+        headers : { Authorization: `Bearer ${getToken()}` },
+    });
 
-  // 204 No Content = 정상 삭제
-  if (!res.ok && res.status !== 204) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-  }
+    if (!res.ok && res.status !== 204) {    // 204 No Content = 정상 삭제
+        const data = await res.json().catch(() => ({}));
+
+        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+    }
 }

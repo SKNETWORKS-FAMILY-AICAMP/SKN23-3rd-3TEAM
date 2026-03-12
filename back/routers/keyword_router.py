@@ -1,3 +1,9 @@
+from db import db_manager
+from typing import Optional
+from fastapi import APIRouter
+from services import keyword_service
+from db.schemas import KeywordResponse
+
 """
 keyword_router.py
 ─────────────────────────────────────────────────────────────
@@ -7,14 +13,11 @@ keyword_router.py
 ─────────────────────────────────────────────────────────────
 """
 
-from db import db_manager
-from typing import Optional
-from fastapi import APIRouter
-from db.schemas import KeywordResponse
-from services import keyword_service
-
 router = APIRouter(prefix="/keywords", tags=["Keywords"])
 
+# ─────────────────────────────────────────────
+# 키워드 목록 조회
+# ─────────────────────────────────────────────
 
 @router.get("", response_model=list[KeywordResponse])
 def get_keywords(type: Optional[str] = None):
@@ -33,14 +36,10 @@ def get_keywords(type: Optional[str] = None):
         ]
     """
     if type:
-        rows = db_manager.execute_query(
-            "SELECT * FROM keywords WHERE type = %s ORDER BY keyword_id",
-            (type,),
-        )
+        rows = db_manager.execute_query("SELECT * FROM keywords WHERE type = %s ORDER BY keyword_id", (type))
     else:
-        rows = db_manager.execute_query(
-            "SELECT * FROM keywords ORDER BY keyword_id",
-        )
+        rows = db_manager.execute_query("SELECT * FROM keywords ORDER BY keyword_id")
+
     return rows
 
 # ─────────────────────────────────────────────
@@ -60,9 +59,10 @@ def get_factorials():
         GET /keywords/factorials
     응답:
         [
-          {"keyword_id": 1, "type": "skin_care_routine", "keyword": "moisturizing_boost", "label": "보습 강화", ...},
-          {"keyword_id": 2, "type": "skin_care_routine", "keyword": "oil_cleansing",      "label": "오일 클렌징", ...},
-          ...
+            {"keyword_id": 1, "type": "skin_care_routine", "keyword": "moisturizing_boost", "label": "보습 강화", ...},
+            {"keyword_id": 2, "type": "skin_care_routine", "keyword": "oil_cleansing",      "label": "오일 클렌징", ...},
+            ...
         ]
     """
+
     return keyword_service.get_skin_care_routines()

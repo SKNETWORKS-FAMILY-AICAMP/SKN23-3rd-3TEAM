@@ -1,3 +1,19 @@
+import os
+
+from fastapi import FastAPI
+from dotenv import load_dotenv
+from contextlib import asynccontextmanager
+from db.db_manager import init_db, close_tunnel
+from fastapi.middleware.cors import CORSMiddleware
+
+from routers.auth_router     import router as auth_router
+from routers.chat_router     import router as chat_router
+from routers.user_router     import router as user_router
+from routers.upload_router   import router as upload_router
+from routers.keyword_router  import router as keyword_router
+from routers.analysis_router import router as analysis_router
+from routers.wishlist_router import router as wishlist_router
+
 """
 main.py
 ─────────────────────────────────────────────────────────────
@@ -10,24 +26,7 @@ FastAPI 앱 진입점.
 ─────────────────────────────────────────────────────────────
 """
 
-import os
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-from db.db_manager import init_db, close_tunnel
-from routers.user_router     import router as user_router
-from routers.chat_router     import router as chat_router
-from routers.analysis_router import router as analysis_router
-from routers.wishlist_router import router as wishlist_router
-from routers.upload_router   import router as upload_router
-from routers.keyword_router  import router as keyword_router
-from routers.auth_router import router as auth_router
-
 load_dotenv()
-
 
 # ─────────────────────────────────────────────
 # 앱 생명주기 (시작 / 종료)
@@ -40,7 +39,6 @@ async def lifespan(app: FastAPI):
     yield
     close_tunnel()
 
-
 # ─────────────────────────────────────────────
 # FastAPI 앱 생성
 # ─────────────────────────────────────────────
@@ -51,7 +49,6 @@ app = FastAPI(
     version     = "0.1.0",
     lifespan    = lifespan,
 )
-
 
 # ─────────────────────────────────────────────
 # CORS 설정
@@ -70,29 +67,14 @@ app.add_middleware(
     allow_headers     = ["*"],
 )
 
-
 # ─────────────────────────────────────────────
 # 라우터 등록
 # ─────────────────────────────────────────────
 
-app.include_router(user_router)      # /users/...
+app.include_router(auth_router)      # /auth/...
 app.include_router(chat_router)      # /chats/...
-app.include_router(analysis_router)  # /analysis/...
-app.include_router(wishlist_router)  # /wishlist/...
+app.include_router(user_router)      # /users/...
 app.include_router(upload_router)    # /upload
 app.include_router(keyword_router)   # /keywords
-app.include_router(auth_router)  # /auth/...
-
-# ─────────────────────────────────────────────
-# 헬스체크
-# ─────────────────────────────────────────────
-
-@app.get("/", tags=["Health"])
-def health_check():
-    """
-    서버 상태 확인용 엔드포인트.
-
-    응답:
-        { "status": "ok" }
-    """
-    return {"status": "ok"}
+app.include_router(analysis_router)  # /analysis/...
+app.include_router(wishlist_router)  # /wishlist/...

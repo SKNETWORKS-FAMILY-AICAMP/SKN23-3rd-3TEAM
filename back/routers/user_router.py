@@ -1,11 +1,22 @@
+import os
+
+from pydantic import BaseModel
+from services import user_service
+from services import auth_service
+from services import email_service
+from .deps import get_current_user_id
+from fastapi import APIRouter, HTTPException, Depends
+from db.schemas import UserCreate, UserUpdate, UserResponse, EmailSendRequest, EmailVerifyRequest, PasswordResetRequest
+
 """
 user_router.py
 ─────────────────────────────────────────────────────────────
 엔드포인트 목록:
     POST   /users/signup               회원가입 (local, OTP 검증 포함)
     POST   /users/login                로그인 (local)
-    GET    /users/me                   내 정보 조회
-    PATCH  /users/me                   내 정보 수정
+    GET    /users/me                   프로필 조회
+    PATCH  /users/me                   프로필 수정
+    GET    /users/me/social-links      소셜 연동 조회
     DELETE /users/me                   회원 탈퇴
     GET    /users/check/email          이메일 중복 확인
     POST   /users/email/send-code      이메일 OTP 발송
@@ -14,22 +25,10 @@ user_router.py
 ─────────────────────────────────────────────────────────────
 """
 
-import os
-
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
-
-from db.schemas import UserCreate, UserUpdate, UserResponse, EmailSendRequest, EmailVerifyRequest, PasswordResetRequest
-from services import user_service
-from services import auth_service
-from services import email_service
-from .deps import get_current_user_id, create_access_token
-
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
 # ─────────────────────────────────────────────
-# 요청 바디 모델 (router 전용)
+# 요청 바디 모델
 # ─────────────────────────────────────────────
 
 class SignupRequest(BaseModel):
@@ -42,16 +41,32 @@ class SignupRequest(BaseModel):
     privacy_agreed      : bool
     verification_code   : str   # 이메일 OTP 인증 코드 (필수)
 
-
 class LoginRequest(BaseModel):
     email    : str
     password : str
-
 
 class TokenResponse(BaseModel):
     access_token : str
     token_type   : str = "bearer"
 
+# ─────────────────────────────────────────────
+# 내부 헬퍼
+# ─────────────────────────────────────────────
+
+def _to_response(user) -> dict:
+    return UserResponse(
+        user_id           = user.user_id,
+        email             = user.email,
+        name              = user.name,
+        nickname          = user.nickname,
+        age               = user.age,
+        gender            = user.gender,
+        skin_type         = user.skin_type,
+        skin_concern      = user.skin_concern,
+        profile_image_url = user.profile_image_url,
+        is_active         = user.is_active,
+        created_at        = user.created_at,
+    )
 
 # ─────────────────────────────────────────────
 # 회원가입 / 로그인
@@ -76,6 +91,7 @@ def signup(body: SignupRequest):
         }
     """
     secret = os.getenv("EMAIL_OTP_SECRET", "")
+
     if not email_service.verify_otp(body.email, body.verification_code, secret):
         raise HTTPException(status_code=400, detail="이메일 인증 코드가 유효하지 않거나 만료되었습니다.")
 
@@ -88,11 +104,12 @@ def signup(body: SignupRequest):
             privacy_agreed = body.privacy_agreed,
         )
         user = user_service.create_user(user_data)
+
         auth_service.register_local_auth(user.user_id, user.email, body.password)
+
         return _to_response(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest):
@@ -111,9 +128,8 @@ def login(body: LoginRequest):
 
     return TokenResponse(access_token=result["access_token"])
 
-
 # ─────────────────────────────────────────────
-# 내 정보
+# 프로필
 # ─────────────────────────────────────────────
 
 @router.get("/me", response_model=UserResponse)
@@ -127,10 +143,11 @@ def get_me(user_id: int = Depends(get_current_user_id)):
         Headers: { Authorization: "Bearer <token>" }
     """
     user = user_service.get_user_by_id(user_id)
+
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-    return _to_response(user)
 
+    return _to_response(user)
 
 @router.patch("/me", response_model=UserResponse)
 def update_me(body: UserUpdate, user_id: int = Depends(get_current_user_id)):
@@ -143,10 +160,28 @@ def update_me(body: UserUpdate, user_id: int = Depends(get_current_user_id)):
     """
     try:
         user = user_service.update_user(user_id, body)
+
         return _to_response(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/me/social-links")
+def get_my_social_links(user_id: int = Depends(get_current_user_id)):
+    """
+    내 계정 소셜 연동 조회.
+    - auth_providers 테이블에서 provider_type을 기준으로 local 제외 소셜 연동 목록을 반환
+
+    프론트 요청 예시:
+        GET /users/me/social-links
+        Headers: { Authorization: "Bearer <token>" }
+
+    응답 예시:
+        { "is_social": true, "providers": ["kakao", "google"] }
+        { "is_social": false, "providers": [] }
+    """
+    providers = auth_service.get_linked_social_providers(user_id)
+
+    return {"is_social": len(providers) > 0, "providers": providers}
 
 @router.delete("/me", status_code=204)
 def delete_me(user_id: int = Depends(get_current_user_id)):
@@ -157,9 +192,26 @@ def delete_me(user_id: int = Depends(get_current_user_id)):
         DELETE /users/me
     """
     success = user_service.delete_user(user_id)
+
     if not success:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
+# ─────────────────────────────────────────────
+# 이메일 중복 확인
+# ─────────────────────────────────────────────
+
+@router.get("/check/email")
+def check_email(email: str):
+    """
+    이메일 중복 확인.
+
+    프론트 요청 예시:
+        GET /users/check/email?email=test@test.com
+    응답:
+        { "available": true }
+    """
+
+    return {"available": not user_service.is_email_taken(email)}
 
 # ─────────────────────────────────────────────
 # 이메일 OTP 인증
@@ -180,12 +232,13 @@ def send_email_code(body: EmailSendRequest):
     """
     secret = os.getenv("EMAIL_OTP_SECRET", "")
     otp = email_service.generate_otp(body.email, secret)
+
     try:
         email_service.send_verification_email(body.email, otp)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
     return {"message": "인증 코드가 발송되었습니다."}
-
 
 @router.post("/email/verify-code", status_code=200)
 def verify_email_code(body: EmailVerifyRequest):
@@ -202,8 +255,8 @@ def verify_email_code(body: EmailVerifyRequest):
     """
     secret = os.getenv("EMAIL_OTP_SECRET", "")
     valid = email_service.verify_otp(body.email, body.code, secret)
-    return {"valid": valid}
 
+    return {"valid": valid}
 
 # ─────────────────────────────────────────────
 # 비밀번호 재설정
@@ -226,6 +279,7 @@ def reset_password(body: PasswordResetRequest):
         { "message": "비밀번호가 변경되었습니다." }
     """
     secret = os.getenv("EMAIL_OTP_SECRET", "")
+
     if not email_service.verify_otp(body.email, body.code, secret):
         raise HTTPException(status_code=400, detail="이메일 인증 코드가 유효하지 않거나 만료되었습니다.")
 
@@ -233,61 +287,5 @@ def reset_password(body: PasswordResetRequest):
         auth_service.reset_password(body.email, body.new_password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
     return {"message": "비밀번호가 변경되었습니다."}
-
-
-# ─────────────────────────────────────────────
-# 중복 확인
-# ─────────────────────────────────────────────
-
-@router.get("/check/email")
-def check_email(email: str):
-    """
-    이메일 중복 확인.
-
-    프론트 요청 예시:
-        GET /users/check/email?email=test@test.com
-    응답:
-        { "available": true }
-    """
-    return {"available": not user_service.is_email_taken(email)}
-
-
-
-@router.get("/me/social-links")
-def get_my_social_links(user_id: int = Depends(get_current_user_id)):
-    """
-    내 계정 소셜 연동 조회.
-    - auth_providers 테이블에서 provider_type을 기준으로 local 제외 소셜 연동 목록을 반환
-
-    프론트 요청 예시:
-        GET /users/me/social-links
-        Headers: { Authorization: "Bearer <token>" }
-
-    응답 예시:
-        { "is_social": true, "providers": ["kakao", "google"] }
-        { "is_social": false, "providers": [] }
-    """
-    providers = auth_service.get_linked_social_providers(user_id)
-    return {"is_social": len(providers) > 0, "providers": providers}
-
-
-# ─────────────────────────────────────────────
-# 내부 헬퍼
-# ─────────────────────────────────────────────
-
-def _to_response(user) -> dict:
-    return UserResponse(
-        user_id           = user.user_id,
-        email             = user.email,
-        name              = user.name,
-        nickname          = user.nickname,
-        age               = user.age,
-        gender            = user.gender,
-        skin_type         = user.skin_type,
-        skin_concern      = user.skin_concern,
-        profile_image_url = user.profile_image_url,
-        is_active         = user.is_active,
-        created_at        = user.created_at,
-    )
-

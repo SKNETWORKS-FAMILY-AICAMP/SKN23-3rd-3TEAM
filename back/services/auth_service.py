@@ -1,3 +1,17 @@
+import os
+import httpx
+import bcrypt
+import secrets
+
+from typing import Optional
+from dotenv import load_dotenv
+from routers.deps import create_access_token
+from services.user_service import (get_user_by_email, get_user_by_id, create_user)
+
+from db.db_manager import execute_one, execute_write, execute_query
+from db.models import AuthProvider, User
+from db.schemas import AuthProviderCreate, UserCreate
+
 """
 auth_service.py
 ─────────────────────────────────────────────────────────────
@@ -18,24 +32,6 @@ auth_service.py
     JWT 발급은 routers/deps.py의 create_access_token() 사용
 ─────────────────────────────────────────────────────────────
 """
-
-import os
-import bcrypt
-import httpx
-from typing import Optional
-
-from dotenv import load_dotenv
-
-from db.db_manager import execute_one, execute_write, execute_query
-from db.models import AuthProvider, User
-from db.schemas import AuthProviderCreate, UserCreate
-from services.user_service import (
-    get_user_by_email,
-    get_user_by_id,
-    create_user,
-)
-# JWT 발급은 deps.py에서 통합 관리
-from routers.deps import create_access_token
 
 load_dotenv()
 
@@ -87,6 +83,7 @@ def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthPr
         "SELECT auth_id FROM auth_providers WHERE user_id = %s AND provider_type = 'local'",
         (user_id,)
     )
+
     if existing:
         raise ValueError("이미 local 로그인 수단이 등록된 계정입니다.")
 
@@ -104,6 +101,7 @@ def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthPr
         """,
         (auth_data.user_id, auth_data.provider_type, auth_data.provider_id, auth_data.password_hash)
     )
+
     return get_auth_by_id(auth_id)
 
 
@@ -119,8 +117,10 @@ def login_local(email: str, plain_password: str) -> dict:
         user   = result["user"]
     """
     user = get_user_by_email(email)
+
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
+    
     if not user.is_active:
         raise ValueError("비활성화된 계정입니다.")
 
@@ -131,13 +131,16 @@ def login_local(email: str, plain_password: str) -> dict:
         """,
         (user.user_id,)
     )
+
     if not auth_row:
         raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
+    
     if not _verify_password(plain_password, auth_row["password_hash"]):
         raise ValueError("비밀번호가 일치하지 않습니다.")
 
     # deps.py의 create_access_token 사용 (user_id만 전달)
     token = create_access_token(user.user_id)
+
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
@@ -192,6 +195,7 @@ async def google_callback(code: str) -> dict:
         )
         token_data   = token_res.json()
         access_token = token_data.get("access_token")
+
         if not access_token:
             raise ValueError(f"Google access_token 발급 실패: {token_data}")
 
@@ -218,6 +222,7 @@ async def google_callback(code: str) -> dict:
 
     # 4. JWT 발급 (deps.py 사용)
     token = create_access_token(user.user_id)
+
     return {"access_token": token, "token_type": "bearer", "user": user, "is_new": is_new}
 
 
@@ -248,7 +253,7 @@ async def kakao_callback(code: str) -> dict:
     1. code → access_token 교환
     2. access_token → Kakao 사용자 정보 조회
     3. 신규 유저면 자동 회원가입 + 소셜 로그인 수단 등록
-       기존 유저면 로그인 처리
+        기존 유저면 로그인 처리
     4. JWT 발급 후 반환
 
     사용 예시:
@@ -257,7 +262,6 @@ async def kakao_callback(code: str) -> dict:
         user   = result["user"]
     """
     async with httpx.AsyncClient() as client:
-
         # 1. code → access_token 교환
         token_res = await client.post(
             "https://kauth.kakao.com/oauth/token",
@@ -272,6 +276,7 @@ async def kakao_callback(code: str) -> dict:
         )
         token_data   = token_res.json()
         access_token = token_data.get("access_token")
+
         if not access_token:
             raise ValueError(f"Kakao access_token 발급 실패: {token_data}")
 
@@ -299,6 +304,7 @@ async def kakao_callback(code: str) -> dict:
 
     # 4. JWT 발급 (deps.py 사용)
     token = create_access_token(user.user_id)
+
     return {"access_token": token, "token_type": "bearer", "user": user, "is_new": is_new}
 
 
@@ -316,8 +322,9 @@ def get_naver_login_url() -> str:
         url = get_naver_login_url()
         return RedirectResponse(url)
     """
-    import secrets
+
     state = secrets.token_urlsafe(16)
+
     return (
         "https://nid.naver.com/oauth2.0/authorize"
         f"?client_id={NAVER_CLIENT_ID}"
@@ -333,7 +340,7 @@ async def naver_callback(code: str, state: str) -> dict:
     1. code + state → access_token 교환
     2. access_token → Naver 사용자 정보 조회
     3. 신규 유저면 자동 회원가입 + 소셜 로그인 수단 등록
-       기존 유저면 로그인 처리
+        기존 유저면 로그인 처리
     4. JWT 발급 후 반환
 
     사용 예시:
@@ -342,7 +349,6 @@ async def naver_callback(code: str, state: str) -> dict:
         user   = result["user"]
     """
     async with httpx.AsyncClient() as client:
-
         # 1. code → access_token 교환
         token_res = await client.get(
             "https://nid.naver.com/oauth2.0/token",
@@ -357,6 +363,7 @@ async def naver_callback(code: str, state: str) -> dict:
         )
         token_data   = token_res.json()
         access_token = token_data.get("access_token")
+
         if not access_token:
             raise ValueError(f"Naver access_token 발급 실패: {token_data}")
 
@@ -384,6 +391,7 @@ async def naver_callback(code: str, state: str) -> dict:
 
     # 4. JWT 발급 (deps.py 사용)
     token = create_access_token(user.user_id)
+
     return {"access_token": token, "token_type": "bearer", "user": user, "is_new": is_new}
 
 
@@ -411,11 +419,13 @@ def _get_or_create_social_user(
         """,
         (provider_type, provider_id)
     )
+
     if auth_row:
         return get_user_by_id(auth_row["user_id"]), False
 
     # 같은 이메일로 가입된 유저 확인 → 소셜 수단만 추가 연결
     existing_user = get_user_by_email(email)
+
     if existing_user:
         execute_write(
             """
@@ -424,6 +434,7 @@ def _get_or_create_social_user(
             """,
             (existing_user.user_id, provider_type, provider_id)
         )
+
         return existing_user, False
 
     # 완전 신규 유저 → 자동 회원가입
@@ -443,6 +454,7 @@ def _get_or_create_social_user(
         """,
         (user.user_id, provider_type, provider_id)
     )
+
     return user, True
 
 
@@ -461,6 +473,7 @@ def get_auth_by_id(auth_id: int) -> Optional[AuthProvider]:
         "SELECT * FROM auth_providers WHERE auth_id = %s",
         (auth_id,)
     )
+
     return AuthProvider.from_dict(row) if row else None
 
 
@@ -478,6 +491,7 @@ def get_auth_by_user(user_id: int) -> list[AuthProvider]:
         "SELECT * FROM auth_providers WHERE user_id = %s",
         (user_id,)
     )
+
     return [AuthProvider.from_dict(row) for row in rows]
 
 def get_linked_social_providers(user_id: int) -> list[str]:
@@ -494,6 +508,7 @@ def get_linked_social_providers(user_id: int) -> list[str]:
         """,
         (user_id,)
     )
+
     return [r["provider_type"] for r in rows]
 
 def reset_password(email: str, new_password: str) -> None:
@@ -503,8 +518,10 @@ def reset_password(email: str, new_password: str) -> None:
     - local 로그인 수단이 없는 계정은 재설정 불가(또는 정책에 따라 생성).
     """
     user = get_user_by_email(email)
+
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
+    
     if not user.is_active:
         raise ValueError("비활성화된 계정입니다.")
 
@@ -516,6 +533,7 @@ def reset_password(email: str, new_password: str) -> None:
         """,
         (user.user_id,)
     )
+    
     if not auth_row:
         raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다. 소셜 로그인 계정은 비밀번호 재설정이 불가합니다.")
 

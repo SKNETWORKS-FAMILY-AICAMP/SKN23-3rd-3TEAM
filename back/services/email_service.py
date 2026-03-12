@@ -1,3 +1,11 @@
+import os
+import hmac
+import time
+import hashlib
+
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
 """
 email_service.py
 ─────────────────────────────────────────────────────────────
@@ -11,15 +19,6 @@ email_service.py
     pip install sendgrid
 ─────────────────────────────────────────────────────────────
 """
-
-import hmac
-import hashlib
-import time
-import os
-
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
-
 
 # ─────────────────────────────────────────────
 # OTP 생성 / 검증
@@ -38,6 +37,7 @@ def generate_otp(email: str, secret: str, window_minutes: int = 10) -> str:
     window = int(time.time()) // (window_minutes * 60)
     msg = f"{email}:{window}".encode()
     h = hmac.new(secret.encode(), msg, hashlib.sha256)
+
     return str(int(h.hexdigest(), 16))[-6:].zfill(6)
 
 
@@ -56,8 +56,10 @@ def verify_otp(email: str, code: str, secret: str, window_minutes: int = 10) -> 
         msg = f"{email}:{window}".encode()
         h = hmac.new(secret.encode(), msg, hashlib.sha256)
         expected = str(int(h.hexdigest(), 16))[-6:].zfill(6)
+
         if hmac.compare_digest(code, expected):
             return True
+        
     return False
 
 

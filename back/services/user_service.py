@@ -1,3 +1,10 @@
+
+from db.models import User
+from typing import Optional
+from datetime import datetime
+from db.schemas import UserCreate, UserUpdate
+from db.db_manager import execute_one, execute_write
+
 """
 user_service.py
 ─────────────────────────────────────────────────────────────
@@ -12,14 +19,6 @@ user_service.py
 인증/로그인 관련 로직은 auth_service.py에서 담당
 ─────────────────────────────────────────────────────────────
 """
-
-from datetime import datetime
-from typing import Optional
-
-from db.db_manager import execute_one, execute_write
-from db.models import User
-from db.schemas import UserCreate, UserUpdate
-
 
 # ─────────────────────────────────────────────
 # 1. 중복 확인
@@ -36,8 +35,9 @@ def is_email_taken(email: str) -> bool:
     """
     row = execute_one(
         "SELECT user_id FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email,)
+        (email)
     )
+
     return row is not None
 
 
@@ -54,6 +54,7 @@ def is_nickname_taken(nickname: str) -> bool:
         "SELECT user_id FROM users WHERE nickname = %s AND deleted_at IS NULL",
         (nickname,)
     )
+
     return row is not None
 
 
@@ -87,6 +88,7 @@ def create_user(data: UserCreate) -> User:
         """,
         (data.email, data.name, data.nickname, data.terms_agreed, data.privacy_agreed)
     )
+
     return get_user_by_id(user_id)
 
 
@@ -104,8 +106,9 @@ def get_user_by_id(user_id: int) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE user_id = %s AND deleted_at IS NULL",
-        (user_id,)
+        (user_id)
     )
+
     return User.from_dict(row) if row else None
 
 
@@ -119,8 +122,9 @@ def get_user_by_email(email: str) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email,)
+        (email)
     )
+
     return User.from_dict(row) if row else None
 
 
@@ -138,6 +142,7 @@ def update_user(user_id: int, data: UserUpdate) -> User:
         updated = update_user(1, UserUpdate(nickname="새닉네임", age=25))
     """
     fields = {k: v for k, v in data.model_dump().items() if v is not None}
+
     if not fields:
         raise ValueError("수정할 내용이 없습니다.")
 
@@ -148,6 +153,7 @@ def update_user(user_id: int, data: UserUpdate) -> User:
         f"UPDATE users SET {set_clause} WHERE user_id = %s AND deleted_at IS NULL",
         values
     )
+
     return get_user_by_id(user_id)
 
 
@@ -172,4 +178,5 @@ def delete_user(user_id: int) -> bool:
         """,
         (datetime.now(), user_id)
     )
+
     return affected > 0

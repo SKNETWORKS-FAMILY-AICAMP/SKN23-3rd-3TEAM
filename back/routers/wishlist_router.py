@@ -1,21 +1,38 @@
-"""
-wishlist_router.py
-─────────────────────────────────────────────────────────────
-엔드포인트 목록:
-    GET    /wishlist              사용자 위시리스트 조회
-    GET    /wishlist/{wish_id}    위시리스트 단건 조회
-    POST   /wishlist              위시리스트 추가
-    DELETE /wishlist/{wish_id}    위시리스트 삭제
-─────────────────────────────────────────────────────────────
-"""
-
 from .deps import get_current_user_id
 from services import analysis_service
 from db.schemas import WishlistAdd, WishlistResponse
 from fastapi import APIRouter, HTTPException, Depends
 
+"""
+wishlist_router.py
+─────────────────────────────────────────────────────────────
+엔드포인트 목록:
+    GET    /wishlist              사용자 위시리스트 조회
+    POST   /wishlist              위시리스트 추가
+    DELETE /wishlist/{wish_id}    위시리스트 삭제
+─────────────────────────────────────────────────────────────
+"""
+
 router = APIRouter(prefix="/wishlist", tags=["Wishlist"])
 
+# ─────────────────────────────────────────────
+# 내부 헬퍼
+# ─────────────────────────────────────────────
+
+def _wish_to_response(wish) -> WishlistResponse:
+    return WishlistResponse(
+        wish_id             = wish.wish_id,
+        user_id             = wish.user_id,
+        product_vector_id   = wish.product_vector_id,
+        product_name        = wish.product_name,
+        product_description = wish.product_description,
+        message_id          = wish.message_id,
+        added_at            = wish.added_at,
+    )
+
+# ─────────────────────────────────────────────
+# 위시리스트
+# ─────────────────────────────────────────────
 
 @router.get("", response_model=list[WishlistResponse])
 def get_wishlist(user_id: int = Depends(get_current_user_id)):
@@ -28,6 +45,7 @@ def get_wishlist(user_id: int = Depends(get_current_user_id)):
         [ { "wish_id": 3, "product_name": "...", ... }, ... ]
     """
     items = analysis_service.get_wishlist_by_user(user_id)
+
     return [_wish_to_response(w) for w in items]
 
 @router.post("", response_model=WishlistResponse, status_code=201)
@@ -74,18 +92,6 @@ def remove_from_wishlist(
         DELETE /wishlist/3
     """
     success = analysis_service.remove_from_wishlist(wish_id, user_id)
+
     if not success:
         raise HTTPException(status_code=404, detail="위시리스트 항목을 찾을 수 없습니다.")
-
-
-# 내부 헬퍼
-def _wish_to_response(wish) -> WishlistResponse:
-    return WishlistResponse(
-        wish_id             = wish.wish_id,
-        user_id             = wish.user_id,
-        product_vector_id   = wish.product_vector_id,
-        product_name        = wish.product_name,
-        product_description = wish.product_description,
-        message_id          = wish.message_id,
-        added_at            = wish.added_at,
-    )

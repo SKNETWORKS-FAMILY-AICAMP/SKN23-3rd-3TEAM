@@ -1,3 +1,12 @@
+import json
+
+from typing import Optional
+from datetime import datetime
+
+from db.models import SkinAnalysisResult, Wishlist
+from db.schemas import AnalysisCreate, WishlistAdd
+from db.db_manager import execute_one, execute_write, execute_query
+
 """
 analysis_service.py
 ─────────────────────────────────────────────────────────────
@@ -16,15 +25,6 @@ analysis_service.py
                     → models.SkinAnalysisResult / Wishlist 로 변환 후 반환
 ─────────────────────────────────────────────────────────────
 """
-
-import json
-from datetime import datetime
-from typing import Optional
-
-from db.db_manager import execute_one, execute_write, execute_query
-from db.models import SkinAnalysisResult, Wishlist
-from db.schemas import AnalysisCreate, WishlistAdd
-
 
 # ─────────────────────────────────────────────
 # 1. 피부 분석 결과 저장
@@ -54,6 +54,7 @@ def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
         """,
         (data.user_id, image_url_json, data.model_type, analysis_data_json)
     )
+
     return get_analysis_by_id(analysis_id)
 
 
@@ -74,10 +75,10 @@ def get_analysis_by_id(analysis_id: int) -> Optional[SkinAnalysisResult]:
         SELECT * FROM skin_analysis_results
         WHERE analysis_id = %s AND deleted_at IS NULL
         """,
-        (analysis_id,)
+        (analysis_id)
     )
-    return SkinAnalysisResult.from_dict(row) if row else None
 
+    return SkinAnalysisResult.from_dict(row) if row else None
 
 def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
     """
@@ -93,10 +94,10 @@ def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
         WHERE user_id = %s AND deleted_at IS NULL
         ORDER BY created_at DESC
         """,
-        (user_id,)
+        (user_id)
     )
-    return [SkinAnalysisResult.from_dict(row) for row in rows]
 
+    return [SkinAnalysisResult.from_dict(row) for row in rows]
 
 def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
     """
@@ -116,10 +117,9 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
         ORDER BY created_at DESC
         LIMIT 1
         """,
-        (user_id,)
+        (user_id)
     )
     return SkinAnalysisResult.from_dict(row) if row else None
-
 
 def get_analysis_by_model_type(
     user_id: int,
@@ -140,8 +140,8 @@ def get_analysis_by_model_type(
         """,
         (user_id, model_type)
     )
-    return [SkinAnalysisResult.from_dict(row) for row in rows]
 
+    return [SkinAnalysisResult.from_dict(row) for row in rows]
 
 # ─────────────────────────────────────────────
 # 3. 피부 분석 결과 삭제
@@ -163,8 +163,8 @@ def delete_analysis(analysis_id: int) -> bool:
         """,
         (datetime.now(), analysis_id)
     )
+    
     return affected > 0
-
 
 # ─────────────────────────────────────────────
 # 4. 위시리스트
@@ -192,6 +192,7 @@ def add_to_wishlist(data: WishlistAdd) -> Wishlist:
         """,
         (data.user_id, data.product_vector_id)
     )
+
     if existing:
         raise ValueError("이미 위시리스트에 추가된 제품입니다.")
 
@@ -209,8 +210,8 @@ def add_to_wishlist(data: WishlistAdd) -> Wishlist:
             data.product_description,
         )
     )
-    return get_wishlist_item_by_id(wish_id)
 
+    return get_wishlist_item_by_id(wish_id)
 
 def get_wishlist_item_by_id(wish_id: int) -> Optional[Wishlist]:
     """
@@ -221,10 +222,10 @@ def get_wishlist_item_by_id(wish_id: int) -> Optional[Wishlist]:
     """
     row = execute_one(
         "SELECT * FROM wishlist WHERE wish_id = %s",
-        (wish_id,)
+        (wish_id)
     )
-    return Wishlist.from_dict(row) if row else None
 
+    return Wishlist.from_dict(row) if row else None
 
 def get_wishlist_by_user(user_id: int) -> list[Wishlist]:
     """
@@ -240,10 +241,10 @@ def get_wishlist_by_user(user_id: int) -> list[Wishlist]:
         WHERE user_id = %s
         ORDER BY wish_id DESC
         """,
-        (user_id,)
+        (user_id)
     )
-    return [Wishlist.from_dict(row) for row in rows]
 
+    return [Wishlist.from_dict(row) for row in rows]
 
 def remove_from_wishlist(wish_id: int, user_id: int) -> bool:
     """
@@ -260,8 +261,8 @@ def remove_from_wishlist(wish_id: int, user_id: int) -> bool:
         """,
         (wish_id, user_id)
     )
-    return affected > 0
 
+    return affected > 0
 
 def remove_all_wishlist(user_id: int) -> bool:
     """
@@ -275,5 +276,5 @@ def remove_all_wishlist(user_id: int) -> bool:
         "DELETE FROM wishlist WHERE user_id = %s",
         (user_id,)
     )
-    return affected > 0
 
+    return affected > 0

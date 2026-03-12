@@ -1,3 +1,12 @@
+import json
+
+from typing import Optional
+from datetime import datetime
+
+from db.db_manager import execute_one, execute_write, execute_query
+from db.models import ChatRoom, ChatMessage
+from db.schemas import ChatRoomCreate, MessageCreate
+
 """
 chat_service.py
 ─────────────────────────────────────────────────────────────
@@ -14,15 +23,6 @@ chat_service.py
                     → models.ChatRoom / ChatMessage 로 변환 후 반환
 ─────────────────────────────────────────────────────────────
 """
-
-import json
-from datetime import datetime
-from typing import Optional
-
-from db.db_manager import execute_one, execute_write, execute_query
-from db.models import ChatRoom, ChatMessage
-from db.schemas import ChatRoomCreate, MessageCreate
-
 
 # ─────────────────────────────────────────────
 # 1. 채팅방
@@ -43,6 +43,7 @@ def create_chat_room(data: ChatRoomCreate) -> ChatRoom:
         """,
         (data.user_id, data.title)
     )
+
     return get_chat_room_by_id(chat_room_id)
 
 
@@ -58,6 +59,7 @@ def get_chat_room_by_id(chat_room_id: int) -> Optional[ChatRoom]:
         "SELECT * FROM chat_rooms WHERE chat_room_id = %s AND deleted_at IS NULL",
         (chat_room_id,)
     )
+
     return ChatRoom.from_dict(row) if row else None
 
 
@@ -77,6 +79,7 @@ def get_chat_rooms_by_user(user_id: int) -> list[ChatRoom]:
         """,
         (user_id,)
     )
+
     return [ChatRoom.from_dict(row) for row in rows]
 
 
@@ -95,6 +98,7 @@ def update_chat_room_title(chat_room_id: int, title: str) -> bool:
         """,
         (title, chat_room_id)
     )
+
     return affected > 0
 
 
@@ -115,6 +119,7 @@ def delete_chat_room(chat_room_id: int) -> bool:
         """,
         (datetime.now(), chat_room_id)
     )
+
     return affected > 0
 
 
@@ -148,6 +153,7 @@ def save_message(data: MessageCreate) -> ChatMessage:
     """
     # 채팅방 존재 여부 확인
     room = get_chat_room_by_id(data.chat_room_id)
+
     if not room:
         raise ValueError(f"존재하지 않는 채팅방입니다. (chat_room_id: {data.chat_room_id})")
 
@@ -161,6 +167,7 @@ def save_message(data: MessageCreate) -> ChatMessage:
         """,
         (data.chat_room_id, data.role, data.content, image_url_json, data.model_type)
     )
+
     return get_message_by_id(message_id)
 
 
@@ -175,6 +182,7 @@ def get_message_by_id(message_id: int) -> Optional[ChatMessage]:
         "SELECT * FROM chat_messages WHERE message_id = %s",
         (message_id,)
     )
+
     return ChatMessage.from_dict(row) if row else None
 
 
@@ -197,6 +205,7 @@ def get_messages_by_room(chat_room_id: int) -> list[ChatMessage]:
         """,
         (chat_room_id,)
     )
+
     return [ChatMessage.from_dict(row) for row in rows]
 
 
@@ -217,6 +226,7 @@ def get_latest_message_by_room(chat_room_id: int) -> Optional[ChatMessage]:
         """,
         (chat_room_id,)
     )
+
     return ChatMessage.from_dict(row) if row else None
 
 
@@ -237,4 +247,5 @@ def get_messages_by_role(chat_room_id: int, role: str) -> list[ChatMessage]:
         """,
         (chat_room_id, role)
     )
+
     return [ChatMessage.from_dict(row) for row in rows]

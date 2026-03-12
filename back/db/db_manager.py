@@ -1,3 +1,11 @@
+import os
+import pymysql
+import pymysql.cursors
+
+from pathlib import Path
+from dotenv import load_dotenv
+from sshtunnel import SSHTunnelForwarder
+
 """
 db_manager.py
 ─────────────────────────────────────────────────────────────
@@ -10,15 +18,7 @@ db_manager.py
 ─────────────────────────────────────────────────────────────
 """
 
-import os
-import pymysql
-import pymysql.cursors
-from sshtunnel import SSHTunnelForwarder
-from dotenv import load_dotenv
-from pathlib import Path
-
-# .env 파일 로드
-load_dotenv()
+load_dotenv()   # .env 파일 로드
 
 # ─────────────────────────────────────────────
 # 환경변수 로드
@@ -46,16 +46,17 @@ def _get_tunnel() -> SSHTunnelForwarder:
     이미 열려있으면 재사용, 닫혀있으면 새로 생성.
     """
     global _tunnel
+
     if _tunnel is None or not _tunnel.is_active:
         _tunnel = SSHTunnelForwarder(
-            (SSH_HOST, SSH_PORT),           # EC2 주소 + 포트
+            (SSH_HOST, SSH_PORT),                   # EC2 주소 + 포트
             ssh_username=SSH_USER,
-            ssh_pkey=SSH_PKEY,              # .pem 파일 경로
+            ssh_pkey=SSH_PKEY,                      # .pem 파일 경로
             remote_bind_address=(DB_HOST, DB_PORT),  # RDS 주소 + 포트
         )
         _tunnel.start()
-    return _tunnel
 
+    return _tunnel
 
 # ─────────────────────────────────────────────
 # Connection 생성
@@ -86,8 +87,8 @@ def get_connection() -> pymysql.connections.Connection:
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
     )
-    return conn
 
+    return conn
 
 # ─────────────────────────────────────────────
 # 공통 쿼리 헬퍼 함수
@@ -101,13 +102,14 @@ def execute_query(sql: str, params: tuple = ()) -> list[dict]:
         rows = execute_query("SELECT * FROM users WHERE user_id = %s", (user_id,))
     """
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
+
             return cursor.fetchall()
     finally:
         conn.close()
-
 
 def execute_one(sql: str, params: tuple = ()) -> dict | None:
     """
@@ -118,13 +120,14 @@ def execute_one(sql: str, params: tuple = ()) -> dict | None:
         user = execute_one("SELECT * FROM users WHERE email = %s", (email,))
     """
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
+
             return cursor.fetchone()
     finally:
         conn.close()
-
 
 def execute_write(sql: str, params: tuple = ()) -> int:
     """
@@ -140,19 +143,22 @@ def execute_write(sql: str, params: tuple = ()) -> int:
         )
     """
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
             last_id  = cursor.lastrowid
             row_count = cursor.rowcount
+
         conn.commit()
+
         return last_id if last_id else row_count
     except Exception as e:
         conn.rollback()  # 실패 시 롤백
+
         raise RuntimeError(f"[DB 쓰기 오류] {e}") from e
     finally:
         conn.close()
-
 
 def execute_many(sql: str, params_list: list[tuple]) -> int:
     """
@@ -167,17 +173,20 @@ def execute_many(sql: str, params_list: list[tuple]) -> int:
         )
     """
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             cursor.executemany(sql, params_list)
+
         conn.commit()
+
         return cursor.rowcount
     except Exception as e:
         conn.rollback()
+
         raise RuntimeError(f"[DB 다건 쓰기 오류] {e}") from e
     finally:
         conn.close()
-
 
 # ─────────────────────────────────────────────
 # DB 초기화 (서버 시작 시 자동 실행)
@@ -211,14 +220,16 @@ def init_db() -> None:
         with conn.cursor() as cursor:
             for statement in statements:
                 cursor.execute(statement)
+
         conn.commit()
+
         print("[init_db] 테이블 초기화 완료")
     except Exception as e:
         conn.rollback()
+
         raise RuntimeError(f"[init_db] 테이블 초기화 실패: {e}") from e
     finally:
         conn.close()
-
 
 # ─────────────────────────────────────────────
 # SSH 터널 종료 (앱 종료 시 호출)
@@ -233,6 +244,8 @@ def close_tunnel() -> None:
             close_tunnel()
     """
     global _tunnel
+
     if _tunnel and _tunnel.is_active:
         _tunnel.stop()
+        
         print("[close_tunnel] SSH 터널 종료")

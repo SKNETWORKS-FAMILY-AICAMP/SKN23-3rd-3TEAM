@@ -29,6 +29,8 @@ DB_USER     = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME     = os.getenv("DB_NAME")
 
+SERVER      = os.getenv("SERVER")
+
 SSH_HOST    = os.getenv("SSH_HOST")
 SSH_PORT    = int(os.getenv("SSH_PORT", 22))
 SSH_USER    = os.getenv("SSH_USER")
@@ -67,13 +69,11 @@ def get_connection() -> pymysql.connections.Connection:
     없으면 DB_HOST로 직접 접속.
     사용 후 반드시 conn.close() 호출 필요.
     """
-    if SSH_HOST:
-        # 로컬 개발 환경: SSH 터널 경유
+    if SERVER == 'local':   # 로컬 개발 환경: SSH 터널 경유
         tunnel = _get_tunnel()
         host = "127.0.0.1"
         port = tunnel.local_bind_port
-    else:
-        # EC2 환경: MariaDB 직접 접속
+    else:                   # EC2 환경: MariaDB 직접 접속 (추후 RDS -> DB 연결로 변경 예정)
         host = DB_HOST
         port = DB_PORT
 

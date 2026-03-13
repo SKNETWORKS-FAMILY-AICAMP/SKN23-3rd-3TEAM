@@ -1,3 +1,10 @@
+import os
+from jose import JWTError, jwt
+from dotenv import load_dotenv
+from fastapi import Depends, HTTPException, status
+from datetime import datetime, timedelta, timezone
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 """
 deps.py
 ─────────────────────────────────────────────────────────────
@@ -6,12 +13,6 @@ deps.py
         실제 JWT 도입 후 이 파일만 수정하면 됨
 ─────────────────────────────────────────────────────────────
 """
-
-import os
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -40,15 +41,17 @@ def get_current_user_id(
         detail="인증 정보가 유효하지 않습니다.",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int | None = payload.get("sub")
+
         if user_id is None:
             raise credentials_exception
+        
         return int(user_id)
     except (JWTError, ValueError):
         raise credentials_exception
-
 
 # ─────────────────────────────────────────────
 # JWT 발급 헬퍼 (user_router에서 사용)
@@ -62,11 +65,11 @@ def create_access_token(user_id: int) -> str:
         from .deps import create_access_token
         token = create_access_token(user.user_id)
     """
-    from datetime import datetime, timedelta, timezone
 
     expire = datetime.now(timezone.utc) + timedelta(hours=24)
     payload = {
         "sub": str(user_id),
         "exp": expire,
     }
+
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)

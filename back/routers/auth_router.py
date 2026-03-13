@@ -1,3 +1,9 @@
+import os
+from fastapi import APIRouter
+from urllib.parse import urlencode
+from fastapi.responses import RedirectResponse
+from services.auth_service import (get_google_login_url, google_callback, get_kakao_login_url, kakao_callback, get_naver_login_url, naver_callback)
+
 """
 auth_router.py
 ─────────────────────────────────────────────────────────────
@@ -9,25 +15,9 @@ auth_router.py
 ─────────────────────────────────────────────────────────────
 """
 
-import os
-from urllib.parse import urlencode
-
-from fastapi import APIRouter
-from fastapi.responses import RedirectResponse
-
-from services.auth_service import (
-    get_google_login_url,
-    google_callback,
-    get_kakao_login_url,
-    kakao_callback,
-    get_naver_login_url,
-    naver_callback,
-)
-
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
-
 
 # ─────────────────────────────────────────────
 # Google 소셜 로그인
@@ -43,8 +33,8 @@ def google_login():
         GET /auth/google/login
     """
     url = get_google_login_url()
-    return RedirectResponse(url)
 
+    return RedirectResponse(url)
 
 @router.get("/google/callback")
 async def google_callback_handler(code: str):
@@ -59,10 +49,10 @@ async def google_callback_handler(code: str):
         result  = await google_callback(code)
         token   = result["access_token"]
         is_new  = result.get("is_new", False)
+
         return RedirectResponse(f"{FRONTEND_BASE_URL}/oauth/callback?{urlencode({'token': token, 'provider': 'google', 'is_new': str(is_new).lower()})}")
     except Exception as e:
         return RedirectResponse(f"{FRONTEND_BASE_URL}/oauth/callback?{urlencode({'error': str(e)})}")
-
 
 # ─────────────────────────────────────────────
 # Kakao 소셜 로그인
@@ -78,8 +68,8 @@ def kakao_login():
         GET /auth/kakao/login
     """
     url = get_kakao_login_url()
-    return RedirectResponse(url)
 
+    return RedirectResponse(url)
 
 @router.get("/kakao/callback")
 async def kakao_callback_handler(code: str):
@@ -94,10 +84,10 @@ async def kakao_callback_handler(code: str):
         result  = await kakao_callback(code)
         token   = result["access_token"]
         is_new  = result.get("is_new", False)
+
         return RedirectResponse(f"{FRONTEND_BASE_URL}/oauth/callback?{urlencode({'token': token, 'provider': 'kakao', 'is_new': str(is_new).lower()})}")
     except Exception as e:
         return RedirectResponse(f"{FRONTEND_BASE_URL}/oauth/callback?{urlencode({'error': str(e)})}")
-
 
 # ─────────────────────────────────────────────
 # Naver 소셜 로그인
@@ -113,8 +103,8 @@ def naver_login():
         GET /auth/naver/login
     """
     url = get_naver_login_url()
-    return RedirectResponse(url)
 
+    return RedirectResponse(url)
 
 @router.get("/naver/callback")
 async def naver_callback_handler(code: str, state: str):
@@ -129,6 +119,7 @@ async def naver_callback_handler(code: str, state: str):
         result  = await naver_callback(code, state)
         token   = result["access_token"]
         is_new  = result.get("is_new", False)
+
         return RedirectResponse(f"{FRONTEND_BASE_URL}/oauth/callback?{urlencode({'token': token, 'provider': 'naver', 'is_new': str(is_new).lower()})}")
     except Exception as e:
         return RedirectResponse(f"{FRONTEND_BASE_URL}/oauth/callback?{urlencode({'error': str(e)})}")

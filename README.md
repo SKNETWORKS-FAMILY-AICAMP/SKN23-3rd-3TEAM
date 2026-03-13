@@ -1144,7 +1144,6 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 │       │   │   ├── ChatPage.tsx            # 메인 채팅 페이지 (비로그인 접근 가능)
 │       │   │   ├── AnalysisPage.tsx        # 피부 분석 결과 상세 (로그인 필수)
 │       │   │   ├── WishlistPage.tsx        # 위시리스트 목록 (로그인 필수)
-│       │   │   ├── WishlistDetailPage.tsx  # 위시리스트 상세 (로그인 필수)
 │       │   │   ├── SettingsPage.tsx        # 프로필·계정 설정 (로그인 필수)
 │       │   │   ├── LoginPage.tsx           # 로그인
 │       │   │   ├── SignupPage.tsx          # 회원가입

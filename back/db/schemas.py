@@ -1,3 +1,7 @@
+from datetime import datetime
+from typing import Optional, Literal
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
+
 """
 schemas.py
 ─────────────────────────────────────────────────────────────
@@ -16,11 +20,6 @@ schemas.py
     [Wishlist]       WishlistAdd / WishlistResponse
 ─────────────────────────────────────────────────────────────
 """
-
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
-from typing import Optional, Literal
-from datetime import datetime
-
 
 # ─────────────────────────────────────────────
 # 1. User 스키마
@@ -43,10 +42,11 @@ class UserCreate(BaseModel):
         """ 필수 약관 미동의 시 가입 차단 """
         if not self.terms_agreed:
             raise ValueError("서비스 이용약관 동의는 필수입니다.")
+        
         if not self.privacy_agreed:
             raise ValueError("개인정보 처리방침 동의는 필수입니다.")
+        
         return self
-
 
 class UserUpdate(BaseModel):
     """
@@ -59,7 +59,6 @@ class UserUpdate(BaseModel):
     skin_type         : Optional[int] = None   # keywords.keyword_id
     skin_concern      : Optional[str] = None
     profile_image_url : Optional[str] = None   # S3 URL
-
 
 class UserResponse(BaseModel):
     """
@@ -79,7 +78,6 @@ class UserResponse(BaseModel):
     created_at        : datetime
 
     model_config = {"from_attributes": True}
-
 
 # ─────────────────────────────────────────────
 # 2. AuthProvider 스키마
@@ -101,8 +99,8 @@ class AuthProviderCreate(BaseModel):
         """ local 로그인인데 비밀번호 해시가 없으면 차단 """
         if self.provider_type == "local" and not self.password_hash:
             raise ValueError("local 로그인은 password_hash가 필요합니다.")
+        
         return self
-
 
 class LoginRequest(BaseModel):
     """
@@ -110,7 +108,6 @@ class LoginRequest(BaseModel):
     """
     email    : EmailStr
     password : str
-
 
 class AuthResponse(BaseModel):
     """
@@ -125,7 +122,6 @@ class AuthResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
 # ─────────────────────────────────────────────
 # 3. ChatRoom 스키마
 # ─────────────────────────────────────────────
@@ -138,7 +134,6 @@ class ChatRoomCreate(BaseModel):
     user_id : int
     title   : Optional[str] = None
 
-
 class ChatRoomResponse(BaseModel):
     """
     채팅방 조회 응답
@@ -149,7 +144,6 @@ class ChatRoomResponse(BaseModel):
     created_at   : Optional[datetime] = None
 
     model_config = {"from_attributes": True}
-
 
 # ─────────────────────────────────────────────
 # 4. ChatMessage 스키마
@@ -173,8 +167,8 @@ class MessageCreate(BaseModel):
         """ 텍스트도 없고 이미지도 없으면 차단 """
         if not self.content and not self.image_url:
             raise ValueError("content 또는 image_url 중 하나는 필수입니다.")
+        
         return self
-
 
 class MessageResponse(BaseModel):
     """
@@ -189,7 +183,6 @@ class MessageResponse(BaseModel):
     created_at   : Optional[datetime]  = None
 
     model_config = {"from_attributes": True}
-
 
 # ─────────────────────────────────────────────
 # 5. SkinAnalysisResult 스키마
@@ -213,8 +206,8 @@ class AnalysisCreate(BaseModel):
         """ 이미지 URL이 비어있으면 차단 """
         if not v:
             raise ValueError("image_url은 최소 1개 이상이어야 합니다.")
+        
         return v
-
 
 class AnalysisResponse(BaseModel):
     """
@@ -228,7 +221,6 @@ class AnalysisResponse(BaseModel):
     created_at    : datetime
 
     model_config = {"from_attributes": True}
-
 
 # ─────────────────────────────────────────────
 # 6. Wishlist 스키마
@@ -244,7 +236,6 @@ class WishlistAdd(BaseModel):
     message_id          : Optional[int] = None  # 추천한 메시지 ID
     product_description : Optional[str] = None  # 제품 간단 설명
 
-
 class WishlistResponse(BaseModel):
     """
     위시리스트 조회 응답
@@ -259,7 +250,6 @@ class WishlistResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
 # ─────────────────────────────────────────────
 # 7. 이메일 인증 스키마
 # ─────────────────────────────────────────────
@@ -271,14 +261,12 @@ class EmailSendRequest(BaseModel):
     """
     email : EmailStr
 
-
 class EmailVerifyRequest(BaseModel):
     """
     이메일 인증 코드 확인 요청
     """
     email : EmailStr
     code  : str
-
 
 class PasswordResetRequest(BaseModel):
     """
@@ -288,7 +276,6 @@ class PasswordResetRequest(BaseModel):
     email        : EmailStr
     code         : str
     new_password : str
-
 
 # ─────────────────────────────────────────────
 # 8. Keyword 스키마

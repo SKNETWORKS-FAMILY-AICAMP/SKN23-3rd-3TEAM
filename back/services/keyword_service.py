@@ -1,3 +1,5 @@
+from db.db_manager import execute_query
+
 """
 keyword_service.py
 ─────────────────────────────────────────────────────────────
@@ -7,9 +9,6 @@ keyword_service.py
     2. 정밀 분석 metrics 기반 factorial label 선택
 ─────────────────────────────────────────────────────────────
 """
-
-from db.db_manager import execute_query
-
 
 # ─────────────────────────────────────────────
 # 1. 피부 케어 루틴 키워드 조회
@@ -42,9 +41,9 @@ def get_skin_care_routines() -> list[dict]:
 
     반환 예시:
         [
-          {"keyword_id": 1, "type": "skin_care_routine", "keyword": "moisturizing_boost", "label": "보습 강화", "description": "..."},
-          {"keyword_id": 2, "type": "skin_care_routine", "keyword": "oil_cleansing",      "label": "오일 클렌징", "description": "..."},
-          ...
+            {"keyword_id": 1, "type": "skin_care_routine", "keyword": "moisturizing_boost", "label": "보습 강화", "description": "..."},
+            {"keyword_id": 2, "type": "skin_care_routine", "keyword": "oil_cleansing",      "label": "오일 클렌징", "description": "..."},
+            ...
         ]
     """
     rows = execute_query(
@@ -56,6 +55,7 @@ def get_skin_care_routines() -> list[dict]:
         """,
         ()
     )
+
     return [dict(row) for row in rows] if rows else []
 
 
@@ -76,7 +76,7 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
 
     Args:
         metrics: validate_node의 _normalize_deep() 결과
-                 예) {"moisture": {"score": 55}, "pore": {"score": 62}, ...}
+        예) {"moisture": {"score": 55}, "pore": {"score": 62}, ...}
         min_count: 최소 반환 개수 (기본 2)
         max_count: 최대 반환 개수 (기본 5)
 
@@ -90,6 +90,7 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
         )
     """
     routines = get_skin_care_routines()
+
     if not routines:
         return []
 
@@ -98,6 +99,7 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
         [
             (key, metrics[key]["score"])
             for key in _METRIC_THRESHOLD
+
             if key in metrics and metrics[key]["score"] <= _METRIC_THRESHOLD[key]
         ],
         key=lambda x: x[1]
@@ -112,14 +114,19 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
             kw    = routine.get("keyword") or ""
             label = routine.get("label") or ""
             desc  = routine.get("description") or ""   # NULL → 빈 문자열
+
             if not kw or not label:
                 continue
+
             if kw in seen_keywords:
                 continue
+
             desc_kws = _METRIC_TO_DESC_KW.get(metric_key, [])
+
             if any(dk in desc for dk in desc_kws):
                 selected_labels.append(label)
                 seen_keywords.add(kw)
+
         if len(selected_labels) >= max_count:
             break
 
@@ -130,11 +137,14 @@ def select_factorial(metrics: dict, min_count: int = 2, max_count: int = 5) -> l
         for routine in routines:
             kw    = routine.get("keyword") or ""
             label = routine.get("label") or ""
+
             if not kw or not label:
                 continue
+
             if kw not in seen_keywords:
                 selected_labels.append(label)
                 seen_keywords.add(kw)
+
             if len(selected_labels) >= min_count:
                 break
 

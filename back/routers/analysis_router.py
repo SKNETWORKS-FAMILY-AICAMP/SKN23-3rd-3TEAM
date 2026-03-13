@@ -1,3 +1,8 @@
+from .deps import get_current_user_id
+from services import analysis_service
+from fastapi import APIRouter, HTTPException, Depends
+from db.schemas import AnalysisCreate, AnalysisResponse
+
 """
 analysis_router.py
 ─────────────────────────────────────────────────────────────
@@ -10,14 +15,23 @@ analysis_router.py
 ─────────────────────────────────────────────────────────────
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-
-from db.schemas import AnalysisCreate, AnalysisResponse
-from services import analysis_service
-from .deps import get_current_user_id
-
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
 
+# ─────────────────────────────────────────────
+# 내부 헬퍼
+# ─────────────────────────────────────────────
+
+def _analysis_to_response(result) -> AnalysisResponse:
+    img = result.image_url
+
+    return AnalysisResponse(
+        analysis_id   = result.analysis_id,
+        user_id       = result.user_id,
+        image_url     = img if isinstance(img, list) else img.split(","),
+        model_type    = result.model_type,
+        analysis_data = result.analysis_data,
+        created_at    = result.created_at,
+    )
 
 # ─────────────────────────────────────────────
 # 피부 분석 결과
@@ -47,8 +61,8 @@ def save_analysis(
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
     result = analysis_service.save_analysis(body)
-    return _analysis_to_response(result)
 
+    return _analysis_to_response(result)
 
 @router.get("", response_model=list[AnalysisResponse])
 def get_analysis_history(user_id: int = Depends(get_current_user_id)):
@@ -61,8 +75,8 @@ def get_analysis_history(user_id: int = Depends(get_current_user_id)):
         [ { "analysis_id": 3, ... }, { "analysis_id": 1, ... } ]
     """
     results = analysis_service.get_analysis_history(user_id)
-    return [_analysis_to_response(r) for r in results]
 
+    return [_analysis_to_response(r) for r in results]
 
 @router.get("/latest", response_model=AnalysisResponse)
 def get_latest_analysis(user_id: int = Depends(get_current_user_id)):
@@ -76,10 +90,11 @@ def get_latest_analysis(user_id: int = Depends(get_current_user_id)):
         { "analysis_id": 5, "model_type": "detailed", ... }
     """
     result = analysis_service.get_latest_analysis(user_id)
+
     if not result:
         raise HTTPException(status_code=404, detail="분석 결과가 없습니다.")
-    return _analysis_to_response(result)
 
+    return _analysis_to_response(result)
 
 @router.get("/{analysis_id}", response_model=AnalysisResponse)
 def get_analysis(
@@ -93,12 +108,14 @@ def get_analysis(
         GET /analysis/1
     """
     result = analysis_service.get_analysis_by_id(analysis_id)
+
     if not result:
         raise HTTPException(status_code=404, detail="분석 결과를 찾을 수 없습니다.")
+
     if result.user_id != user_id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
-    return _analysis_to_response(result)
 
+    return _analysis_to_response(result)
 
 @router.delete("/{analysis_id}", status_code=204)
 def delete_analysis(
@@ -112,14 +129,14 @@ def delete_analysis(
         DELETE /analysis/1
     """
     result = analysis_service.get_analysis_by_id(analysis_id)
+
     if not result:
         raise HTTPException(status_code=404, detail="분석 결과를 찾을 수 없습니다.")
+
     if result.user_id != user_id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
+
     analysis_service.delete_analysis(analysis_id)
-
-
-
 
 @router.get("/model/{model_type}", response_model=list[AnalysisResponse])
 def get_analysis_by_model_type(
@@ -128,8 +145,8 @@ def get_analysis_by_model_type(
 ):
     """
     모델 타입별 분석 히스토리 조회 (최신순).
-    
-model_type: simple / detailed
+
+    model_type: simple / detailed
 
     프론트 요청 예시:
         GET /analysis/model/simple
@@ -138,19 +155,5 @@ model_type: simple / detailed
         [ { "analysis_id": 3, "model_type": "detailed", ... }, ... ]
     """
     results = analysis_service.get_analysis_by_model_type(user_id, model_type)
-    return [_analysis_to_response(r) for r in results]
-    
-# ─────────────────────────────────────────────
-# 내부 헬퍼
-# ─────────────────────────────────────────────
 
-def _analysis_to_response(result) -> AnalysisResponse:
-    img = result.image_url
-    return AnalysisResponse(
-        analysis_id   = result.analysis_id,
-        user_id       = result.user_id,
-        image_url     = img if isinstance(img, list) else img.split(","),
-        model_type    = result.model_type,
-        analysis_data = result.analysis_data,
-        created_at    = result.created_at,
-    )
+    return [_analysis_to_response(r) for r in results]

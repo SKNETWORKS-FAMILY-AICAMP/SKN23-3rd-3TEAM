@@ -1,3 +1,9 @@
+import json
+
+from typing import Optional
+from datetime import datetime
+from dataclasses import dataclass, field
+
 """
 models.py
 ─────────────────────────────────────────────────────────────
@@ -13,12 +19,6 @@ models.py
 ─────────────────────────────────────────────────────────────
 """
 
-import json
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional
-
-
 # ─────────────────────────────────────────────
 # 1. Keyword
 # 테이블: keywords
@@ -27,8 +27,8 @@ from typing import Optional
 @dataclass
 class Keyword:
     keyword_id  : int
-    type        : str                    # 키워드 그룹 (예: skin_type, gender)
-    keyword     : str                    # 코드 내부 값 (예: dry, oily)
+    type        : str                   # 키워드 그룹 (예: skin_type, gender)
+    keyword     : str                   # 코드 내부 값 (예: dry, oily)
     label       : Optional[str] = None  # 화면 표시 이름 (예: 건성, 지성)
     description : Optional[str] = None  # 설명
 
@@ -42,7 +42,6 @@ class Keyword:
             label       = row.get("label"),
             description = row.get("description"),
         )
-
 
 # ─────────────────────────────────────────────
 # 2. User
@@ -90,7 +89,6 @@ class User:
             deleted_at        = row.get("deleted_at"),
         )
 
-
 # ─────────────────────────────────────────────
 # 3. AuthProvider
 # 테이블: auth_providers
@@ -100,10 +98,10 @@ class User:
 class AuthProvider:
     auth_id       : int
     user_id       : int
-    provider_type : str                    # local / google / kakao
-    provider_id   : str                    # 각 provider의 고유 사용자 ID
+    provider_type : str                     # local / google / kakao
+    provider_id   : str                     # 각 provider의 고유 사용자 ID
     created_at    : datetime
-    password_hash : Optional[str] = None  # local 로그인 전용 (소셜이면 None)
+    password_hash : Optional[str] = None    # local 로그인 전용 (소셜이면 None)
 
     @staticmethod
     def from_dict(row: dict) -> "AuthProvider":
@@ -116,7 +114,6 @@ class AuthProvider:
             created_at    = row["created_at"],
             password_hash = row.get("password_hash"),
         )
-
 
 # ─────────────────────────────────────────────
 # 4. ChatRoom
@@ -142,7 +139,6 @@ class ChatRoom:
             deleted_at   = row.get("deleted_at"),
         )
 
-
 # ─────────────────────────────────────────────
 # 5. ChatMessage
 # 테이블: chat_messages
@@ -152,16 +148,17 @@ class ChatRoom:
 class ChatMessage:
     message_id   : int
     chat_room_id : int
-    role         : str                     # user / assistant / system
-    model_type   : str                     # simple / detailed
-    content      : Optional[str]      = None  # 텍스트 내용 (이미지 전용이면 None)
-    image_url    : Optional[list]     = None  # S3 이미지 URL 배열 (JSON)
+    role         : str                          # user / assistant / system
+    model_type   : str                          # simple / detailed
+    content      : Optional[str]      = None    # 텍스트 내용 (이미지 전용이면 None)
+    image_url    : Optional[list]     = None    # S3 이미지 URL 배열 (JSON)
     created_at   : Optional[datetime] = None
 
     @staticmethod
     def from_dict(row: dict) -> "ChatMessage":
         """ DB 조회 결과 dict → ChatMessage 객체 변환 """
         img_url = row.get("image_url")
+
         if isinstance(img_url, str):
             try:
                 parsed = json.loads(img_url)
@@ -178,7 +175,6 @@ class ChatMessage:
             image_url    = img_url or [],
             created_at   = row.get("created_at"),
         )
-
 
 # ─────────────────────────────────────────────
 # 6. SkinAnalysisResult
@@ -200,6 +196,7 @@ class SkinAnalysisResult:
         """ DB 조회 결과 dict → SkinAnalysisResult 객체 변환 """
         raw_img  = row["image_url"]
         raw_data = row["analysis_data"]
+
         return SkinAnalysisResult(
             analysis_id   = row["analysis_id"],
             user_id       = row["user_id"],
@@ -209,7 +206,6 @@ class SkinAnalysisResult:
             created_at    = row["created_at"],
             deleted_at    = row.get("deleted_at"),
         )
-
 
 # ─────────────────────────────────────────────
 # 7. Wishlist
